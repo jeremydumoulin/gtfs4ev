@@ -11,6 +11,7 @@ langage = python 3
 
 
 Todo
-- Verifier que les pd sont bien remplis
-- Donner quelques stats et warnings, notamment concernant les services
-- Lister les fichiers presents mais non utilises
+- Infos temporelles
+- Infos spatiales : taille de la bbox
+- Calculer la bbox avec ev-fleet-sim et comparer 
+- Mapper les distances avec les routes OSM
