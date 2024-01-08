@@ -1,6 +1,8 @@
 # coding: utf-8
 
 import pandas as pd
+from shapely.geometry import LineString, Point
+import numpy as np
 
 """ 
 Helper functions
@@ -18,3 +20,17 @@ def check_dataframe(df):
 		return False
 	else:
 		return True
+
+def find_closest_point(line, point):
+    min_distance = float('inf')  # Initialize with a large value
+    closest_point = None
+    
+    for coordinate in line.coords:
+        current_point = Point(coordinate)
+        distance = point.distance(current_point)
+        
+        if distance < min_distance:
+            min_distance = distance
+            closest_point = current_point
+    
+    return closest_point
