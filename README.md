@@ -13,5 +13,7 @@ langage = python 3
 Todo
 - Infos temporelles
 - Infos spatiales : taille de la bbox
+- Visualisation des routes et des stops à la manière de ev-fleet-sim
 - Calculer la bbox avec ev-fleet-sim et comparer 
 - Mapper les distances avec les routes OSM
+- vérifier les projections et laisser à l'utilisateur la possibilité d'adapter le système de projection

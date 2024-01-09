@@ -11,16 +11,16 @@ from gtfs4ev import constants as cst
 from gtfs4ev import environment as env
 from gtfs4ev import helpers as hlp
 
-class TrafficSim:  
+class TrafficFeed:  
 
     """
     ATTRIBUTES
     """
     
-datapath = "" # Absolute path to the GTFS datafolder
+    datapath = "" # Absolute path to the GTFS datafolder
 
     # Panda dataframes holding standard data
-    agency = pd.DataFrame()    
+    agency = pd.DataFrame()
     routes = pd.DataFrame()
     stop_times = pd.DataFrame()
     calendar = pd.DataFrame()
