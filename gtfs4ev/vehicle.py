@@ -8,12 +8,13 @@ from pathlib import Path
 from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import transform
 import pyproj
+from datetime import datetime
 
 from gtfs4ev import constants as cst
 from gtfs4ev import environment as env
 from gtfs4ev import helpers as hlp
 
-from gtfs4ev.trafficfeed import TrafficFeed
+from gtfs4ev.gtfsfeed import GTFSFeed
 
 class Vehicle:  
 
@@ -27,6 +28,10 @@ class Vehicle:
     trip_id = "" # ID of the trip taken by the electric vehicle
 
     trip_data = pd.DataFrame() # Dataframe countaining all the relevant data for the vehicle trip
+    trip_frequencies = pd.DataFrame()
+
+    # Simulation results
+    trip_profile = pd.DataFrame()
 
     """
     METHODS
@@ -41,8 +46,9 @@ class Vehicle:
 
         self.set_feed(feed)
         self.set_trip_id(trip_id)
-
+        
         self.set_trip_data()
+        self.set_trip_frequencies()
 
     """ Setters """
 
@@ -63,7 +69,7 @@ class Vehicle:
         """
         try:       
             # Check if the value is an instance of the expected type
-            if not isinstance(feed, TrafficFeed):
+            if not isinstance(feed, GTFSFeed):
                 raise TypeError(f"Expected an instance of YourCustomType, but got {type(value)}")
         except TypeError:
             print(f"\t Error: Impossible to initiate the traffic feed")
@@ -201,24 +207,74 @@ class Vehicle:
 
             self.trip_data = output_df
 
+    def set_trip_frequencies(self):
+        """ Setter for trip_frequencies attribute
+        """
+        try:  
+            frequencies = self.feed.frequencies[self.feed.frequencies['trip_id'] == self.trip_id].copy()
+        except Exception:
+            print(f"\t Error: Impossible to find the frequencies related to the trip_id in the feed.")
+        else:
+            frequencies['duration_secs'] = (frequencies['end_time'] - frequencies['start_time']).dt.total_seconds()
+            frequencies['n_vehicles'] = np.floor(self.trip_data.iloc[-1]['time']/frequencies['headway_secs']).astype(int)
+            frequencies['n_vehicles'] = np.where(frequencies['n_vehicles'] == 0, 1, frequencies['n_vehicles'])
+            frequencies['n_trips_per_vehicle'] = frequencies['duration_secs']/self.trip_data.iloc[-1]['time']
+            frequencies['energy_estimate'] = self.trip_data.iloc[-1]['cumulative_consumption'] * frequencies['n_trips_per_vehicle'] * frequencies['n_vehicles']
+            frequencies['energy_per_vehicle'] = frequencies['energy_estimate'] / frequencies['n_vehicles']
+            frequencies['vkt'] = frequencies['n_trips_per_vehicle'] * self.trip_data['distance'].sum()
 
-    """ Statistics and profiles """
+            frequencies['time'] = frequencies['end_time'] # Initialisation with random value       
 
-    def power_profile(self, t):
-        nearest_higher_index = (self.trip_data['time'] - t).apply(lambda x: float('inf') if x <= 0 else x).idxmin()
+            time = frequencies['duration_secs'].iloc[0] 
+
+            for i in range(0, len(frequencies)):
+                if i == 0:
+                    frequencies['time'].iloc[i] = time
+                else:
+                    time += frequencies['duration_secs'].iloc[i]
+                    frequencies['time'].iloc[i] = time
+
+            self.trip_frequencies = frequencies
+
+
+    """ Statistics and profiles of a single vehicle """
+
+    def power_profile(self, t, loop = False):  
+
+        if t > self.trip_data['time'].iloc[-1]:
+            if not loop:
+                return 0
+            else:
+                t = t % self.trip_data.iloc[-1]['time']
+                
+        nearest_higher_index = (self.trip_data['time'] - t).apply(lambda x: float('inf') if x <= 0 else x).idxmin()            
 
         return self.trip_data.loc[nearest_higher_index, 'power']
 
-    def energy_profile(self, t):
+    def energy_profile(self, t, loop = False):       
+
+        if t > self.trip_data['time'].iloc[-1]:
+            if not loop:
+                return 0
+            else:
+                t = t % self.trip_data.iloc[-1]['time']
+
         nearest_higher_index = (self.trip_data['time'] - t).apply(lambda x: float('inf') if x <= 0 else x).idxmin()
 
         return self.trip_data.loc[nearest_higher_index, 'cumulative_consumption']
 
-    def speed_profile(self, t):
+    def speed_profile(self, t, loop = False):
+        nearest_higher_index = (self.trip_data['time'] - t).apply(lambda x: float('inf') if x <= 0 else x).idxmin()
+
+        if t > self.trip_data['time'].iloc[-1]:
+            if not loop:
+                return 0
+            else:
+                t = t % self.trip_data.iloc[-1]['time']
+
         nearest_higher_index = (self.trip_data['time'] - t).apply(lambda x: float('inf') if x <= 0 else x).idxmin()
 
         return self.trip_data.loc[nearest_higher_index, 'speed']
-
 
     def statistics(self):     
         statistics = {
@@ -235,3 +291,76 @@ class Vehicle:
         }
         
         return statistics
+
+
+    """ Statistics and profiles of the trip """
+
+    def simulate(self, duration, time_step):
+        # start = datetime.strptime(start_time, '%H:%M:%S')
+        # end = datetime.strptime(end_time, '%H:%M:%S')
+        # total_time = (end-start).total_seconds()
+
+        time_values = np.arange(0, duration, time_step)
+
+        output_data = []
+
+        energy = .0
+        power = .0
+        speed = .0
+        n_stopped = 0
+        n_moving = 0
+        tot_speed = .0
+
+        for value in time_values:
+            t = value
+            power = .0
+            tot_speed = .0
+            n_moving = n_stopped = 0
+
+            if t > self.trip_frequencies['time'].iloc[-1]:
+                print("Error: specified timeframe is greater than the total trip time")
+                power = .0
+                energy += .0
+                speed = .0
+                tot_speed = .0
+                n_moving = n_stopped = 0
+            else:     
+                index = (self.trip_frequencies['time'] - t).apply(lambda x: float('inf') if x <= 0 else x).idxmin()            
+
+                if index != self.trip_frequencies.index[0]:
+                    t = t - self.trip_frequencies.loc[index-1, 'time']                
+                
+                for vehicle_index in range(self.trip_frequencies.loc[index, 'n_vehicles']):
+                    # print(vehicle_index)                
+                    power += self.power_profile(t + vehicle_index * self.trip_frequencies.loc[index, 'headway_secs'], loop=True)
+                    speed = self.speed_profile(t + vehicle_index * self.trip_frequencies.loc[index, 'headway_secs'], loop=True)
+                    tot_speed += speed
+                    if speed == .0:
+                        n_stopped += 1
+                    
+                speed = tot_speed / self.trip_frequencies.loc[index, 'n_vehicles']    
+                energy += power * time_step / 3600
+                n_moving = self.trip_frequencies.loc[index, 'n_vehicles'] - n_stopped
+
+            output_data.append({
+                't': value,
+                'power_kW': power,
+                'energy_kWh': energy,
+                'average_speed_kmh': speed,
+                'nbr_vehicles_moving': n_moving,
+                'nbr_vehicles_stopped': n_stopped
+            })  
+
+        output_df = pd.DataFrame(output_data) 
+
+        self.trip_profile = output_df
+
+
+    def energy_profile_trip(self, t):
+
+        integrand = self.power_profile_trip
+
+        # Integrate the power profile from 0 to t
+        result, _ = quad(integrand, 0, t)
+
+        return result

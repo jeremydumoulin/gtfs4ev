@@ -10,7 +10,7 @@ import numpy as np
 import math
 
 from gtfs4ev.vehicle import Vehicle
-from gtfs4ev.trafficfeed import TrafficFeed
+from gtfs4ev.gtfsfeed import GTFSFeed
 from gtfs4ev.vehicle import Vehicle
 from gtfs4ev import helpers as hlp
 
@@ -19,29 +19,123 @@ Main function
 """
 def main():
 
-	feed = TrafficFeed("GTFS_Nairobi")
-
-	vehicle = Vehicle(feed = feed, trip_id="1107D110", ev_consumption = 0.2)
-
-	statistics = vehicle.statistics()	
-
-	filtered_frequencies = vehicle.feed.frequencies[vehicle.feed.frequencies['trip_id'] == vehicle.trip_id]
-
-	print(filtered_frequencies)
+	feed = GTFSFeed("GTFS_Nairobi")		
+	feed.clean_trips()
 
 
+	# trips = feed.trips['trip_id']
 
-	def total_power(headway, n_vehicles):
-		for i in range(0, n_vehicles):
-			print(i)
+	# print(trips)
 
-	total_power(300, 12)
+	# output_data = []
+	# df = pd.DataFrame()
+	# time_step = 100
+	# time_span = 54000
+	# tot_energy = .0
 
-	start_time = filtered_frequencies.iloc[0]['start_time']
-	stop_time = filtered_frequencies.iloc[0]['end_time']
-	time_step = 10
+	# profile = np.zeros(int(time_span/time_step))
 
-	headway_time = 300 # headway time in seconds
+	# i = 0
+	# for trip in trips:
+	# 	i += 1		
+	# 	print(f"Completion: {i / len(trips) * 100}%")
+	# 	vehicle = Vehicle(feed = feed, trip_id=trip, ev_consumption = 0.4)
+
+	# 	print(vehicle.trip_frequencies)
+
+	# 	energy = vehicle.trip_frequencies['energy_estimate'].sum()
+	# 	# print(vehicle.trip_frequencies['energy_estimate'])
+	# 	# print(energy)
+	# 	tot_energy += energy
+
+	# 	vehicle.simulate(time_span, time_step)
+
+	# 	# print(vehicle.trip_profile['power_kW'])
+
+	# 	profile += vehicle.trip_profile['power_kW'].values
+				
+	# 	# vehicle.simulate(time_span, time_step)
+	# 	# print(vehicle.trip_profile)
+
+	# print(profile)
+	# # 
+
+
+
+	# vehicle = Vehicle(feed = feed, trip_id='20045131', ev_consumption = 0.2)
+	# print(vehicle.trip_frequencies)
+	# vehicle.simulate(54000, 50)
+
+
+	# statistics = vehicle.statistics()	
+
+	# print(statistics)
+	# print(vehicle.trip_frequencies)
+	# print(vehicle.trip_data.iloc[-1])
+
+	# vehicle.simulate(54000, 50)
+
+	# df = vehicle.trip_profile
+
+	# # Calculate moving average for the 'Power' column
+	# window_size = 120
+	# df['Power_MA'] = df['power_kW'].rolling(window=window_size, min_periods=1).mean()
+
+	# # Plotting
+	# plt.figure(figsize=(10, 6))
+
+	# # Plot power values
+	# plt.plot(df['t'], df['power_kW'], label='Power', color='green', linestyle='-')
+
+	# # Plot moving average line
+	# plt.plot(df['t'], df['Power_MA'], color='black', label=f'Power Moving Avg (window={window_size})', linestyle='--')
+
+
+	# # Plot energy values on a second y-axis
+	# ax2 = plt.gca().twinx()
+	# ax2.plot(df['t'], df['energy_kWh'], color='orange', label='Energy', linestyle='--')
+
+	# # Set labels and title
+	# plt.xlabel('Time')
+	# plt.ylabel('Power (kW)')
+	# ax2.set_ylabel('Cumulative Energy (kWh)')
+
+	# plt.title('Power and Energy Over Time')
+
+	# plt.show()
+
+
+
+	time_values = np.arange(0, 4000, 20) 
+
+	vehicle = Vehicle(feed = feed, trip_id='20237110', ev_consumption = 0.4)
+
+	power_values = [vehicle.power_profile(t) for t in time_values]
+
+	# Plot the function
+	plt.plot(time_values, power_values, marker='o')
+	plt.xlabel('Time (seconds)')
+	plt.ylabel('Power')
+	plt.title('Power vs. Time')
+	plt.grid(True)
+
+	plt.savefig('power_vs_time.png')
+	plt.show()
+
+
+
+
+	# def total_power(headway, n_vehicles):
+	# 	for i in range(0, n_vehicles):
+	# 		print(i)
+
+	# total_power(300, 12)
+
+	# start_time = filtered_frequencies.iloc[0]['start_time']
+	# stop_time = filtered_frequencies.iloc[0]['end_time']
+	# time_step = 10
+
+	# headway_time = 300 # headway time in seconds
 
 
 	

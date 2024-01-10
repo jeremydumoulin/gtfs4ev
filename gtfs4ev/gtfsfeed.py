@@ -11,7 +11,7 @@ from gtfs4ev import constants as cst
 from gtfs4ev import environment as env
 from gtfs4ev import helpers as hlp
 
-class TrafficFeed:  
+class GTFSFeed:  
 
     """
     ATTRIBUTES
@@ -383,7 +383,7 @@ class TrafficFeed:
         number_of_trips = len(self.trips)
         number_of_routes = len(self.routes)
 
-        # Calculate the minimum, maximum, averagen, and standard deviation of the number of rows per trip_id
+        # Calculate the minimum, maximum, average, and standard deviation of the number of rows per trip_id
         statistics = {
             'min_stops_per_trip': stop_times.groupby('trip_id').size().min(),
             'max_stops_per_trip': stop_times.groupby('trip_id').size().max(),
@@ -394,4 +394,20 @@ class TrafficFeed:
             'stops_to_routes_ratio': number_of_stops / number_of_routes
         }
         
-        return statistics   
+        return statistics
+
+    """ Cleaning the data """
+
+    def clean_trips(self):
+        """ Deleting the trips which are not associated to a frequency 
+        """
+        trips = self.trips
+        frequencies = self.frequencies
+
+        # Merge the DataFrames based on 'trip_id'
+        merged_df = trips.merge(frequencies, on='trip_id')
+
+        # Only keep the rows from the original df1 that have a corresponding trip_id in df2
+        cleaned_trips = trips[trips['trip_id'].isin(merged_df['trip_id'])]
+
+        self.trips = cleaned_trips
