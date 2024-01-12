@@ -8,10 +8,14 @@ import pyproj
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+import folium
+from folium.plugins import MarkerCluster, MeasureControl
 
-from gtfs4ev.vehicle import Vehicle
 from gtfs4ev.gtfsfeed import GTFSFeed
-from gtfs4ev.vehicle import Vehicle
+from gtfs4ev.tripsim import TripSim
+
+from gtfs4ev import constants as cst
+from gtfs4ev import environment as env
 from gtfs4ev import helpers as hlp
 
 """
@@ -19,8 +23,284 @@ Main function
 """
 def main():
 
-	feed = GTFSFeed("GTFS_Nairobi")		
-	feed.clean_trips()
+	"""
+	Setting up and cleaning the GTFS Feed
+	"""
+
+	# Populate the feed with the raw data
+	feed = GTFSFeed("GTFS_Nairobi")	
+
+	# Check if there is any issue with de data
+	if feed.data_check():
+		feed.clean_all()
+
+	# Recheck the data to make sure everything has been cleaned
+	feed.data_check()
+
+	# If needed, filter out trips belonging to specific services
+	#feed.filter_services('service_0001')
+
+	"""
+	1. Get general information about the feed
+	"""
+
+	feed.general_feed_info()
+
+	"""
+	2. Visualize the paratransit network
+	"""
+
+	# """ Visualize a trip using the trip_id """
+	# trip_id = '1107D110'
+
+	# # Get the shape of the trip_id
+	# shape = feed.get_shape(trip_id) 
+
+	# # Extract coordinates from the LineString
+	# coordinates = list(shape.coords)
+
+	# # Create a Folium Map centered at the midpoint of the LineString
+	# midpoint = (shape.centroid.y, shape.centroid.x)
+	# mymap = folium.Map(location=midpoint, zoom_start=12)
+
+	# # Add the LineString to the map
+	# folium.PolyLine(locations=[[coord[1], coord[0]] for coord in shape.coords], color='blue').add_to(mymap)
+
+	# # Save the map to an HTML file
+	# mymap.save(f"{env.OUTPUT_PATH}/trip_{trip_id}.html")	
+
+	# """ Add the stops to the path """
+	# # Get the stop locations
+	# stop_coordinates = feed.get_stop_locations(trip_id) 
+
+	# # Add the Points to the map
+	# for point in stop_coordinates:
+	#     folium.Marker([point.y, point.x], icon=folium.Icon(color='red')).add_to(mymap)
+
+	# # Save the map to an HTML file
+	# mymap.save(f"{env.OUTPUT_PATH}/trip_{trip_id}_withstops.html")
+
+	# """ Map the stop frequencies """
+	# df = feed.stop_frequencies()
+
+	# # Create a Folium Map centered around the first point
+	# first_point = df['geometry'].iloc[0]
+	
+	# mymap = folium.Map(location=[first_point.y, first_point.x], zoom_start=12)
+
+	# # Add CircleMarkers for each point with size based on 'count'
+	# for index, row in df.iterrows():
+	#     point_coords = row['geometry']
+	#     count_value = row['count']
+	#     stop_id = row['stop_id']
+
+	#     # Create a Popup with the 'count' value
+	#     popup_content = f"Count: {count_value} \n Stop id: {stop_id} \n"
+	#     popup = folium.Popup(popup_content, max_width=300)
+
+	#     # Get the corresponding color from the color scale
+	#     color_scale = folium.LinearColormap(colors=['blue', 'red'], vmin=df['count'].min(), vmax=df['count'].max())
+
+	#     fill_color = color_scale(count_value)
+
+	#     folium.CircleMarker(location=(point_coords.y, point_coords.x),
+	#                         radius=count_value,  # Adjust the scale factor as needed
+	#                         color='none',
+	#                         fill=True,
+	#                         fill_color=fill_color,
+	#                         fill_opacity=0.6,
+	#                         popup=popup).add_to(mymap)
+
+	# color_scale.add_to(mymap)
+
+	# # Add MeasureControl for the scale
+	# mymap.add_child(MeasureControl(primary_length_unit='kilometers'))
+
+	# # Save the map to an HTML file
+	# mymap.save(f"{env.OUTPUT_PATH}/stop_frequencies.html")
+
+	# """ Visualize all trips """
+	# print(feed.trips)
+
+	# mymap = folium.Map(location=(feed.get_shape('1107D110').centroid.y, feed.get_shape('1107D110').centroid.x), zoom_start=12)
+
+	# for index, row in feed.trips.iterrows():
+	#     trip_id = row['trip_id']
+
+	#     # Get the shape of the trip_id
+	#     shape = feed.get_shape(trip_id) 
+
+	#     # Extract coordinates from the LineString
+	#     coordinates = list(shape.coords)
+
+	#     # Create a Folium Map centered at the midpoint of the LineString
+	#     midpoint = (shape.centroid.y, shape.centroid.x)		
+
+	#     # Add the LineString to the map
+	#     folium.PolyLine(locations=[[coord[1], coord[0]] for coord in shape.coords], color='blue').add_to(mymap)
+
+	#     # Save the map to an HTML file
+	#     mymap.save(f"{env.OUTPUT_PATH}/all_trips.html")	
+	#     print(trip_id)
+
+	"""
+	3. Extract global metrics of the GTFS Feed
+	"""
+	# print(f"Simulation area: {feed.simulation_area_km2()} km2")
+	# print(feed.trip_statistics())
+	# print(feed.stop_statistics())
+
+	# # Average distance between stops along the trips
+	# dist = feed.ave_distance_between_stops_all(False)
+	# weighted_average = np.average(dist['stop_dist_km'], weights=dist['n_stops'])
+
+	# print(f"Average distance between stops: {weighted_average} km")
+
+	"""
+	4. Extract topological information 
+	"""
+	# print(feed.trip_crossovers())
+	# print(feed.nearest_point_distance_km()) # Warning: takes a long time
+
+	"""
+	5. Operationnal metrics of a trip 
+	"""
+	# trip_sim = TripSim(feed = feed, trip_id='20121111', ev_consumption = 0.2)
+
+	# print(trip_sim.trip_duration_sec)
+	# print(trip_sim.trip_length_km)
+
+	# print(trip_sim.operation_estimates())
+	# print(trip_sim.operation_estimates_aggregated())
+
+	"""
+	5. Operationnal metrics for the whole system
+	"""
+	# trips = feed.trips
+	
+	# df = pd.DataFrame()
+
+	# for index, row in trips.iterrows():
+	# 	trip_id = row['trip_id']
+	# 	trip_sim = TripSim(feed = feed, trip_id=trip_id, ev_consumption = 0.4)
+
+	# 	trip_stats = trip_sim.operation_estimates_aggregated()
+	# 	df = pd.concat([df, pd.DataFrame([trip_stats])], ignore_index=True)
+	
+	# print(df)
+
+	# print(df['n_trips'].sum())
+	# print(df['vkm'].sum())
+	# print(df['energy_kWh'].sum())
+
+	# print(df['vkt'].mean())
+	# print(df['energy_kWh_per_vehicle'].mean())
+
+	"""
+	6. Power/energy/speed profile of a single vehicle along a trip and associated statistics
+	"""
+
+	# trip_sim = TripSim(feed = feed, trip_id='20121111', ev_consumption = 0.4)
+
+	# time_values = np.arange(0, trip_sim.trip_duration_sec, 20) 
+	# values = [trip_sim.power_profile(t) for t in time_values]
+	# # values = [trip_sim.energy_profile(t) for t in time_values]
+	# # values = [trip_sim.speed_profile(t) for t in time_values]
+
+	# # Plot the function
+	# plt.plot(time_values, values, marker='o')
+	# plt.xlabel('Time (seconds)')
+	# plt.ylabel('Power')
+	# plt.title('Power vs. Time')
+	# plt.grid(True)
+
+	# # plt.savefig('power_vs_time.png')
+	# plt.show()
+
+	# print(trip_sim.vehicle_statistics())
+
+	"""
+	7. Profile of the vehicle fleet on a trip
+	"""
+
+	trips = feed.trips['trip_id']
+
+	output_data = []
+	df = pd.DataFrame()
+	time_step = 100
+	time_span = 54000
+	tot_energy = .0
+
+	profile = np.zeros(int(time_span/time_step))
+
+	i = 0
+	for trip in trips:
+		i += 1		
+		print(f"Completion: {i / len(trips) * 100}%")
+		trip_sim = TripSim(feed = feed, trip_id=trip, ev_consumption = 0.4)
+
+		print(trip_sim.frequencies)
+
+		trip_sim.simulate_vehicle_fleet(time_span, time_step)
+
+
+		profile += trip_sim.trip_profile['power_kW'].values
+
+	print(profile)
+
+	"""
+	8. Profile of the whole system
+	"""
+
+
+
+
+	#print(feed.bounding_box())
+	#print(feed.simulation_area_km2())
+
+	#print(feed.stops)
+	#feed.clean_all()
+	#print(feed.stops)
+
+	#df = feed.operation_estimates_all()
+	#print(df)
+	#print(df['vkm'].sum())
+	#print(df['n_trips'].sum())
+
+	# print(feed.nearest_point_distance_km()['trip_length_km'].mean)
+
+	# print(feed.trip_statistics())
+
+	# print(feed.trip_length_km_all()['trip_length_km'].mean)
+
+	# print(feed.n_stops('20121111'))
+
+	#dist = feed.ave_distance_between_stops_all(False)
+	#weighted_average = np.average(dist['stop_dist_km'], weights=dist['n_stops'])
+
+	#print(weighted_average)
+
+
+
+	# print(feed.routes)
+	# feed.clean_all()
+	# print(feed.routes)
+	# print(feed.trips)
+
+	# print(feed.stops['stop_id'])
+
+	#feed.clean_trips()
+
+
+	"""
+	Simulation
+	"""
+
+	# vehicle = Vehicle(feed = feed, trip_id='20121111', ev_consumption = 0.2)
+	# print(vehicle.trip_data['distance'].sum())
+
+
+
 
 
 	# trips = feed.trips['trip_id']
@@ -106,21 +386,21 @@ def main():
 
 
 
-	time_values = np.arange(0, 4000, 20) 
+	# time_values = np.arange(0, 4000, 20) 
 
-	vehicle = Vehicle(feed = feed, trip_id='20237110', ev_consumption = 0.4)
+	# vehicle = Vehicle(feed = feed, trip_id='20237110', ev_consumption = 0.4)
 
-	power_values = [vehicle.power_profile(t) for t in time_values]
+	# power_values = [vehicle.power_profile(t) for t in time_values]
 
-	# Plot the function
-	plt.plot(time_values, power_values, marker='o')
-	plt.xlabel('Time (seconds)')
-	plt.ylabel('Power')
-	plt.title('Power vs. Time')
-	plt.grid(True)
+	# # Plot the function
+	# plt.plot(time_values, power_values, marker='o')
+	# plt.xlabel('Time (seconds)')
+	# plt.ylabel('Power')
+	# plt.title('Power vs. Time')
+	# plt.grid(True)
 
-	plt.savefig('power_vs_time.png')
-	plt.show()
+	# plt.savefig('power_vs_time.png')
+	# plt.show()
 
 
 

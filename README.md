@@ -12,23 +12,19 @@ langage = python 3
 
 Todo
 
-- GTFS Feed. Implémenter des fonctions pour analyser le feed : Fonction data_check
-- GTFS Feed. Implémenter une fonction qui permet de clean les différentes erreurs. Implementer aussi une fonction globale qui permet de faire un clean_all
-- GTFS Feed. Implémenter une fonction qui permet de filtrer le dataset selon le service ou les routes ou autre. filter_services
-
-- GTFS Feed. Extraire quelques données topologiques :
-	- Ratio entre le nombre de stops et le nombre de routes et de trips
-	- Frequence des stops
-	- Longueur des trips
-	- Topologie : nombre de noeuds, nombre de links (comparer), longueur totale des trips et des routes
-
-- GTFS Feed. Ajouter epsg comme paramètre
-
+- Transférer tout ce qui relève de la modélisation dans la classe TripSim
+- Propriétés de la classe : single_trip_length_km, single_trip_duration_sec
+- Methodes : speed, profile, métrique pour chaque
 
 - Créer un notebook jupyter qui permet de visualiser un trip en spécifiant son id et/ou un point
 - Visualiser l'ensemble du réseau
 
 - Renommer la classe Vehicle en tripSim
+
+- Ajouter les données pour un single_trip_data
+- Mettre d'autres propriétés comme le trip_duration, trip_length, d'autres valeurs de l'article
+
+- Extraire le VKT
 
 - Infos spatiales : taille de la bbox
 - Visualisation des routes et des stops à la manière de ev-fleet-sim
@@ -39,3 +35,5 @@ Todo
 
 
 - Croiser avec des informations GIS : pourcentage de routes desservies par le reseau, accessibilite 
+- GTFS Feed. Implémenter une fonction qui permet de filtrer le dataset selon le service ou les routes ou autre. filter_services
+- Améliorer les fonctions qui permettent de vérifier la consistance des données. Regarder tous ce qui est lié aux trips, aux stops, aux routes

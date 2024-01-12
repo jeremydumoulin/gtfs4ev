@@ -16,7 +16,7 @@ from gtfs4ev import helpers as hlp
 
 from gtfs4ev.gtfsfeed import GTFSFeed
 
-class Vehicle:  
+class TripSim:  
 
     """
     ATTRIBUTES
@@ -28,7 +28,11 @@ class Vehicle:
     trip_id = "" # ID of the trip taken by the electric vehicle
 
     trip_data = pd.DataFrame() # Dataframe countaining all the relevant data for the vehicle trip
-    trip_frequencies = pd.DataFrame()
+
+    trip_duration_sec = .0
+    trip_length_km = .0
+
+    frequencies = pd.DataFrame()
 
     # Simulation results
     trip_profile = pd.DataFrame()
@@ -40,7 +44,7 @@ class Vehicle:
     """ Constructor """
 
     def __init__(self, feed, trip_id, ev_consumption):
-        print(f"Initializing a new vehicle: ")
+        print(f"Initializing a new vehicle with trip_id = {trip_id}")
 
         self.set_ev_consumption(ev_consumption)
 
@@ -48,7 +52,10 @@ class Vehicle:
         self.set_trip_id(trip_id)
         
         self.set_trip_data()
-        self.set_trip_frequencies()
+        self.set_frequencies()
+
+        self.set_trip_duration_sec()
+        self.set_trip_length_km()        
 
     """ Setters """
 
@@ -207,35 +214,22 @@ class Vehicle:
 
             self.trip_data = output_df
 
-    def set_trip_frequencies(self):
+    def set_trip_duration_sec(self):
+        """ Setter for duration
+        """                
+        self.trip_duration_sec = self.feed.trip_duration_sec(self.trip_id)
+
+    def set_trip_length_km(self):
+        """ Setter for length
+        """                
+        self.trip_length_km = self.feed.trip_length_km(self.trip_id)
+
+    def set_frequencies(self):
         """ Setter for trip_frequencies attribute
         """
-        try:  
-            frequencies = self.feed.frequencies[self.feed.frequencies['trip_id'] == self.trip_id].copy()
-        except Exception:
-            print(f"\t Error: Impossible to find the frequencies related to the trip_id in the feed.")
-        else:
-            frequencies['duration_secs'] = (frequencies['end_time'] - frequencies['start_time']).dt.total_seconds()
-            frequencies['n_vehicles'] = np.floor(self.trip_data.iloc[-1]['time']/frequencies['headway_secs']).astype(int)
-            frequencies['n_vehicles'] = np.where(frequencies['n_vehicles'] == 0, 1, frequencies['n_vehicles'])
-            frequencies['n_trips_per_vehicle'] = frequencies['duration_secs']/self.trip_data.iloc[-1]['time']
-            frequencies['energy_estimate'] = self.trip_data.iloc[-1]['cumulative_consumption'] * frequencies['n_trips_per_vehicle'] * frequencies['n_vehicles']
-            frequencies['energy_per_vehicle'] = frequencies['energy_estimate'] / frequencies['n_vehicles']
-            frequencies['vkt'] = frequencies['n_trips_per_vehicle'] * self.trip_data['distance'].sum()
-
-            frequencies['time'] = frequencies['end_time'] # Initialisation with random value       
-
-            time = frequencies['duration_secs'].iloc[0] 
-
-            for i in range(0, len(frequencies)):
-                if i == 0:
-                    frequencies['time'].iloc[i] = time
-                else:
-                    time += frequencies['duration_secs'].iloc[i]
-                    frequencies['time'].iloc[i] = time
-
-            self.trip_frequencies = frequencies
-
+        frequencies = self.feed.frequencies[self.feed.frequencies['trip_id'] == self.trip_id].copy()
+        frequencies = frequencies.reset_index(drop=True)
+        self.frequencies = frequencies
 
     """ Statistics and profiles of a single vehicle """
 
@@ -276,7 +270,7 @@ class Vehicle:
 
         return self.trip_data.loc[nearest_higher_index, 'speed']
 
-    def statistics(self):     
+    def vehicle_statistics(self):     
         statistics = {
             'trip_duration_s': self.trip_data.iloc[-1]['time'],
             'total_consumption_kWh': self.trip_data.iloc[-1]['cumulative_consumption'],
@@ -293,12 +287,65 @@ class Vehicle:
         return statistics
 
 
-    """ Statistics and profiles of the trip """
+    """ Simulation of operation estimates of the trip """
 
-    def simulate(self, duration, time_step):
-        # start = datetime.strptime(start_time, '%H:%M:%S')
-        # end = datetime.strptime(end_time, '%H:%M:%S')
-        # total_time = (end-start).total_seconds()
+    def operation_estimates(self):
+        frequencies = self.frequencies
+        trip_id = self.trip_id
+        trip_length_km = self.trip_length_km
+        trip_duration_sec = self.trip_duration_sec
+
+        df = pd.DataFrame(frequencies)
+
+        df['trip_id'] = trip_id
+
+        df['timeslot_duration_sec'] = (df['end_time'] - df['start_time']).dt.total_seconds()
+
+        df['n_vehicles'] = trip_duration_sec/df['headway_secs']
+        #df['n_vehicles'] = np.where(df['n_vehicles'] == 0, 1, df['n_vehicles']) # Put 1 if the output is 0
+
+        df['trips_per_vehicle'] = df['timeslot_duration_sec'] / trip_duration_sec
+
+        df['n_trips'] = df['trips_per_vehicle'] * df['n_vehicles'] 
+
+        df['vkm'] = df['trips_per_vehicle'] * df['n_vehicles'] * trip_length_km
+
+        df['vkt'] = df['vkm'] / df['n_vehicles']
+
+        df['energy_kWh'] = df['vkm'] * self.ev_consumption
+
+        df['energy_kWh_per_vehicle'] = df['vkt'] * self.ev_consumption
+
+        return df
+
+    def operation_estimates_aggregated(self):
+        df = self.operation_estimates()
+
+        n_trips = df['n_trips'].sum()
+        vkm = df['vkm'].sum()
+        ave_nbr_vehicles = np.average(df['n_vehicles'], weights=df['timeslot_duration_sec'])
+
+        trips_per_vehicle = df['trips_per_vehicle'].sum()
+        vkt = df['vkt'].sum()
+
+        energy = df['energy_kWh'].sum()
+        energy_per_vehicle = df['energy_kWh_per_vehicle'].sum()
+
+        statistics = {
+            'trip_id': self.trip_id,
+            'n_trips': n_trips,
+            'vkm': vkm,
+            'ave_nbr_vehicles': ave_nbr_vehicles,
+            'trips_per_vehicle': trips_per_vehicle,
+            'vkt': vkt,
+            'energy_kWh':energy,
+            'energy_kWh_per_vehicle':energy_per_vehicle
+        }
+
+        return statistics
+
+
+    def simulate_vehicle_fleet(self, duration, time_step):
 
         time_values = np.arange(0, duration, time_step)
 
@@ -317,7 +364,7 @@ class Vehicle:
             tot_speed = .0
             n_moving = n_stopped = 0
 
-            if t > self.trip_frequencies['time'].iloc[-1]:
+            if t > self.frequencies['time'].iloc[-1]:
                 print("Error: specified timeframe is greater than the total trip time")
                 power = .0
                 energy += .0
@@ -325,22 +372,22 @@ class Vehicle:
                 tot_speed = .0
                 n_moving = n_stopped = 0
             else:     
-                index = (self.trip_frequencies['time'] - t).apply(lambda x: float('inf') if x <= 0 else x).idxmin()            
+                index = (self.frequencies['time'] - t).apply(lambda x: float('inf') if x <= 0 else x).idxmin()            
 
-                if index != self.trip_frequencies.index[0]:
-                    t = t - self.trip_frequencies.loc[index-1, 'time']                
+                if index != self.frequencies.index[0]:
+                    t = t - self.frequencies.loc[index-1, 'time']                
                 
-                for vehicle_index in range(self.trip_frequencies.loc[index, 'n_vehicles']):
+                for vehicle_index in range(self.frequencies.loc[index, 'n_vehicles']):
                     # print(vehicle_index)                
-                    power += self.power_profile(t + vehicle_index * self.trip_frequencies.loc[index, 'headway_secs'], loop=True)
-                    speed = self.speed_profile(t + vehicle_index * self.trip_frequencies.loc[index, 'headway_secs'], loop=True)
+                    power += self.power_profile(t + vehicle_index * self.frequencies.loc[index, 'headway_secs'], loop=True)
+                    speed = self.speed_profile(t + vehicle_index * self.frequencies.loc[index, 'headway_secs'], loop=True)
                     tot_speed += speed
                     if speed == .0:
                         n_stopped += 1
                     
-                speed = tot_speed / self.trip_frequencies.loc[index, 'n_vehicles']    
+                speed = tot_speed / self.frequencies.loc[index, 'n_vehicles']    
                 energy += power * time_step / 3600
-                n_moving = self.trip_frequencies.loc[index, 'n_vehicles'] - n_stopped
+                n_moving = self.frequencies.loc[index, 'n_vehicles'] - n_stopped
 
             output_data.append({
                 't': value,
