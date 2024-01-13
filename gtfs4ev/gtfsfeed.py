@@ -667,7 +667,7 @@ class GTFSFeed:
         return crossovers_count
 
 
-    """ Filter services """
+    """ Filter functions """
 
     def filter_services(self, service_id):
         """ Number of crossovers
@@ -675,21 +675,3 @@ class GTFSFeed:
         self.trips.drop(self.trips[self.trips['service_id'] == service_id].index, inplace=True)
 
         
-
-    """ Operation estimates (to be moved in another class) """
-
-    
-
-    def operation_estimates_all(self):
-        trips = self.trips
-
-        df = pd.DataFrame()
-
-        # Iterate over rows of df1 and append rows to df2
-        for index, row in trips.iterrows():
-            # Modify or process the row data as needed before appending
-            # For example, you can add a new column, change values, etc.
-            operation_estimates = self.operation_estimates(row['trip_id'])
-            df = pd.concat([df, operation_estimates], ignore_index=True)
-
-        return df    

@@ -8,7 +8,7 @@ from pathlib import Path
 from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import transform
 import pyproj
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from gtfs4ev import constants as cst
 from gtfs4ev import environment as env
@@ -345,57 +345,111 @@ class TripSim:
         return statistics
 
 
-    def simulate_vehicle_fleet(self, duration, time_step):
+    def simulate_vehicle_fleet(self, start_time, stop_time, time_step, transient_state = False):
 
-        time_values = np.arange(0, duration, time_step)
+        # 1. Check the start and stop times and extract the duration of the simulation
+
+        # Parse input strings into datetime objects
+        start_datetime = datetime.strptime(start_time, "%H:%M:%S")
+        stop_datetime = datetime.strptime(stop_time, "%H:%M:%S")
+
+        # Check conditions
+        if start_datetime >= datetime.strptime("00:00:00", "%H:%M:%S") and stop_datetime <= datetime.strptime("23:59:59", "%H:%M:%S") and start_datetime < stop_datetime:
+            # Calculate duration
+            duration = (stop_datetime - start_datetime).total_seconds()
+        else:
+            print("Error: Stop time must be greater than the start_time")
+            return None
+
+        # 2. Initialize the output data variables      
 
         output_data = []
 
         energy = .0
         power = .0
-        speed = .0
-        n_stopped = 0
-        n_moving = 0
-        tot_speed = .0
+        n_vehicles_previous = 1
 
-        for value in time_values:
-            t = value
+        # 3. Get the operation estimates and other usefull values
+
+        df = self.operation_estimates()
+
+        min_datetime = df['start_time'].iloc[0]
+        max_datetime = df['end_time'].iloc[-1]
+
+        # 3. Calculate the power and cumulated energy for the vehicle fleet for each time step
+        # The idea is to find the corresponding headway_sec in order to calculate the outputs. If there is no time slot with a headway sec for the datetime, the output is zero
+        # If the transient state has to be calculated, then take into account the rise of the vehicle fleet of the current time slot and the decay of the previous time slot
+        # If we are above the datetime of the last time slot, also assess the decay of vehicles of the later
+
+        time_values = np.arange(0, duration, time_step)
+
+        for t in time_values:
+            # Get the current datetime and reset the power            
+            current_datetime = start_datetime + timedelta(seconds=t)
             power = .0
-            tot_speed = .0
-            n_moving = n_stopped = 0
+            decay_time = 0
 
-            if t > self.frequencies['time'].iloc[-1]:
-                print("Error: specified timeframe is greater than the total trip time")
+            # If the transient state is to be calculated, calculate the decay time of the last time slot
+            if transient_state:
+                decay_time = df['n_vehicles'].iloc[-1]*df['headway_secs'].iloc[-1]
+
+            # If the current datime has no running vehicles, set the power and the additionnal energy to 0
+            # Else assess the power and energy of the vehicle fleet
+            if (current_datetime < min_datetime) or (current_datetime > (max_datetime + timedelta(seconds=decay_time)) ):
+                #print("Specified datime is not associated to any frequency")
                 power = .0
                 energy += .0
-                speed = .0
-                tot_speed = .0
-                n_moving = n_stopped = 0
-            else:     
-                index = (self.frequencies['time'] - t).apply(lambda x: float('inf') if x <= 0 else x).idxmin()            
-
-                if index != self.frequencies.index[0]:
-                    t = t - self.frequencies.loc[index-1, 'time']                
+            else:                
+                # Get the index of the row with the relevant operational information            
+                # If in the decay time of the last time slot, set to the index of the last time slot
+                if transient_state and current_datetime > max_datetime:
+                    index = df.tail(1).index[0]
+                else:
+                    mask = (df['start_time'] <= current_datetime) & (current_datetime <= df['end_time'])
+                    index = df[mask].index[0]
                 
-                for vehicle_index in range(self.frequencies.loc[index, 'n_vehicles']):
-                    # print(vehicle_index)                
-                    power += self.power_profile(t + vehicle_index * self.frequencies.loc[index, 'headway_secs'], loop=True)
-                    speed = self.speed_profile(t + vehicle_index * self.frequencies.loc[index, 'headway_secs'], loop=True)
-                    tot_speed += speed
-                    if speed == .0:
-                        n_stopped += 1
-                    
-                speed = tot_speed / self.frequencies.loc[index, 'n_vehicles']    
-                energy += power * time_step / 3600
-                n_moving = self.frequencies.loc[index, 'n_vehicles'] - n_stopped
+                # Get the corresponding headway_sec and the elapsed time between the beginning of the time slot and the current time (local time)    
+                headway_sec = df.loc[index, 'headway_secs']
+                t_local = (current_datetime - df.loc[index, 'start_time']).total_seconds()
 
+                # Assess the number of vehicles - must be an integer                
+                # If the transient state has to be calculated, the number of vehicles of the current time slot is increasing over time 
+                # If the result is 0, set the number of vehicles to 1
+                if transient_state and ((t_local - self.trip_duration_sec) < 0):
+                    n_vehicles = max(round(t_local / headway_sec), 1) 
+                else:
+                    n_vehicles = max(round(df.loc[index, 'n_vehicles']), 1)
+     
+                # Loop over the vehicles
+                # For each vehicle, add the power for the local time delayed by the headway time 
+                if current_datetime <= max_datetime:
+                    for vehicle_index in range(n_vehicles):                                  
+                        power += self.power_profile(t_local + vehicle_index * headway_sec, loop=True)                  
+
+                # Add also the decay of the fleet of the previous time slot if the transient state neeeds to be calculated
+                if transient_state and (index > 0 or current_datetime > max_datetime):
+                    # If we are in the datetime of the vehicles of the last time slot, give a dummy index to ensure the code works
+                    if current_datetime > max_datetime:
+                        index = index + 1
+                        t_local = (current_datetime - df.loc[index-1, 'end_time']).total_seconds()                                             
+
+                    headway_sec = df.loc[index-1, 'headway_secs']                    
+                    n_vehicles_previous = int(round(df.loc[index-1, 'n_vehicles']))                    
+
+                    if (t_local - self.trip_duration_sec) < 0 :
+                        n_vehicles_previous = n_vehicles_previous- round(t_local / headway_sec)
+                    else:
+                        n_vehicles_previous = 0
+
+                    for vehicle_index in range(n_vehicles_previous):                                  
+                        power += self.power_profile(t_local + vehicle_index * headway_sec, loop=True)
+
+                energy += power * time_step / 3600                    
+  
             output_data.append({
-                't': value,
+                't': t,
                 'power_kW': power,
-                'energy_kWh': energy,
-                'average_speed_kmh': speed,
-                'nbr_vehicles_moving': n_moving,
-                'nbr_vehicles_stopped': n_stopped
+                'energy_kWh': energy
             })  
 
         output_df = pd.DataFrame(output_data) 

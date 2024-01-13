@@ -13,6 +13,7 @@ from folium.plugins import MarkerCluster, MeasureControl
 
 from gtfs4ev.gtfsfeed import GTFSFeed
 from gtfs4ev.tripsim import TripSim
+from gtfs4ev.trafficsim import TrafficSim
 
 from gtfs4ev import constants as cst
 from gtfs4ev import environment as env
@@ -223,35 +224,91 @@ def main():
 	7. Profile of the vehicle fleet on a trip
 	"""
 
-	trips = feed.trips['trip_id']
+	# trip_sim = TripSim(feed = feed, trip_id='20121111', ev_consumption = 0.4)
 
-	output_data = []
-	df = pd.DataFrame()
-	time_step = 100
-	time_span = 54000
-	tot_energy = .0
+	# trip_sim.simulate_vehicle_fleet(start_time = "05:00:00", stop_time = "22:00:00", time_step = 30, transient_state = False)
 
-	profile = np.zeros(int(time_span/time_step))
+	# print(trip_sim.trip_profile)
 
-	i = 0
-	for trip in trips:
-		i += 1		
-		print(f"Completion: {i / len(trips) * 100}%")
-		trip_sim = TripSim(feed = feed, trip_id=trip, ev_consumption = 0.4)
+	# # Plot the function
+	# plt.plot(trip_sim.trip_profile['t'], trip_sim.trip_profile['power_kW'], marker='o')
+	# plt.xlabel('Time (seconds)')
+	# plt.ylabel('Power')
+	# plt.title('Power vs. Time')
+	# plt.grid(True)
 
-		print(trip_sim.frequencies)
-
-		trip_sim.simulate_vehicle_fleet(time_span, time_step)
-
-
-		profile += trip_sim.trip_profile['power_kW'].values
-
-	print(profile)
+	# # plt.savefig('power_vs_time.png')
+	# plt.show()
 
 	"""
-	8. Profile of the whole system
+	8. Profile of a set of trips
 	"""
+	# trips = ['1107D110', '1107D111', '10114110']
+	# ev_con = [0.4, 0.4, 0.4]
 
+	# traffic_sim = TrafficSim(feed, trips, ev_con)
+
+	# print(traffic_sim.operation_estimates().sum())
+	# df = traffic_sim.profile(start_time = "05:00:00", stop_time = "23:00:00", time_step = 50, transient_state = True)
+
+	# # Plot the function
+	# plt.plot(df['t'], df['power_kW'], marker='o')
+	# plt.xlabel('Time (seconds)')
+	# plt.ylabel('Power')
+	# plt.title('Power vs. Time')
+	# plt.grid(True)
+
+	# # plt.savefig('power_vs_time.png')
+	# plt.show()
+
+	"""
+	9. Profile of a the whole traffic network
+	"""
+	trips = list(feed.trips['trip_id'])
+	print(trips)
+	ev_con = [0.4] * len(trips)
+
+	traffic_sim = TrafficSim(feed, trips, ev_con)
+
+	print(traffic_sim.operation_estimates().sum())
+	df = traffic_sim.profile(start_time = "05:00:00", stop_time = "23:00:00", time_step = 50, transient_state = True)
+
+	# Plot the function
+	plt.plot(df['t'], df['power_kW'], marker='o')
+	plt.xlabel('Time (seconds)')
+	plt.ylabel('Power')
+	plt.title('Power vs. Time')
+	plt.grid(True)
+
+	# plt.savefig('power_vs_time.png')
+	plt.show()
+
+
+
+	# trips = feed.trips['trip_id']
+
+	# output_data = []
+	# df = pd.DataFrame()
+	# time_step = 100
+	# time_span = 54000
+	# tot_energy = .0
+
+	# profile = np.zeros(int(time_span/time_step))
+
+	# i = 0
+	# for trip in trips:
+	# 	i += 1		
+	# 	print(f"Completion: {i / len(trips) * 100}%")
+	# 	trip_sim = TripSim(feed = feed, trip_id=trip, ev_consumption = 0.4)
+
+	# 	print(trip_sim.frequencies)
+
+	# 	trip_sim.simulate_vehicle_fleet(time_span, time_step)
+
+
+	# 	profile += trip_sim.trip_profile['power_kW'].values
+
+	# print(profile)
 
 
 
