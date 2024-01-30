@@ -1,5 +1,13 @@
 # coding: utf-8
 
+""" 
+GTFSFeed. 
+Holds the GTFS feed. Is instantiated using a GTFS data folder in the input folder. Provides features for 
+checking GTFS data, filtering data (e.g. to keep only services present on certain days), and extracting 
+general information about the feed. This class is purely about analyzing and curating data; no modeling 
+involved here. 
+"""
+
 import numpy as np
 import pandas as pd
 import geopandas as gpd
@@ -32,7 +40,6 @@ class GTFSFeed:
     # Geopanda dataframes holding georeferenced data
     shapes = gpd.GeoDataFrame(columns=['shape_id', 'geometry'], crs="EPSG:4326")
     stops = gpd.GeoDataFrame(columns=['stop_id', 'stop_name', 'geometry'], crs="EPSG:4326")
-
 
     """
     METHODS
@@ -414,7 +421,7 @@ class GTFSFeed:
         """
         print("\nGeneral information about the traffic feed data:")
         print(f"\t The transport system comprises {self.trips.shape[0]} trips, belonging to {self.routes.shape[0]} routes and {self.calendar.shape[0]} services")
-        if int(self.trips.shape[0]/self.routes.shape[0]) == 2:
+        if self.trips.shape[0]/self.routes.shape[0] == 2.0:
             print("\t Note: The number of trips is twice the number of routes, probably meaning that each route is associated with a round trip.")
              
         print(f"\t Agencies: {self.agency.shape[0]} - Stops: {self.stops.shape[0]} associated with {self.stop_times.shape[0]} stop times - Frequencies: {self.frequencies.shape[0]}")

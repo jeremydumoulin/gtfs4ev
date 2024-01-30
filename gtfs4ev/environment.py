@@ -1,5 +1,9 @@
 # coding: utf-8
 
+"""
+Useful predefined environment variables.
+"""
+
 from pathlib import Path
 
 PARENT_PATH = Path.cwd()

@@ -1,5 +1,12 @@
 # coding: utf-8
 
+""" 
+TrafficSim
+Simulates the behaviour of a vehicle fleet along a set of several trips. Is instanciated using a 
+GTFSFeed, a list of trip_ids, and a list of corresponding electric vehicle consimption (kWh/km). 
+Provides operational metrics and profiles for the set of trips.
+"""
+
 import numpy as np
 import pandas as pd
 import geopandas as gpd

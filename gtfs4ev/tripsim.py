@@ -1,5 +1,12 @@
 # coding: utf-8
 
+""" 
+TripSim
+Simulates the behaviour of a single vehicle or a vehicle fleet along a trip and extracts relevant 
+metrics. Is instantiated using a GTFSFeed, the trip_id, and the electric vehicle consumption (kWh/km). 
+Provides both operational metrics and power/energy profiles. 
+"""
+
 import numpy as np
 import pandas as pd
 import geopandas as gpd
@@ -395,7 +402,8 @@ class TripSim:
 
             # If the current datime has no running vehicles, set the power and the additionnal energy to 0
             # Else assess the power and energy of the vehicle fleet
-            if (current_datetime < min_datetime) or (current_datetime > (max_datetime + timedelta(seconds=decay_time)) ):
+            mask = (df['start_time'] <= current_datetime) & (current_datetime <= df['end_time']) 
+            if (current_datetime < min_datetime) or (current_datetime > (max_datetime + timedelta(seconds=decay_time)) ) or not mask.any():
                 #print("Specified datime is not associated to any frequency")
                 power = .0
                 energy += .0
@@ -405,7 +413,6 @@ class TripSim:
                 if transient_state and current_datetime > max_datetime:
                     index = df.tail(1).index[0]
                 else:
-                    mask = (df['start_time'] <= current_datetime) & (current_datetime <= df['end_time'])
                     index = df[mask].index[0]
                 
                 # Get the corresponding headway_sec and the elapsed time between the beginning of the time slot and the current time (local time)    
