@@ -134,6 +134,7 @@ lib/
 lib64/
 parts/
 __pycache__/
+gtfs4ev/__pycache__/
 sdist/
 var/
 wheels/
