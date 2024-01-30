@@ -14,14 +14,14 @@ More generally, the code provides the following features:
 > :memo: **Note:** GTFS stands for General Transit Feed Specification. It is a standardized data format designed for scheduled transport systems, in the form of a set of .txt files describing various aspects of the system and linked together using a relational data structure. Importantly, it contains both spatial and temporal data, paving the way for mobility simulation. The main useful files and their links are shown in the following figure. Note that for the code to work, some GTFS files that are officially optionnal are required, such as shapes.txt and frequencies.txt. For more detailed information about GTFS data, please visit the [google documentation](https://developers.google.com/transit/gtfs).
 
 <center>
-	<img src="doc/gtfs_data_structure.png" width="500"> 
+	<img src="doc/gtfs_data_structure.png" width="600"> 
 	<p><font size="-1">GTFS data structure showing the relations between the different tables. Adapted from: J. Vieira, Transp. Res. Part D, 2023.</font></p>
 </center>
 
 authors = Jeremy Dumoulin, Alejandro Pena-Bello, Noémie Jeannin, Nicolas Wyrsch  
 contact = jeremy.dumoulin@epfl.ch  
 langage = python 3  
-repository = X 
+repository = https://gitlab.epfl.ch/PVLAB/SYSTEM/openmod4africa/gtfs4ev 
 
 
 ## Installation
@@ -40,7 +40,7 @@ $ conda activate gtfs4ev
 
 3. Run the tests to make sure everything is working properly.
 ```bash
-?
+To-be-implemented
 ```
 
 ## Usage
