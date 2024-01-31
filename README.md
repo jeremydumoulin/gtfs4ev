@@ -98,9 +98,8 @@ Please also make sure to update tests as appropriate.
 
 ### Open tasks
 
-- [ ] Data check-up using https://github.com/MobilityData/gtfs-validator
 - [ ] Map GTFS shapes with OSM data
-- [ ] Implement some more classical transit metrics
+- [ ] Implement more classical transit metrics
 - [ ] Upgrade data filtering
 - [ ] Potential benefits of electrification
 - [ ] Spatio-temporal visualisation of the fleet evolution
@@ -111,6 +110,7 @@ Please also make sure to update tests as appropriate.
 - [ ] Let the user set the desired projection CRS
 - [ ] Assess some accessibility metrics by crossing the data with other GIS data 
 - [ ] Write some unit tests 
+- [ ] Improve GTFS data analysis, cleaning, and filtering ; perhaps by relying on an external library
 
 ### Done
 

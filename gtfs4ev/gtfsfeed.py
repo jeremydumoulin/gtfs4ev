@@ -6,6 +6,8 @@ Holds the GTFS feed. Is instantiated using a GTFS data folder in the input folde
 checking GTFS data, filtering data (e.g. to keep only services present on certain days), and extracting 
 general information about the feed. This class is purely about analyzing and curating data; no modeling 
 involved here. 
+IMPORTANT: The calendar_dates.txt file is not considered, meaning that some service exception are not 
+taken into account.
 """
 
 import numpy as np
@@ -21,16 +23,15 @@ from gtfs4ev import constants as cst
 from gtfs4ev import environment as env
 from gtfs4ev import helpers as hlp
 
-class GTFSFeed:  
+class GTFSFeed:
 
-    """
-    ATTRIBUTES
-    """
+    #######################################
+    ############# ATTRIBUTES ##############
+    #######################################
     
     datapath = "" # Absolute path to the GTFS datafolder
 
-    # Panda dataframes holding standard data
-    agency = pd.DataFrame()
+    # Panda dataframes holding mandatory standard GTFS data
     routes = pd.DataFrame()
     stop_times = pd.DataFrame()
     calendar = pd.DataFrame()
@@ -41,19 +42,18 @@ class GTFSFeed:
     shapes = gpd.GeoDataFrame(columns=['shape_id', 'geometry'], crs="EPSG:4326")
     stops = gpd.GeoDataFrame(columns=['stop_id', 'stop_name', 'geometry'], crs="EPSG:4326")
 
-    """
-    METHODS
-    """
-
-
-    """ Constructor """
+    #######################################
+    ############### METHODS ###############
+    #######################################
+    
+    ############# Constructor #############
+    ####################################### 
 
     def __init__(self, gtfs_foldername):
-        print(f"\nInitializing the TrafficFeed object using the /{gtfs_foldername} data folder: ")
+        print(f"INFO \t Initializing a new GTFSFeed object using /{gtfs_foldername} data... ")
 
-        self.set_datapath(gtfs_foldername)        
+        self.set_datapath(gtfs_foldername)      
 
-        self.set_agency()        
         self.set_stop_times()
         self.set_calendar()
         self.set_trips()
@@ -62,12 +62,13 @@ class GTFSFeed:
 
         self.set_shapes()
         self.set_stops()
-
+        
+        print("INFO \t GTFSFeed created. Feed could now be analyzed, cleaned, or filtered.")
         print("\t -")
-        print("\t TrafficFeed successfully created. You can display general information using the general_feed_info() method.")
 
 
-    """ Setters """
+    ############# Setters #############
+    ################################### 
 
     def set_datapath(self, gtfs_foldername):
         """ Setter for datafolder attribute.
@@ -75,7 +76,7 @@ class GTFSFeed:
         """
         try:
             abs_path = env.INPUT_PATH / str(gtfs_foldername)
-            files_to_check = ['agency.txt', 'routes.txt', 'stop_times.txt', 'calendar.txt', 'frequencies.txt', 'shapes.txt', 'stops.txt', 'trips.txt']          
+            files_to_check = ['routes.txt', 'stop_times.txt', 'calendar.txt', 'frequencies.txt', 'shapes.txt', 'stops.txt', 'trips.txt']          
 
             if not os.path.isdir(abs_path):
                 raise FileNotFoundError() 
@@ -86,40 +87,19 @@ class GTFSFeed:
                     if not os.path.exists(file_path):
                         raise FileNotFoundError()                    
             except Exception:
-                print("\t Error: one of the required GTFS files seems to be missing. Make sure the following files are in the data folder: 'agency.txt', 'routes.txt', 'stop_times.txt', 'calendar.txt', 'frequencies.txt', 'shapes.txt', 'stops.txt'.")
+                print("ERROR \t Some required GTFS files missing. Make sure the following files are in the data folder: 'routes.txt', 'stop_times.txt', 'calendar.txt', 'frequencies.txt', 'shapes.txt', 'stops.txt'.")
             finally:
-                print("\t Folder found, including all required .txt files.")
                 for file_name in os.listdir(abs_path):
                     file_path = os.path.join(abs_path, file_name)
                     if file_name not in files_to_check:
-                        print(f"\t Note: The data folder contains an additional but unused file named '{file_name}'.")
+                        print(f"INFO \t The data folder contains a GTFS file that is not required: '{file_name}'.")
 
         except FileNotFoundError as e:
-            print(f"\t Error: unable to open the /{gtfs_foldername} folder. Make sure the data folder exists. ")
+            print(f"ERROR \t unable to open the /{gtfs_foldername} folder. Make sure the data folder exists. ")
         except Exception as e:
-            print(f"\t Error: {e}")
+            print(f"ERROR \t {e}")
         else:            
             self.datapath = abs_path
-
-    def set_agency(self):
-        """ Setter for agency attribute.
-        Keeps only the four required columns of the GTFS standard
-        """        
-        file_path = open(self.datapath / "agency.txt", "r", encoding = "utf-8")       
-        
-        columns_to_keep = ['agency_id', 'agency_name', 'agency_url', 'agency_timezone']
-        column_types = {'agency_id': str, 'agency_name': str, 'agency_url': str, 'agency_timezone': str}
-            
-        try:          
-            df = pd.read_csv(file_path, usecols=columns_to_keep, dtype=column_types)
-        except Exception:
-            print("Error: it seems that some of the required columns of the agency.txt file are missing. Please check 'agency_id', 'agency_name', 'agency_url', 'agency_timezone' are present. ")    
-        else:
-            self.agency = df
-            if not hlp.check_dataframe(df):
-                print("Warning: empty values or NaN values found in agency.txt. This might cause some issues.")
-        
-        file_path.close()
 
     def set_routes(self):
         """ Setter for routes attribute.
@@ -133,11 +113,11 @@ class GTFSFeed:
         try:          
             df = pd.read_csv(file_path, usecols=columns_to_keep, dtype=column_types)       
         except Exception:
-            print("Error: it seems that some of the required columns of the routes.txt file are missing. Please check 'route_id', 'agency_id', 'route_short_name', 'route_long_name' are present. ")    
+            print("ERROR \t It seems that some of the required columns of the routes.txt file are missing. Please check 'route_id', 'agency_id', 'route_short_name', 'route_long_name' are present. ")    
         else:
             self.routes = df
             if not hlp.check_dataframe(df):
-                print("Warning: empty values or NaN values found in routes.txt. This might cause some issues.")
+                print("ALERT \t Empty values or NaN values found in routes.txt. This might cause some issues.")
 
         # Extract the 'route_id' column from the first DataFrame
         route_ids = self.routes['route_id']
@@ -146,7 +126,7 @@ class GTFSFeed:
         all_present = route_ids.isin(self.trips['route_id']).all()
 
         if not all_present:
-            print("\t Warning: Some routes are not associated to any trip in the trips.txt file. The clean_routes() function could be used to solve this issue.")
+            print("ALERT \t Some routes are not associated to any trip in the trips.txt file. The clean_routes() function could be used to solve this issue.")
         
         file_path.close()
 
@@ -164,11 +144,11 @@ class GTFSFeed:
             df['arrival_time']= pd.to_datetime(df['arrival_time'], format='%H:%M:%S')
             df['departure_time']= pd.to_datetime(df['departure_time'], format='%H:%M:%S')                
         except Exception:
-            print("Error: it seems that some of the required columns of the stop_times.txt file are missing. Please check 'trip_id', 'arrival_time', 'departure_time', 'stop_id', 'stop_sequence' are present. ")    
+            print("ERROR \t It seems that some of the required columns of the stop_times.txt file are missing. Please check 'trip_id', 'arrival_time', 'departure_time', 'stop_id', 'stop_sequence' are present. ")    
         else:
             self.stop_times = df
             if not hlp.check_dataframe(df):
-                print("Warning: empty values or NaN values found in stop_times.txt. This might cause some issues.")
+                print("ALERT \t Empty values or NaN values found in stop_times.txt. This might cause some issues.")
         
         file_path.close()
 
@@ -184,11 +164,11 @@ class GTFSFeed:
             df['start_date']= pd.to_datetime(df['start_date'], format='%Y%m%d')
             df['end_date']= pd.to_datetime(df['end_date'], format='%Y%m%d')                
         except Exception:
-            print("Error: it seems that some of the required columns of the calendar.txt file are missing. ")    
+            print("ERROR \t It seems that some of the required columns of the calendar.txt file are missing. ")    
         else:
             self.calendar = df
             if not hlp.check_dataframe(df):
-                print("Warning: empty values or NaN values found in calendar.txt. This might cause some issues.")
+                print("ALERT \t Empty values or NaN values found in calendar.txt. This might cause some issues.")
         
         file_path.close()
 
@@ -211,11 +191,11 @@ class GTFSFeed:
             df['start_time']= pd.to_datetime(df['start_time'], format='%H:%M:%S')
             df['end_time']= pd.to_datetime(df['end_time'], format='%H:%M:%S')              
         except Exception:
-            print("Error: it seems that some of the required columns of the frequencies.txt file are missing. ")    
+            print("ERROR \t It seems that some of the required columns of the frequencies.txt file are missing. ")    
         else:
             self.frequencies = df
             if not hlp.check_dataframe(df):
-                print("Warning: empty values or NaN values found in frequencies.txt. This might cause some issues.")
+                print("ALERT \t Empty values or NaN values found in frequencies.txt. This might cause some issues.")
 
             # Extract the 'stop_id' column from the first DataFrame
             trip_ids = self.trips['trip_id']
@@ -224,7 +204,7 @@ class GTFSFeed:
             all_present = trip_ids.isin(self.frequencies['trip_id']).all()
 
             if not all_present:
-                print("\t Warning: Some trips are not associated to any frequency in the frequencies.txt file. The clean_trips() function could be used to solve this issue.")
+                print("ALERT \t Some trips are not associated to any frequency in the frequencies.txt file. The clean_trips() function could be used to solve this issue.")
         
         file_path.close()
 
@@ -240,11 +220,11 @@ class GTFSFeed:
         try:          
             df = pd.read_csv(file_path, usecols=columns_to_keep, dtype=column_types)               
         except Exception:
-            print("Error: it seems that some of the required columns of the trips.txt file are missing. ")    
+            print("ERROR \t It seems that some of the required columns of the trips.txt file are missing. ")    
         else:
             self.trips = df
             if not hlp.check_dataframe(df):
-                print("Dataframe created - Warning: empty values or NaN values found in trips.txt. This might cause some issues.")
+                print("ALERT \t Empty values or NaN values found in trips.txt. This might cause some issues.")
         
         file_path.close()
 
@@ -263,11 +243,11 @@ class GTFSFeed:
             # Create a GeoDataFrame from the grouped data
             gdf = gpd.GeoDataFrame(geometry=grouped, crs="EPSG:4326").reset_index()                
         except Exception:
-            print("Error: problem in creating the geopanda dataframe. Perhaps some of the required columns of the shapes.txt file are missing.")    
+            print("ERROR \t Problem in creating the geopanda dataframe. Perhaps some of the required columns of the shapes.txt file are missing.")    
         else:
             self.shapes = gdf
             if not hlp.check_dataframe(df):
-                print(" Warning: empty values or NaN values found in shapes.txt. This might cause some issues.")
+                print("ALERT \t Empty values or NaN values found in shapes.txt. This might cause some issues.")
 
         file_path.close()
 
@@ -288,11 +268,11 @@ class GTFSFeed:
             # Create a GeoDataFrame
             gdf = gpd.GeoDataFrame(df, geometry=geometry, crs="EPSG:4326")
         except Exception:
-            print("Error: problem in creating the geopanda dataframe. Perhaps some of the required columns of the stops.txt file are missing.")    
+            print("ERROR \t Problem in creating the geopanda dataframe. Perhaps some of the required columns of the stops.txt file are missing.")    
         else:
             self.stops = gdf
             if not hlp.check_dataframe(df):
-                print("Warning: empty values or NaN values found in stops.txt. This might cause some issues.")
+                print("ALERT \t Empty values or NaN values found in stops.txt. This might cause some issues.")
 
             # Extract the 'stop_id' column from the first DataFrame
             stop_ids_df1 = self.stops['stop_id']
@@ -301,142 +281,34 @@ class GTFSFeed:
             all_present = stop_ids_df1.isin(self.stop_times['stop_id']).all()
 
             if not all_present:
-                print("\t Warning: Some stops are not associated to any stop_time in the stop_times.txt file. The clean_stops() function could be used to solve this issue")
+                print("ALERT \t Some stops are not associated to any stop_time in the stop_times.txt file. The clean_stops() function could be used to solve this issue")
         
         file_path.close()
 
+    ############# GTFS Feed analysis: assessing general transit indicators #############
+    #################################################################################### 
 
-    """ Helpers """    
-
-    def get_shape(self, trip_id):
-        # Get the shape of the corresponding trip and project it into epsg:3857 crs
-        gdf = pd.merge(self.trips, self.shapes[['shape_id', 'geometry']], on='shape_id', how='left')
-        linestring = gdf.loc[gdf['trip_id'] == trip_id, 'geometry'].iloc[0]
-
-        return linestring
-
-    def get_stop_locations(self, trip_id):
-        gdf = pd.merge(self.stop_times, self.stops[['stop_id', 'geometry']], on='stop_id', how='left')       
-        coordinates = gdf.loc[gdf['trip_id'] == trip_id, 'geometry']
-
-        return coordinates.tolist()
-
-
-    """ Data check-up """
-
-    def data_check(self):
-        """ Checking the consistency of trips, routes, and stops  
-        """
-        print("\nChecking the gtfs data consistency:")
-
-        problem_found = False
-
-        # Trips
-
-        # Extract the 'stop_id' column from the first DataFrame
-        trip_ids = self.trips['trip_id']
-        # Check if all stop_ids from df1 are present in df2
-        all_present = trip_ids.isin(self.frequencies['trip_id']).all()
-        if not all_present:
-            problem_found = True
-            print("\t Warning: Some trips are not associated to any frequency in the frequencies.txt file. The clean_trips() function could be used to solve this issue.")
-
-        # Routes 
-
-        # Extract the 'route_id' column from the first DataFrame
-        route_ids = self.routes['route_id']
-        # Check if all route_ids from df1 are present in df2
-        all_present = route_ids.isin(self.trips['route_id']).all()
-        if not all_present:
-            problem_found = True
-            print("\t Warning: Some routes are not associated to any trip in the trips.txt file. The clean_routes() function could be used to solve this issue.")
-
-        # Stops
-
-        # Extract the 'stop_id' column from the first DataFrame
-        stop_ids_df1 = self.stops['stop_id']
-        # Check if all stop_ids from df1 are present in df2
-        all_present = stop_ids_df1.isin(self.stop_times['stop_id']).all()
-        if not all_present:
-            problem_found = True
-            print("\t Warning: Some stops are not associated to any stop_time in the stop_times.txt file. The clean_stops() function could be used to solve this issue")
-
-        print("\t -")    
-        if problem_found:
-            print("\t Problems found. If multiple warnings, the clean_all() method could be used.")
-        else:
-            print("\t No problems found.")        
-
-        return problem_found
-
-
-    """ Data cleaning """
-
-    def clean_trips(self):
-        """ Deleting the trips which are not associated to a frequency 
-        """
-        trips = self.trips
-        frequencies = self.frequencies
-
-        # Merge the DataFrames based on 'trip_id'
-        merged_df = trips.merge(frequencies, on='trip_id')
-
-        # Only keep the rows from the original df1 that have a corresponding trip_id in df2
-        cleaned_trips = trips[trips['trip_id'].isin(merged_df['trip_id'])]
-
-        self.trips = cleaned_trips
-
-    def clean_stops(self):
-        """ Deleting the stops which are not associated to any stop_times
-        """
-        stops = self.stops
-        stop_times = self.stop_times
-
-        cleaned_stops = stops[stops['stop_id'].isin(stop_times['stop_id'])]
-
-        self.stops = cleaned_stops
-
-    def clean_routes(self):
-        """ Deleting the routes which are not associated to any trip
-        """        
-        routes = self.routes
-        trips = self.trips
-
-        cleaned_routes = routes[routes['route_id'].isin(trips['route_id'])]
-
-        self.routes = cleaned_routes
-
-    def clean_all(self):
-        """ Executing all the cleaning functions 
-        """
-        self.clean_trips()
-        self.clean_stops()
-        self.clean_routes()
-
-
-    """ General information about the feed """    
+    """ Overview of basic global indicators """
 
     def general_feed_info(self):
         """ Displays some general information about the traffic feed
         """
-        print("\nGeneral information about the traffic feed data:")
-        print(f"\t The transport system comprises {self.trips.shape[0]} trips, belonging to {self.routes.shape[0]} routes and {self.calendar.shape[0]} services")
+        print("INFO \t General information about the traffic feed data:")
+        print(f"\t \t Trips: {self.trips.shape[0]} - Routes: {self.routes.shape[0]} - Services: {self.calendar.shape[0]}")
+        print(f"\t \t Stops: {self.stops.shape[0]} - Stop times: {self.stop_times.shape[0]} - Frequencies: {self.frequencies.shape[0]}")
         if self.trips.shape[0]/self.routes.shape[0] == 2.0:
-            print("\t Note: The number of trips is twice the number of routes, probably meaning that each route is associated with a round trip.")
-             
-        print(f"\t Agencies: {self.agency.shape[0]} - Stops: {self.stops.shape[0]} associated with {self.stop_times.shape[0]} stop times - Frequencies: {self.frequencies.shape[0]}")
-    
+            print("\t \t Note: The number of trips is twice the number of routes, probably meaning that each route is associated with a round trip.")          
+
         # Group frequencies by id and check if all values in 'row_count' are the same
         group_sizes = self.frequencies.groupby('trip_id').size().reset_index(name='row_count')
         are_all_values_same = group_sizes['row_count'].nunique() == 1
 
         if are_all_values_same:
-            print(f"\t Frequency intervals: {group_sizes['row_count'][0]} - Start time: {self.frequencies['start_time'].min()} - End time {self.frequencies['end_time'].max()}")
+            print(f"\t \t Frequency intervals: {group_sizes['row_count'][0]} - Start time: {self.frequencies['start_time'].min()} - End time: {self.frequencies['end_time'].max()}")
         else:
-            print("\t Warning: the number of intervals associated with frequencies is not the same for each trip")
+            print("\t \t Note: The number of intervals associated with frequencies is not the same for each trip")
 
-
-    """ Per trip metrics """
+    """ Per trip transit indicators """
 
     def trip_length_km(self, trip_id):
         """ Calculates the lenght in km of a trip
@@ -497,7 +369,7 @@ class GTFSFeed:
         return result_df['stop_dist_km'].mean() / 1000.0
 
     def n_stops(self, trip_id):
-        """ Number of stops for each trip
+        """ Number of stops of a trip
         """        
         stop_times = self.stop_times       
         n_stops = stop_times.groupby('trip_id').size().reset_index(name='row_count')
@@ -505,7 +377,7 @@ class GTFSFeed:
         return n_stops.loc[n_stops['trip_id'] == trip_id, 'row_count'].iloc[0]
 
 
-    """ Per stop metrics """
+    """ Per stop transit indicators """
 
     def stop_frequencies(self):
         """ Returns the number of times a stop is used by all trips
@@ -517,8 +389,7 @@ class GTFSFeed:
         
         return stop_counts
 
-
-    """ Global metrics assessment """
+    """ Global transit indicators """
 
     def bounding_box(self):
         """ Returns the bounding box for the simulation    
@@ -608,9 +479,139 @@ class GTFSFeed:
         
         return statistics 
 
-    """ Filter functions """
+    ############# Data checking and cleaning #############
+    ######################################################
+
+    """ Data checking """
+
+    def data_check(self):
+        """ Quick but important checks regarding data consistency that could cause some issues later
+        """
+        print("NOTE \t Checking GTFS data:")
+
+        problem_found = False
+
+        # Trips - Checking that each trip is associated with a frequency
+
+        # Extract the 'stop_id' column from the first DataFrame
+        trip_ids = self.trips['trip_id']
+        # Check if all stop_ids from df1 are present in df2
+        all_present = trip_ids.isin(self.frequencies['trip_id']).all()
+        if not all_present:
+            problem_found = True
+            print("\t \t - Some trips are not associated to any frequency in the frequencies.txt file. ")
+
+        # Routes - Checking that each route is associated with a trip
+
+        # Extract the 'route_id' column from the first DataFrame
+        route_ids = self.routes['route_id']
+        # Check if all route_ids from df1 are present in df2
+        all_present = route_ids.isin(self.trips['route_id']).all()
+        if not all_present:
+            problem_found = True
+            print("\t \t - Some routes are not associated to any trip in the trips.txt file. ")
+
+        # Stops - Checking that each stop is associated with stop_time
+
+        # Extract the 'stop_id' column from the first DataFrame
+        stop_ids_df1 = self.stops['stop_id']
+        # Check if all stop_ids from df1 are present in df2
+        all_present = stop_ids_df1.isin(self.stop_times['stop_id']).all()
+        if not all_present:
+            problem_found = True
+            print("\t \t - Some stops are not associated to any stop_time in the stop_times.txt file. ")
+
+        if problem_found:
+            print("ALERT \t Problems found. Data cleaning should be performed. For in-depth GTFS analysis and validation: \x1b]8;;https://gtfs-validator.mobilitydata.org/\aGTFS Validator\x1b]8;;\a.")
+        else:
+            print("NOTE \t No problem found.")        
+
+        return problem_found
+
+    """ Data cleaning """
+
+    def clean_trips(self):
+        """ Deleting the trips which are not associated to a frequency
+        """
+        trips = self.trips
+        frequencies = self.frequencies
+
+        # Merge the DataFrames based on 'trip_id'
+        merged_df = trips.merge(frequencies, on='trip_id')
+
+        # Only keep the rows from the original df1 that have a corresponding trip_id in df2
+        cleaned_trips = trips[trips['trip_id'].isin(merged_df['trip_id'])]
+
+        self.trips = cleaned_trips
+
+    def clean_stops(self):
+        """ Deleting the stops which are not associated to any stop_times
+        """
+        stops = self.stops
+        stop_times = self.stop_times
+
+        cleaned_stops = stops[stops['stop_id'].isin(stop_times['stop_id'])]
+
+        self.stops = cleaned_stops
+
+    def clean_routes(self):
+        """ Deleting the routes which are not associated to any trip
+        """        
+        routes = self.routes
+        trips = self.trips
+
+        cleaned_routes = routes[routes['route_id'].isin(trips['route_id'])]
+
+        self.routes = cleaned_routes
+
+    def clean_all(self):
+        """ Executing all the cleaning functions 
+        """
+        self.clean_trips()
+        self.clean_stops()
+        self.clean_routes()  
+
+
+    ############# Data filtering #############
+    ##########################################
 
     def filter_services(self, service_id):
-        """ Drop the number of trips
+        """ Drop the trips belonging to a specific service, for example to consider only weekdays
         """
-        self.trips.drop(self.trips[self.trips['service_id'] == service_id].index, inplace=True)
+
+        print(f"NOTE \t Filtering out all the data from the following service: {service_id}")
+
+        df = self.trips
+
+        # Iterate over the DataFrame using iterrows, delete the associated values 
+        for index, row in df.iterrows():
+            if row['service_id'] == service_id:
+                self.routes.drop(self.routes[self.routes['route_id'] == row['route_id']].index, inplace=True) # Drop the routes
+                self.calendar.drop(self.calendar[self.calendar['service_id'] == row['service_id']].index, inplace=True) # Drop the service
+                self.frequencies.drop(self.frequencies[self.frequencies['trip_id'] == row['trip_id']].index, inplace=True) # Drop the frequencies
+                self.stop_times.drop(self.stop_times[self.stop_times['trip_id'] == row['trip_id']].index, inplace=True) # Drop the stop_times
+                self.clean_stops()
+                self.shapes.drop(self.shapes[self.shapes['shape_id'] == row['trip_id']].index, inplace=True) # Drop the shapes
+
+        # Finally, drop the trips        
+        self.trips.drop(self.trips[self.trips['service_id'] == service_id].index, inplace=True) 
+
+
+    ############# Various helper methods #############
+    ##################################################   
+
+    def get_shape(self, trip_id):
+        """ Get the shape of a trip_id as a LineString Object
+        """
+        gdf = pd.merge(self.trips, self.shapes[['shape_id', 'geometry']], on='shape_id', how='left')
+        linestring = gdf.loc[gdf['trip_id'] == trip_id, 'geometry'].iloc[0]
+
+        return linestring
+
+    def get_stop_locations(self, trip_id):
+        """ Get a list of the coordinates of all the stops belonging to a trip 
+        """
+        gdf = pd.merge(self.stop_times, self.stops[['stop_id', 'geometry']], on='stop_id', how='left')       
+        coordinates = gdf.loc[gdf['trip_id'] == trip_id, 'geometry']
+
+        return coordinates.tolist()

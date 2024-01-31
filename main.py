@@ -30,26 +30,32 @@ def main():
 	#######################################
 
 	# Populate the feed with the raw data (do not comment!)
-	feed = GTFSFeed("GTFS_Abidjan")	
+	feed = GTFSFeed("GTFS_Freetown")
 
-	# Check if there is any issue with de data
-	if feed.data_check():
-		feed.clean_all()
+	feed.general_feed_info()	
 
-	# Recheck the data to make sure everything has been cleaned
 	feed.data_check()
+
+	# # Check if there is any issue with de data
+	# if feed.data_check():
+	# 	feed.clean_all()
+
+	# # Recheck the data to make sure everything has been cleaned
+	# feed.data_check()
 
 	# feed.general_feed_info()
 
 	# Optionnal. If needed, filter out trips belonging to specific services
 	# feed.filter_services('service_0001')
-	# feed.filter_services('service_0003') # For Freetown, service 0003 corresponds to a ferry
+	feed.filter_services('service_0003') # For Freetown, service 0003 corresponds to a ferry
+
+	feed.general_feed_info() # Display general information after filtering
 
 	###############################################
 	# 1. Display general information about the feed
 	###############################################
 
-	feed.general_feed_info()
+	# feed.general_feed_info()
 
 	######################################
 	# 2. Visualize the paratransit network
@@ -167,10 +173,10 @@ def main():
 	# 4. Extract topological information 
 	############################################
 
-	tp = Topology(feed)
+	# tp = Topology(feed)
 
-	print(tp.trip_crossovers())
-	print(tp.nearest_point_distance_km())
+	# print(tp.trip_crossovers())
+	# print(tp.nearest_point_distance_km())
 
 	# print(feed.trip_crossovers())
 	# print(feed.nearest_point_distance_km()) # Warning: takes a long time
