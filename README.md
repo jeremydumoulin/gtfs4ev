@@ -68,7 +68,7 @@ env.INPUT_PATH = "my_input_path"
 To run the code, you need to import the various modules you want to use from the `gtfs4ev/` package into a new python script. For the time being, you will find two types of modules in the package:
 
 * The core **classes** of gtfs4ev: GTFSFeed, TripSim, TrafficSim
-* Some more generic **helpers**: environment.py, helpers.py, constants.py 
+* Some more generic **helpers**: environment.py, helpers.py, constants.py, topology.py 
 
 Both can be imported as modules to be used in the python script.
 ```python
@@ -102,7 +102,6 @@ Please also make sure to update tests as appropriate.
 - [ ] Map GTFS shapes with OSM data
 - [ ] Implement some more classical transit metrics
 - [ ] Upgrade data filtering
-- [ ] Topology
 - [ ] Potential benefits of electrification
 - [ ] Spatio-temporal visualisation of the fleet evolution
 - [ ] Improve closest point mapping (interpolate between points)
@@ -112,11 +111,12 @@ Please also make sure to update tests as appropriate.
 - [ ] Let the user set the desired projection CRS
 - [ ] Assess some accessibility metrics by crossing the data with other GIS data 
 - [ ] Write some unit tests 
-- [ ] Get the code ready for collaboration: upload to GitLab and better comment classes
 
 ### Done
 
 - [x] Update the README and create a virtual environment
+- [x] Create a topology class
+- [x] Get the code ready for collaboration: upload to GitLab and better comment classes
 
 ## License
 

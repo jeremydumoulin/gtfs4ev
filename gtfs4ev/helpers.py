@@ -11,7 +11,7 @@ import numpy as np
 
 def check_dataframe(df):
 	""" Returns false if a dataframe contains neither NaN nor empty values.	  
-    """
+	"""
 
 	# Check for NaN values in the entire DataFrame
 	if df.isna().any().any():
@@ -24,16 +24,17 @@ def check_dataframe(df):
 
 def find_closest_point(line, point):
 	""" Among all the points of a line (LineString object), returns the one closest to the point (Point object) coordinates  
-    """
-    min_distance = float('inf')  # Initialize with a large value
-    closest_point = None
-    
-    for coordinate in line.coords:
-        current_point = Point(coordinate)
-        distance = point.distance(current_point)
-        
-        if distance < min_distance:
-            min_distance = distance
-            closest_point = current_point
-    
-    return closest_point
+	"""
+
+	min_distance = float('inf')
+	closest_point = None
+
+	for coordinate in line.coords:
+		current_point = Point(coordinate)
+		distance = point.distance(current_point)
+
+		if distance < min_distance:
+			min_distance = distance
+			closest_point = current_point
+
+	return closest_point

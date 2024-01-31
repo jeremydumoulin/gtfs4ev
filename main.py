@@ -14,6 +14,7 @@ from folium.plugins import MarkerCluster, MeasureControl
 from gtfs4ev.gtfsfeed import GTFSFeed
 from gtfs4ev.tripsim import TripSim
 from gtfs4ev.trafficsim import TrafficSim
+from gtfs4ev.topology import Topology
 
 from gtfs4ev import constants as cst
 from gtfs4ev import environment as env
@@ -166,12 +167,20 @@ def main():
 	# 4. Extract topological information 
 	############################################
 
+	tp = Topology(feed)
+
+	print(tp.trip_crossovers())
+	print(tp.nearest_point_distance_km())
+
 	# print(feed.trip_crossovers())
 	# print(feed.nearest_point_distance_km()) # Warning: takes a long time
 
-	"""
-	5. Operationnal metrics of a trip 
-	"""
+	#########################
+	# 5. Operationnal metrics  
+	#########################
+
+	""" For a single trip """
+
 	# trip_sim = TripSim(feed = feed, trip_id='20121111', ev_consumption = 0.2)
 
 	# print(trip_sim.trip_duration_sec)
@@ -180,10 +189,9 @@ def main():
 	# print(trip_sim.operation_estimates())
 	# print(trip_sim.operation_estimates_aggregated())
 
-	##############################################
-	# 5. Operationnal metrics for the whole system 
-	##############################################
-	# trips = feed.trips
+	""" For the whole system """
+
+	# trips = feed.trips	
 	
 	# df = pd.DataFrame()
 
@@ -275,27 +283,27 @@ def main():
 	# 9. Profile of a the whole traffic network
 	###########################################
 
-	trips = list(feed.trips['trip_id'])
+	# trips = list(feed.trips['trip_id'])
 
-	print(trips)
-	ev_con = [0.4] * len(trips)
+	# print(trips)
+	# ev_con = [0.4] * len(trips)
 
-	traffic_sim = TrafficSim(feed, trips, ev_con)
+	# traffic_sim = TrafficSim(feed, trips, ev_con)
 
-	print(traffic_sim.operation_estimates().sum())
-	df = traffic_sim.profile(start_time = "00:00:00", stop_time = "23:59:59", time_step = 20, transient_state = False)
+	# print(traffic_sim.operation_estimates().sum())
+	# df = traffic_sim.profile(start_time = "00:00:00", stop_time = "23:59:59", time_step = 20, transient_state = False)
 
-	df.to_csv("output/Freetown_profile_20s_0h-23h59m59s.csv", index=False)
+	# df.to_csv("output/Freetown_profile_20s_0h-23h59m59s.csv", index=False)
 
-	# Plot the function
-	plt.plot(df['t'], df['power_kW'], marker='o')
-	plt.xlabel('Time (seconds)')
-	plt.ylabel('Power')
-	plt.title('Power vs. Time')
-	plt.grid(True)
+	# # Plot the function
+	# plt.plot(df['t'], df['power_kW'], marker='o')
+	# plt.xlabel('Time (seconds)')
+	# plt.ylabel('Power')
+	# plt.title('Power vs. Time')
+	# plt.grid(True)
 
-	# plt.savefig('power_vs_time.png')
-	plt.show()
+	# # plt.savefig('power_vs_time.png')
+	# plt.show()
 		
 
 if __name__ == "__main__":

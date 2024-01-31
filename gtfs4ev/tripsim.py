@@ -78,7 +78,7 @@ class TripSim:
             self.ev_consumption = ev_consumption
 
     def set_feed(self, feed):
-        """ Setter for ev_consumption attribute.
+        """ Setter for feed attribute.
         Checks that the object is of the right type
         """
         try:       
