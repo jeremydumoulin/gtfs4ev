@@ -28,7 +28,7 @@ repository = https://gitlab.epfl.ch/PVLAB/SYSTEM/openmod4africa/gtfs4ev
 
 1. Get the latest version of the code on GitLab on your local machine. If you are not familiar with git, you can also manually download the folder from GitLab and then run the code. However, you won't be able to have access to contribute to the project.
 ```bash
-$ git pull XXX master
+$ git clone https://gitlab.inl90.ec-lyon.fr/jdumoulin/sqbalance.git
 ```
 
 2. Create a conda environment with the required dependencies. 
@@ -98,12 +98,9 @@ Please also make sure to update tests as appropriate.
 
 ### Open tasks
 
-- [ ] Get the code ready for collaboration
-	- [ ] Upload to GitLab
-	- [ ] Create some tests
-	- [ ] Better comment classes
 - [ ] Data check-up using https://github.com/MobilityData/gtfs-validator
 - [ ] Map GTFS shapes with OSM data
+- [ ] Implement some more classical transit metrics
 - [ ] Upgrade data filtering
 - [ ] Topology
 - [ ] Potential benefits of electrification
@@ -115,6 +112,7 @@ Please also make sure to update tests as appropriate.
 - [ ] Let the user set the desired projection CRS
 - [ ] Assess some accessibility metrics by crossing the data with other GIS data 
 - [ ] Write some unit tests 
+- [ ] Get the code ready for collaboration: upload to GitLab and better comment classes
 
 ### Done
 
