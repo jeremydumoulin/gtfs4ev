@@ -25,57 +25,30 @@ Main function
 """
 def main():
 
-	#######################################
-	# Setting up and cleaning the GTFS Feed
-	#######################################
+	############################################
+	# GTFS Feed initialization and preprocessing
+	############################################
 
 	# Populate the feed with the raw data (do not comment!)
 	feed = GTFSFeed("GTFS_Nairobi")
 
-	feed.general_feed_info()	
+	# feed.general_feed_info() # General information before data cleaning
 
-	# feed.data_check()
-	# feed.check_agency()
-	# feed.check_shapes()
-	# feed.check_stops()
-	# feed.check_frequencies()
-	# feed.check_calendar()
-	# feed.check_routes()
-	# feed.check_stop_times()
-	# feed.check_trips()
-
-	feed.check_all()
-
-	feed.drop_useless_trips()
-	feed.drop_useless_stop_times()
-
-	feed.check_all()
-	feed.general_feed_info()	
-
-	# # Check if there is any issue with de data
-	# if feed.data_check():
-	# 	feed.clean_all()
-
-	# feed.clean_all()
-	# feed.check_all()
-
-
-	# # Recheck the data to make sure everything has been cleaned
-	# feed.data_check()
-
-	# feed.general_feed_info()
+	# Check data consistency, and perform cleaning if needed
+	if not feed.check_all():
+		feed.clean_all() # Data cleaning to get a consistent feed
+		feed.check_all() # Re-check data consistency
 
 	# Optionnal. If needed, filter out trips belonging to specific services
-	# feed.filter_services('service_0001')
+	# feed.filter_services('service_0001') # For Freetown, service 0001 corresponds is for weekends
 	# feed.filter_services('service_0003') # For Freetown, service 0003 corresponds to a ferry
-
-	# feed.general_feed_info() # Display general information after filtering
+	# feed.check_all()
 
 	###############################################
 	# 1. Display general information about the feed
 	###############################################
 
-	# feed.general_feed_info()
+	feed.general_feed_info()
 
 	######################################
 	# 2. Visualize the paratransit network

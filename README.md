@@ -99,7 +99,6 @@ Please also make sure to update tests as appropriate.
 ### Open tasks
 
 - [ ] Map GTFS shapes with OSM data
-- [ ] Upgrade data filtering
 - [ ] Potential benefits of electrification
 - [ ] Spatio-temporal visualisation of the fleet evolution
 - [ ] Improve closest point mapping (interpolate between points)
@@ -109,13 +108,14 @@ Please also make sure to update tests as appropriate.
 - [ ] Let the user set the desired projection CRS
 - [ ] Assess some accessibility metrics by crossing the data with other GIS data 
 - [ ] Write some unit tests 
-- [ ] Improve GTFS data analysis, cleaning, and filtering ; perhaps by relying on an external library
+- [ ] Improve a bit GTFS data analysis, cleaning, and filtering ; perhaps by relying on an external library
 
 ### Done
 
 - [x] Update the README and create a virtual environment
 - [x] Create a topology class
 - [x] Get the code ready for collaboration: upload to GitLab and better comment classes
+- [x] Upgrade data filtering
 
 ## License
 

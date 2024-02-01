@@ -18,6 +18,7 @@ from pathlib import Path
 from shapely.geometry import LineString, Point, Polygon, box, MultiPoint
 from shapely.ops import transform, nearest_points
 import pyproj
+from contextlib import redirect_stdout
 
 from gtfs4ev import constants as cst
 from gtfs4ev import environment as env
@@ -152,7 +153,7 @@ class GTFSFeed:
         all_present = route_ids.isin(self.trips['route_id']).all()
 
         if not all_present:
-            print("ALERT \t Some routes are not associated to any trip in the trips.txt file. The clean_routes() function could be used to solve this issue.")
+            print("ALERT \t Some routes are not associated to any trip in the trips.txt file. Consistency check recommended.")
         
         file_path.close()
 
@@ -230,7 +231,7 @@ class GTFSFeed:
             all_present = trip_ids.isin(self.frequencies['trip_id']).all()
 
             if not all_present:
-                print("ALERT \t Some trips are not associated to any frequency in the frequencies.txt file. The clean_trips() function could be used to solve this issue.")
+                print("ALERT \t Some trips are not associated to any frequency in the frequencies.txt file. Consistency check recommended.")
         
         file_path.close()
 
@@ -307,7 +308,7 @@ class GTFSFeed:
             all_present = stop_ids_df1.isin(self.stop_times['stop_id']).all()
 
             if not all_present:
-                print("ALERT \t Some stops are not associated to any stop_time in the stop_times.txt file. The clean_stops() function could be used to solve this issue")
+                print("ALERT \t Some stops are not associated to any stop_time in the stop_times.txt file. Consistency check recommended.")
         
         file_path.close()
 
@@ -333,7 +334,9 @@ class GTFSFeed:
         if are_all_values_same:
             print(f"\t \t Frequency intervals: {group_sizes['row_count'][0]} - Start time: {self.frequencies['start_time'].min()} - End time: {self.frequencies['end_time'].max()}")
         else:
-            print("\t \t Note: The number of intervals associated with frequencies is not the same for each trip")
+            print("\t \t Note: The number of intervals associated with frequencies is not the same for each trip.")
+
+        print("\t -")
 
     """ Per trip transit indicators """
 
@@ -660,7 +663,9 @@ class GTFSFeed:
     def check_all(self): 
         """ Checking the consistency of all the data
         """
-        print("NOTE \t Checking data consistency...")
+        print("INFO \t Checking data consistency...")
+
+        consistent = False
 
         agency_status = self.check_agency()
         shapes_status = self.check_shapes()
@@ -672,11 +677,12 @@ class GTFSFeed:
         trips_status = self.check_trips()
 
         if (not agency_status and not shapes_status and not stops_status and not frequencies_status and not calendar_status and not routes_status and not stop_times_status and not trips_status):
-            print("NOTE \t No problem found.")
+            print("INFO \t No problem found.")
+            consistent = True
 
-        print("\t -")  
+        return consistent
 
-    """ Quick data fixing: the practical minimum for gtfs4ev simulations to run. WARNING: Data consistency could be altered. """
+    """ Quick data fixing: the practical minimum for gtfs4ev. WARNING: Data consistency could be altered. This could be useful in order to simulate all the possbile trips even if some of them do not belong to any route or so. """
 
     def drop_useless_trips(self):
         """ Delete the trips which are not useable because they are not assiocated to any frequency, stop_times, or shapes
@@ -714,50 +720,68 @@ class GTFSFeed:
 
         self.stop_times = cleaned_stop_times
 
-    """ Data cleaning: Thorough data cleaning aiming to ensure consistent GTFS data. """
+    """ Data cleaning: Extensive data cleansing to ensure consistency of GTFS data. """
 
-    # def clean_trips_minimium(self):
-    #     """ Deleting the trips which are not useable because they are not assiocated to any frequency, stop_times, or shapes
-    #     Warning: This ensures that all the trips could be simulated by gtfs4ev but could alter data consistency
-    #     """
-    #     trips = self.trips
-    #     frequencies = self.frequencies
+    def clean_agency(self):
+        """ Deleting each agency not associated with any route
+        """
+        self.agency = self.agency[self.agency['agency_id'].isin(self.routes['agency_id'])]
 
-    #     # Merge the DataFrames based on 'trip_id'
-    #     merged_df = trips.merge(frequencies, on='trip_id')
-
-    #     # Only keep the rows from the original df1 that have a corresponding trip_id in df2
-    #     cleaned_trips = trips[trips['trip_id'].isin(merged_df['trip_id'])]
-
-    #     self.trips = cleaned_trips
+    def clean_shapes(self):
+        """ Deleting each shape not associated with any trip
+        """
+        self.shapes = self.shapes[self.shapes['shape_id'].isin(self.trips['shape_id'])]
 
     def clean_stops(self):
-        """ Deleting the stops which are not associated to any stop_times
+        """ Deleting each stop not associated with any stop_time
         """
-        stops = self.stops
-        stop_times = self.stop_times
+        self.stops = self.stops[self.stops['stop_id'].isin(self.stop_times['stop_id'])]
 
-        cleaned_stops = stops[stops['stop_id'].isin(stop_times['stop_id'])]
+    def clean_frequencies(self):
+        """ Deleting each frequency not associated with any trip
+        """
+        self.frequencies = self.frequencies[self.frequencies['trip_id'].isin(self.trips['trip_id'])]
 
-        self.stops = cleaned_stops
+    def clean_calendar(self):
+        """ Deleting each service not associated with any trip
+        """
+        self.calendar = self.calendar[self.calendar['service_id'].isin(self.trips['service_id'])]
 
     def clean_routes(self):
-        """ Deleting the routes which are not associated to any trip
-        """        
-        routes = self.routes
-        trips = self.trips
+        """ Deleting each route not associated with any agency or trip
+        """
+        self.routes = self.routes[self.routes['agency_id'].isin(self.agency['agency_id'])]
+        self.routes = self.routes[self.routes['route_id'].isin(self.trips['route_id'])]
 
-        cleaned_routes = routes[routes['route_id'].isin(trips['route_id'])]
+    def clean_stop_times(self):
+        """ Deleting each stop_time not associated with any trip or stop
+        """
+        self.drop_useless_stop_times()
+        self.stop_times = self.stop_times[self.stop_times['trip_id'].isin(self.trips['trip_id'])]
 
-        self.routes = cleaned_routes
+    def clean_trips(self):
+        """ Deleting each trip not associated with any routes, service, frequencies, stop_times, or shapes
+        """
+        self.drop_useless_trips()
+        self.trips = self.trips[self.trips['route_id'].isin(self.routes['route_id'])]
+        self.trips = self.trips[self.trips['service_id'].isin(self.calendar['service_id'])]
 
     def clean_all(self):
-        """ Executing all the cleaning functions 
+        """ Executing all the cleaning functions. No consistency problems should arise after this function has been run.
         """
-        self.clean_trips()
-        self.clean_stops()
-        self.clean_routes()  
+        # Clean everything and repeat until consistency is reached 
+        with redirect_stdout(None):       
+            while not self.check_all():
+                self.clean_agency()
+                self.clean_shapes()
+                self.clean_stops()
+                self.clean_frequencies()
+                self.clean_calendar()
+                self.clean_routes() 
+                self.clean_stop_times()
+                self.clean_trips()
 
+        print("INFO \t Clean all: data has been cleaned. A consistency check is recommended.")        
 
     ############# Data filtering #############
     ##########################################
@@ -766,7 +790,7 @@ class GTFSFeed:
         """ Drop the trips belonging to a specific service, for example to consider only weekdays
         """
 
-        print(f"NOTE \t Filtering out all the data from the following service: {service_id}")
+        print(f"INFO \t Filtering out all the data from the following service: {service_id}")
 
         df = self.trips
 
@@ -781,8 +805,10 @@ class GTFSFeed:
                 self.shapes.drop(self.shapes[self.shapes['shape_id'] == row['trip_id']].index, inplace=True) # Drop the shapes
 
         # Finally, drop the trips        
-        self.trips.drop(self.trips[self.trips['service_id'] == service_id].index, inplace=True) 
+        self.trips.drop(self.trips[self.trips['service_id'] == service_id].index, inplace=True)
 
+        with redirect_stdout(None): 
+            self.clean_all()
 
     ############# Various helper methods #############
     ##################################################   
