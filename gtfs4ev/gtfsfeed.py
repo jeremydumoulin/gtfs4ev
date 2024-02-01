@@ -32,15 +32,16 @@ class GTFSFeed:
     datapath = "" # Absolute path to the GTFS datafolder
 
     # Panda dataframes holding mandatory standard GTFS data
+    agency = pd.DataFrame()
     routes = pd.DataFrame()
     stop_times = pd.DataFrame()
-    calendar = pd.DataFrame()
-    frequencies = pd.DataFrame()
+    stops = gpd.GeoDataFrame(columns=['stop_id', 'stop_name', 'geometry'], crs="EPSG:4326")
     trips = pd.DataFrame()
 
-    # Geopanda dataframes holding georeferenced data
+    # Dataframes for other required data for gtfs4ev
+    calendar = pd.DataFrame()
+    frequencies = pd.DataFrame()
     shapes = gpd.GeoDataFrame(columns=['shape_id', 'geometry'], crs="EPSG:4326")
-    stops = gpd.GeoDataFrame(columns=['stop_id', 'stop_name', 'geometry'], crs="EPSG:4326")
 
     #######################################
     ############### METHODS ###############
@@ -52,16 +53,20 @@ class GTFSFeed:
     def __init__(self, gtfs_foldername):
         print(f"INFO \t Initializing a new GTFSFeed object using /{gtfs_foldername} data... ")
 
-        self.set_datapath(gtfs_foldername)      
+        self.set_datapath(gtfs_foldername) 
 
-        self.set_stop_times()
-        self.set_calendar()
-        self.set_trips()
+        # Required data according to the GTFS standard    
+        self.set_agency() 
+        self.set_trips()       
         self.set_routes()
-        self.set_frequencies()        
-
-        self.set_shapes()
+        self.set_stop_times()
         self.set_stops()
+
+        # Other required data for gtfs4ev
+        self.set_calendar()     
+        self.set_frequencies()      
+        self.set_shapes()
+        
         
         print("INFO \t GTFSFeed created. Feed could now be analyzed, cleaned, or filtered.")
         print("\t -")
@@ -76,7 +81,8 @@ class GTFSFeed:
         """
         try:
             abs_path = env.INPUT_PATH / str(gtfs_foldername)
-            files_to_check = ['routes.txt', 'stop_times.txt', 'calendar.txt', 'frequencies.txt', 'shapes.txt', 'stops.txt', 'trips.txt']          
+            # Check if required files are present : 1) required files from the GTFS specification 2) required files for gtfs4ev
+            files_to_check = ['agency.txt', 'routes.txt', 'stop_times.txt', 'calendar.txt', 'frequencies.txt', 'shapes.txt', 'stops.txt', 'trips.txt']          
 
             if not os.path.isdir(abs_path):
                 raise FileNotFoundError() 
@@ -87,7 +93,7 @@ class GTFSFeed:
                     if not os.path.exists(file_path):
                         raise FileNotFoundError()                    
             except Exception:
-                print("ERROR \t Some required GTFS files missing. Make sure the following files are in the data folder: 'routes.txt', 'stop_times.txt', 'calendar.txt', 'frequencies.txt', 'shapes.txt', 'stops.txt'.")
+                print("ERROR \t Some required GTFS files missing. Make sure the following files are in the data folder: 'agency.txt', 'routes.txt', 'stop_times.txt', 'calendar.txt', 'frequencies.txt', 'shapes.txt', 'stops.txt'.")
             finally:
                 for file_name in os.listdir(abs_path):
                     file_path = os.path.join(abs_path, file_name)
@@ -100,6 +106,26 @@ class GTFSFeed:
             print(f"ERROR \t {e}")
         else:            
             self.datapath = abs_path
+
+    def set_agency(self):
+        """ Setter for agency attribute.
+        Keeps only the four required columns of the GTFS standard
+        """        
+        file_path = open(self.datapath / "agency.txt", "r", encoding = "utf-8")       
+        
+        columns_to_keep = ['agency_id', 'agency_name', 'agency_url', 'agency_timezone']
+        column_types = {'agency_id': str, 'agency_name': str, 'agency_url': str, 'agency_timezone': str}
+            
+        try:          
+            df = pd.read_csv(file_path, usecols=columns_to_keep, dtype=column_types)
+        except Exception:
+            print("Error: it seems that some of the required columns of the agency.txt file are missing. Please check 'agency_id', 'agency_name', 'agency_url', 'agency_timezone' are present. ")    
+        else:
+            self.agency = df
+            if not hlp.check_dataframe(df):
+                print("Warning: empty values or NaN values found in agency.txt. This might cause some issues.")
+        
+        file_path.close()        
 
     def set_routes(self):
         """ Setter for routes attribute.
@@ -296,6 +322,7 @@ class GTFSFeed:
         print("INFO \t General information about the traffic feed data:")
         print(f"\t \t Trips: {self.trips.shape[0]} - Routes: {self.routes.shape[0]} - Services: {self.calendar.shape[0]}")
         print(f"\t \t Stops: {self.stops.shape[0]} - Stop times: {self.stop_times.shape[0]} - Frequencies: {self.frequencies.shape[0]}")
+        print(f"\t \t Agencies: {self.agency.shape[0]} - Shapes: {self.shapes.shape[0]}")
         if self.trips.shape[0]/self.routes.shape[0] == 2.0:
             print("\t \t Note: The number of trips is twice the number of routes, probably meaning that each route is associated with a round trip.")          
 
@@ -484,65 +511,225 @@ class GTFSFeed:
 
     """ Data checking """
 
-    def data_check(self):
-        """ Quick but important checks regarding data consistency that could cause some issues later
+    def check_agency(self):
+        """ Checking that each agency is associated with at least one route
         """
-        print("NOTE \t Checking GTFS data:")
-
-        problem_found = False
-
-        # Trips - Checking that each trip is associated with a frequency
-
-        # Extract the 'stop_id' column from the first DataFrame
-        trip_ids = self.trips['trip_id']
-        # Check if all stop_ids from df1 are present in df2
-        all_present = trip_ids.isin(self.frequencies['trip_id']).all()
+        problem = False
+        agency_ids = self.agency['agency_id']
+        
+        all_present = agency_ids.isin(self.routes['agency_id']).all()
         if not all_present:
-            problem_found = True
-            print("\t \t - Some trips are not associated to any frequency in the frequencies.txt file. ")
+            problem = True
+            print("ALERT \t Data consistency: some agencies are not associated with any route.")
 
-        # Routes - Checking that each route is associated with a trip
+        return problem 
 
-        # Extract the 'route_id' column from the first DataFrame
+    def check_shapes(self):
+        """ Checking that each shape is associated with at least one trip
+        """
+        problem = False
+
+        shape_ids = self.shapes['shape_id']
+        
+        all_present = shape_ids.isin(self.trips['shape_id']).all()
+        if not all_present:
+            problem = True
+            print("ALERT \t Data consistency: some shapes are not associated with any trip.")
+
+        return problem
+
+    def check_stops(self):
+        """ Checking that each stop is associated with at least one stop time
+        """
+        problem = False
+
+        stop_ids = self.stops['stop_id']
+        
+        all_present = stop_ids.isin(self.stop_times['stop_id']).all()
+        if not all_present:
+            problem = True
+            print("ALERT \t Data consistency: some stops are not associated with any stop time.")
+
+        return problem
+
+    def check_frequencies(self):
+        """ Checking that each frequency is associated with at least one stop trip
+        """
+        problem = False
+
+        trip_ids = self.frequencies['trip_id']
+        
+        all_present = trip_ids.isin(self.trips['trip_id']).all()
+        if not all_present:
+            problem = True
+            print("ALERT \t Data consistency: some frequencies are not associated with any trip.")
+
+        return problem
+
+    def check_calendar(self):
+        """ Checking that each service is associated with at least one stop trip
+        """
+        problem = False
+
+        service_ids = self.calendar['service_id']
+        
+        all_present = service_ids.isin(self.trips['service_id']).all()
+        if not all_present:
+            problem = True
+            print("ALERT \t Data consistency: some services are not associated with any trip.")
+
+        return problem
+
+    def check_routes(self):
+        """ Checking that each route is associated with an agency and trips
+        """
+        problem = False
+
         route_ids = self.routes['route_id']
-        # Check if all route_ids from df1 are present in df2
+        agency_ids = self.routes['agency_id']
+        
         all_present = route_ids.isin(self.trips['route_id']).all()
         if not all_present:
-            problem_found = True
-            print("\t \t - Some routes are not associated to any trip in the trips.txt file. ")
+            problem = True
+            print("ALERT \t Data consistency: some routes are not associated with any trip.")
 
-        # Stops - Checking that each stop is associated with stop_time
-
-        # Extract the 'stop_id' column from the first DataFrame
-        stop_ids_df1 = self.stops['stop_id']
-        # Check if all stop_ids from df1 are present in df2
-        all_present = stop_ids_df1.isin(self.stop_times['stop_id']).all()
+        all_present = agency_ids.isin(self.agency['agency_id']).all()
         if not all_present:
-            problem_found = True
-            print("\t \t - Some stops are not associated to any stop_time in the stop_times.txt file. ")
+            problem = True
+            print("ALERT \t Data consistency: some routes are not associated with any agency.")
 
-        if problem_found:
-            print("ALERT \t Problems found. Data cleaning should be performed. For in-depth GTFS analysis and validation: \x1b]8;;https://gtfs-validator.mobilitydata.org/\aGTFS Validator\x1b]8;;\a.")
-        else:
-            print("NOTE \t No problem found.")        
+        return problem
 
-        return problem_found
+    def check_stop_times(self):
+        """ Checking that each stop time is associated with trips and stops
+        """
+        problem = False
 
-    """ Data cleaning """
+        stop_ids = self.stop_times['stop_id']
+        trip_ids = self.stop_times['trip_id']
+        
+        all_present = stop_ids.isin(self.stops['stop_id']).all()
+        if not all_present:
+            problem = True
+            print("ALERT \t Data consistency: some stop times are not associated with any stop.")
 
-    def clean_trips(self):
-        """ Deleting the trips which are not associated to a frequency
+        all_present = trip_ids.isin(self.trips['trip_id']).all()
+        if not all_present:
+            problem = True
+            print("ALERT \t Data consistency: some stop times are not associated with any trip.")
+
+        return problem
+
+    def check_trips(self):
+        """ Checking that each trips is associated with the needed information: routes, service, frequencies, stop_times, shapes
+        """
+        problem = False
+
+        route_ids = self.trips['route_id']
+        service_ids = self.trips['service_id']
+        trip_ids = self.trips['trip_id']
+        shape_ids = self.trips['shape_id']
+        
+        all_present = route_ids.isin(self.routes['route_id']).all()
+        if not all_present:
+            problem = True
+            print("ALERT \t Data consistency: some trips are not associated with any route.")
+
+        all_present = service_ids.isin(self.calendar['service_id']).all()
+        if not all_present:
+            problem = True
+            print("ALERT \t Data consistency: some trips are not associated with any agency.")
+
+        all_present = trip_ids.isin(self.frequencies['trip_id']).all()
+        if not all_present:
+            problem = True
+            print("ALERT \t Data consistency: some trips are not associated with any frequencies. Could cause important issues.")
+
+        all_present = trip_ids.isin(self.stop_times['trip_id']).all()
+        if not all_present:
+            problem = True
+            print("ALERT \t Data consistency: some trips are not associated with any stop times.")  
+
+        all_present = shape_ids.isin(self.shapes['shape_id']).all()
+        if not all_present:
+            problem = True
+            print("ALERT \t Data consistency: some trips are not associated with any shape.")
+
+        return problem
+
+    def check_all(self): 
+        """ Checking the consistency of all the data
+        """
+        print("NOTE \t Checking data consistency...")
+
+        agency_status = self.check_agency()
+        shapes_status = self.check_shapes()
+        stops_status = self.check_stops()
+        frequencies_status = self.check_frequencies()
+        calendar_status = self.check_calendar()
+        routes_status = self.check_routes()
+        stop_times_status = self.check_stop_times()
+        trips_status = self.check_trips()
+
+        if (not agency_status and not shapes_status and not stops_status and not frequencies_status and not calendar_status and not routes_status and not stop_times_status and not trips_status):
+            print("NOTE \t No problem found.")
+
+        print("\t -")  
+
+    """ Quick data fixing: the practical minimum for gtfs4ev simulations to run. WARNING: Data consistency could be altered. """
+
+    def drop_useless_trips(self):
+        """ Delete the trips which are not useable because they are not assiocated to any frequency, stop_times, or shapes
+        Warning: This ensures that all the trips could be simulated by gtfs4ev but could alter data consistency
         """
         trips = self.trips
         frequencies = self.frequencies
+        stop_times = self.stop_times
+        shapes = self.shapes
 
-        # Merge the DataFrames based on 'trip_id'
-        merged_df = trips.merge(frequencies, on='trip_id')
+        # Drop trips not associated to any frequency
+        merged_df = trips.merge(frequencies, on='trip_id')        
+        cleaned_trips = trips[trips['trip_id'].isin(merged_df['trip_id'])] # Only keep the useful rows
 
-        # Only keep the rows from the original df1 that have a corresponding trip_id in df2
-        cleaned_trips = trips[trips['trip_id'].isin(merged_df['trip_id'])]
+        # Drop trips not associated to any stop_times
+        merged_df = cleaned_trips.merge(stop_times, on='trip_id')        
+        cleaned_trips_2 = cleaned_trips[cleaned_trips['trip_id'].isin(merged_df['trip_id'])] # Only keep the useful rows
 
-        self.trips = cleaned_trips
+        # Drop trips not associated to any shape
+        merged_df = cleaned_trips_2.merge(shapes, on='shape_id')        
+        cleaned_trips_3 = cleaned_trips_2[cleaned_trips_2['shape_id'].isin(merged_df['shape_id'])] # Only keep the useful rows
+
+        self.trips = cleaned_trips_3
+
+    def drop_useless_stop_times(self):
+        """ Delete the stop_times which are not useable because they are not assiocated to any stop
+        Warning: This ensures that all the stop_times could be simulated by gtfs4ev but could alter data consistency
+        """        
+        stop_times = self.stop_times
+        stops = self.stops
+
+        # Drop stop_times not associated to any frequency
+        merged_df = stop_times.merge(stops, on='stop_id')        
+        cleaned_stop_times = stop_times[stop_times['stop_id'].isin(merged_df['stop_id'])] # Only keep the useful rows
+
+        self.stop_times = cleaned_stop_times
+
+    """ Data cleaning: Thorough data cleaning aiming to ensure consistent GTFS data. """
+
+    # def clean_trips_minimium(self):
+    #     """ Deleting the trips which are not useable because they are not assiocated to any frequency, stop_times, or shapes
+    #     Warning: This ensures that all the trips could be simulated by gtfs4ev but could alter data consistency
+    #     """
+    #     trips = self.trips
+    #     frequencies = self.frequencies
+
+    #     # Merge the DataFrames based on 'trip_id'
+    #     merged_df = trips.merge(frequencies, on='trip_id')
+
+    #     # Only keep the rows from the original df1 that have a corresponding trip_id in df2
+    #     cleaned_trips = trips[trips['trip_id'].isin(merged_df['trip_id'])]
+
+    #     self.trips = cleaned_trips
 
     def clean_stops(self):
         """ Deleting the stops which are not associated to any stop_times

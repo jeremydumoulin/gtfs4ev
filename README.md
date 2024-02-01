@@ -99,7 +99,6 @@ Please also make sure to update tests as appropriate.
 ### Open tasks
 
 - [ ] Map GTFS shapes with OSM data
-- [ ] Implement more classical transit metrics
 - [ ] Upgrade data filtering
 - [ ] Potential benefits of electrification
 - [ ] Spatio-temporal visualisation of the fleet evolution
