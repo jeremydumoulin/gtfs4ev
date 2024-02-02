@@ -30,7 +30,7 @@ def main():
 	############################################
 
 	# Populate the feed with the raw data (do not comment!)
-	feed = GTFSFeed("GTFS_Freetown")
+	feed = GTFSFeed("GTFS_Nairobi")
 
 	feed.general_feed_info() # General information before data cleaning
 

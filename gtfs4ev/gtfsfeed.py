@@ -18,6 +18,7 @@ from pathlib import Path
 from shapely.geometry import LineString, Point, Polygon, box, MultiPoint
 from shapely.ops import transform, nearest_points
 import pyproj
+from pyproj import Geod
 from contextlib import redirect_stdout
 
 from gtfs4ev import constants as cst
@@ -340,18 +341,22 @@ class GTFSFeed:
 
     """ Per trip transit indicators """
 
-    def trip_length_km(self, trip_id):
+    def trip_length_km(self, trip_id, geodesic = True):
         """ Calculates the lenght in km of a trip
         """
         # Get the shape of the corresponding trip and project it into epsg:3857 crs
         gdf = pd.merge(self.trips, self.shapes[['shape_id', 'geometry']], on='shape_id', how='left')
         linestring = gdf.loc[gdf['trip_id'] == trip_id, 'geometry'].iloc[0]
 
-        web_mercator_projection = pyproj.Transformer.from_crs("EPSG:4326", "EPSG:3857", always_xy=True).transform 
+        if geodesic: 
+            geod = Geod(ellps="WGS84")
+            distance = geod.geometry_length(linestring) / 1000.0
+        else:
+            web_mercator_projection = pyproj.Transformer.from_crs("EPSG:4326", "EPSG:3857", always_xy=True).transform
+            linestring_projection = transform(web_mercator_projection, linestring)
+            distance = linestring_projection.length / 1000.0
 
-        linestring_projection = transform(web_mercator_projection, linestring)
-
-        return linestring_projection.length / 1000.0
+        return distance
 
     def trip_duration_sec(self, trip_id):
         """ Calculates the time in sec of a trip
