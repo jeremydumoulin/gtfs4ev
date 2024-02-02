@@ -786,29 +786,19 @@ class GTFSFeed:
     ############# Data filtering #############
     ##########################################
 
-    def filter_services(self, service_id):
+    def filter_services(self, service_id, clean_all = True):
         """ Drop the trips belonging to a specific service, for example to consider only weekdays
         """
 
         print(f"INFO \t Filtering out all the data from the following service: {service_id}")
 
-        df = self.trips
-
-        # Iterate over the DataFrame using iterrows, delete the associated values 
-        for index, row in df.iterrows():
-            if row['service_id'] == service_id:
-                self.routes.drop(self.routes[self.routes['route_id'] == row['route_id']].index, inplace=True) # Drop the routes
-                self.calendar.drop(self.calendar[self.calendar['service_id'] == row['service_id']].index, inplace=True) # Drop the service
-                self.frequencies.drop(self.frequencies[self.frequencies['trip_id'] == row['trip_id']].index, inplace=True) # Drop the frequencies
-                self.stop_times.drop(self.stop_times[self.stop_times['trip_id'] == row['trip_id']].index, inplace=True) # Drop the stop_times
-                self.clean_stops()
-                self.shapes.drop(self.shapes[self.shapes['shape_id'] == row['trip_id']].index, inplace=True) # Drop the shapes
-
-        # Finally, drop the trips        
+        # Drop the trips associated to a specific service       
         self.trips.drop(self.trips[self.trips['service_id'] == service_id].index, inplace=True)
 
-        with redirect_stdout(None): 
-            self.clean_all()
+        # Clean all the dataset to be consistent with the trips
+        if clean_all:
+            with redirect_stdout(None): 
+                self.clean_all()
 
     ############# Various helper methods #############
     ##################################################   

@@ -30,19 +30,22 @@ def main():
 	############################################
 
 	# Populate the feed with the raw data (do not comment!)
-	feed = GTFSFeed("GTFS_Nairobi")
+	feed = GTFSFeed("GTFS_Freetown")
 
-	# feed.general_feed_info() # General information before data cleaning
+	feed.general_feed_info() # General information before data cleaning
 
 	# Check data consistency, and perform cleaning if needed
+	feed.check_all()
 	if not feed.check_all():
 		feed.clean_all() # Data cleaning to get a consistent feed
 		feed.check_all() # Re-check data consistency
 
-	# Optionnal. If needed, filter out trips belonging to specific services
-	# feed.filter_services('service_0001') # For Freetown, service 0001 corresponds is for weekends
-	# feed.filter_services('service_0003') # For Freetown, service 0003 corresponds to a ferry
-	# feed.check_all()
+	# Optionnal. If needed, filter out trips belonging to specific services	
+	# For example, this is needed fo Freetown, as service 0001 is for weekends and 0003 for ferrys
+	feed.filter_services('service_0001', clean_all = True) 
+	feed.filter_services('service_0003', clean_all = True)
+
+	feed.check_all()
 
 	###############################################
 	# 1. Display general information about the feed
@@ -152,17 +155,17 @@ def main():
 	# 3. Extract global metrics of the GTFS Feed
 	############################################
 
-	# print(f"Simulation area: {feed.simulation_area_km2()} km2")
-	# print(feed.trip_statistics())
-	# print(feed.stop_statistics())
+	print(f"Simulation area: {feed.simulation_area_km2()} km2")
+	print(feed.trip_statistics())
+	print(feed.stop_statistics())
 
-	# # Average distance between stops along the trips
-	# dist = feed.ave_distance_between_stops_all(False)
-	# weighted_average = np.average(dist['stop_dist_km'], weights=dist['n_stops'])
+	# Average distance between stops along the trips
+	dist = feed.ave_distance_between_stops_all(False)
+	weighted_average = np.average(dist['stop_dist_km'], weights=dist['n_stops'])
 
-	# print(f"Average distance between stops: {weighted_average} km")
+	print(f"Average distance between stops: {weighted_average} km")
 
-	############################################
+	# ############################################
 	# 4. Extract topological information 
 	############################################
 
