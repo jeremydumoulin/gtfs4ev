@@ -5,11 +5,11 @@ GTFS data is used to model the mobility behaviour of a vehicle along each trip a
 
 More generally, the code provides the following features:
 
-- GTFS data check-up and filtering
-- Extraction of transport system characteristics from GTFS data: area covered by the system, route length, distance between stops, etc.
-- Assessment of topological characteristics 
-- Simulation of the transport system operation and assessment of operational outputs: number of vehicles on the road, speed, distance covered by each, etc.
-- Power and energy profile along the day, for each route or the entire vehicle fleet
+- GTFS data acheck-up and filtering
+- Assessment of general transit feed indicators based on the GTFS data: area covered by the system, average trip length, distance between stops, etc.
+- Assessment of topological characteristics of the transit system
+- Simulation of the transport system operation and associated indicators: number of vehicles on the road, speed, distance travelled, etc.
+- Power and energy profile of the electric vehicle fleet
 
 > :memo: **Note:** GTFS stands for General Transit Feed Specification. It is a standardized data format designed for scheduled transport systems, in the form of a set of .txt files describing various aspects of the system and linked together using a relational data structure. Importantly, it contains both spatial and temporal data, paving the way for mobility simulation. The main useful files and their links are shown in the following figure. Note that for the code to work, some GTFS files that are officially optionnal are required, such as shapes.txt and frequencies.txt. For more detailed information about GTFS data, please visit the [google documentation](https://developers.google.com/transit/gtfs).
 
