@@ -16,10 +16,11 @@ import geopandas as gpd
 import os
 from pathlib import Path
 from shapely.geometry import LineString, Point, Polygon, box, MultiPoint
-from shapely.ops import transform, nearest_points
+from shapely.ops import transform, nearest_points, snap
 import pyproj
 from pyproj import Geod
 from contextlib import redirect_stdout
+import osmnx
 
 from gtfs4ev import constants as cst
 from gtfs4ev import environment as env
@@ -262,10 +263,11 @@ class GTFSFeed:
         """
         file_path = open(self.datapath / "shapes.txt", "r", encoding = "utf-8")       
        
-        columns_to_keep = ['shape_id', 'shape_pt_lat', 'shape_pt_lon']                      
+        columns_to_keep = ['shape_id', 'shape_pt_lat', 'shape_pt_lon']
+        column_types = {'shape_id': str, 'shape_pt_lat': float, 'shape_pt_lon': float}                         
 
         try:          
-            df = pd.read_csv(file_path, usecols=columns_to_keep)
+            df = pd.read_csv(file_path, usecols=columns_to_keep, dtype=column_types)
             # Group by shape_id and create LineString for each group
             grouped = df.groupby('shape_id').apply(lambda x: LineString(zip(x['shape_pt_lon'], x['shape_pt_lat'])))
             # Create a GeoDataFrame from the grouped data
@@ -285,10 +287,11 @@ class GTFSFeed:
         """
         file_path = open(self.datapath / "stops.txt", "r", encoding = "utf-8")       
     
-        columns_to_keep = ['stop_id', 'stop_name', 'stop_lat', 'stop_lon']                     
+        columns_to_keep = ['stop_id', 'stop_name', 'stop_lat', 'stop_lon']
+        column_types = {'stop_id': str, 'stop_name': str, 'stop_lat': float, 'stop_lon': float}                      
 
         try:          
-            df = pd.read_csv(file_path, usecols=columns_to_keep)
+            df = pd.read_csv(file_path, usecols=columns_to_keep, dtype=column_types)
             # Create Point geometries from latitude and longitude columns
             geometry = [Point(lon, lat) for lon, lat in zip(df['stop_lon'], df['stop_lat'])]
             # Drop latitude and longitude columns
@@ -786,7 +789,23 @@ class GTFSFeed:
                 self.clean_stop_times()
                 self.clean_trips()
 
-        print("INFO \t Clean all: data has been cleaned. A consistency check is recommended.")        
+        print("INFO \t Clean all: data has been cleaned. A consistency check is recommended.")
+
+    """ Snapping the shapefile to the local OSM road network """ 
+    def snap_shapes_to_osm(self):
+        print("INFO \t Snapping the GTFS trip shapes to OSM road network...")
+        bbox = self.bounding_box()
+        print("INFO \t Getting OSM data according to GTFS data boundaries")
+        graph = osmnx.graph_from_bbox(bbox = (bbox.bounds[3], bbox.bounds[1], bbox.bounds[2], bbox.bounds[0]), network_type='drive')
+
+        # Get the nodes from the road network graph
+        nodes = osmnx.graph_to_gdfs(graph, edges=False)
+
+        # Snap each LineString geometry to the nearest node in the road network
+        for idx, row in self.shapes.iterrows():
+            print(f"INFO \t Snapping in progress: {idx}/{len(self.shapes)}", end="\r")
+            snapped_line = snap(row.geometry, nodes.unary_union, tolerance=0.0001)
+            self.shapes.loc[idx, 'geometry'] = snapped_line      
 
     ############# Data filtering #############
     ##########################################

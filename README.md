@@ -98,7 +98,6 @@ Please also make sure to update tests as appropriate.
 
 ### Open tasks
 
-- [ ] Map GTFS shapes with OSM data
 - [ ] Potential benefits of electrification
 - [ ] Spatio-temporal visualisation of the fleet evolution
 - [ ] Improve closest point mapping (interpolate between points)
@@ -116,6 +115,7 @@ Please also make sure to update tests as appropriate.
 - [x] Create a topology class
 - [x] Get the code ready for collaboration: upload to GitLab and better comment classes
 - [x] Upgrade data filtering
+- [x] Map GTFS shapes with OSM data
 
 ## License
 

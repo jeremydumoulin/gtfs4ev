@@ -30,22 +30,30 @@ def main():
 	############################################
 
 	# Populate the feed with the raw data (do not comment!)
-	feed = GTFSFeed("GTFS_Nairobi")
+	feed = GTFSFeed("GTFS_Accra")
 
 	feed.general_feed_info() # General information before data cleaning
 
 	# Check data consistency, and perform cleaning if needed
 	feed.check_all()
-	if not feed.check_all():
-		feed.clean_all() # Data cleaning to get a consistent feed
-		feed.check_all() # Re-check data consistency
+	# if not feed.check_all():
+	# 	feed.clean_all() # Data cleaning to get a consistent feed
+	# 	feed.check_all() # Re-check data consistency
+
+	# If consistency problems, just drop the trips and stops that cannot be used
+	# For example, Accra
+	feed.drop_useless_trips()
+	feed.drop_useless_stop_times()
+
+	# Optionnal: snap trip shapes to OSM road network
+	# feed.snap_shapes_to_osm() # Takes a lot of time
 
 	# Optionnal. If needed, filter out trips belonging to specific services	
 	# For example, this is needed fo Freetown, as service 0001 is for weekends and 0003 for ferrys
-	feed.filter_services('service_0001', clean_all = True) 
-	feed.filter_services('service_0003', clean_all = True)
+	# feed.filter_services('service_0001', clean_all = True) 
+	# feed.filter_services('service_0003', clean_all = True)
 
-	feed.check_all()
+	# feed.check_all()
 
 	###############################################
 	# 1. Display general information about the feed
@@ -128,9 +136,10 @@ def main():
 
 	# """ Visualize all trips """
 	# Warning: could take a great amount of time
+
 	# print(feed.trips)
 
-	# mymap = folium.Map(location=(feed.get_shape('trip_0001').centroid.y, feed.get_shape('trip_0001').centroid.x), zoom_start=12, control_scale = True)
+	# mymap = folium.Map(location=(feed.get_shape('1107D110').centroid.y, feed.get_shape('1107D110').centroid.x), zoom_start=12, control_scale = True)
 
 	# for index, row in feed.trips.iterrows():
 	#     trip_id = row['trip_id']
@@ -148,7 +157,7 @@ def main():
 	#     folium.PolyLine(locations=[[coord[1], coord[0]] for coord in shape.coords], color='blue').add_to(mymap)
 
 	#     # Save the map to an HTML file
-	#     mymap.save(f"{env.OUTPUT_PATH}/all_trips_Freetown.html")	
+	#     mymap.save(f"{env.OUTPUT_PATH}/all_trips_Nairobi.html")	
 	#     print(trip_id)
 
 	############################################
@@ -306,6 +315,7 @@ def main():
 
 	# # plt.savefig('power_vs_time.png')
 	# plt.show()
+
 		
 
 if __name__ == "__main__":
