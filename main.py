@@ -30,20 +30,15 @@ def main():
 	############################################
 
 	# Populate the feed with the raw data (do not comment!)
-	feed = GTFSFeed("GTFS_Accra")
+	feed = GTFSFeed("GTFS_AddisAbaba")
 
 	feed.general_feed_info() # General information before data cleaning
 
 	# Check data consistency, and perform cleaning if needed
 	feed.check_all()
-	# if not feed.check_all():
-	# 	feed.clean_all() # Data cleaning to get a consistent feed
-	# 	feed.check_all() # Re-check data consistency
-
-	# If consistency problems, just drop the trips and stops that cannot be used
-	# For example, Accra
-	feed.drop_useless_trips()
-	feed.drop_useless_stop_times()
+	if not feed.check_all():
+		feed.clean_all() # Data cleaning to get a consistent feed
+		feed.check_all() # Re-check data consistency
 
 	# Optionnal: snap trip shapes to OSM road network
 	# feed.snap_shapes_to_osm() # Takes a lot of time
@@ -52,6 +47,13 @@ def main():
 	# For example, this is needed fo Freetown, as service 0001 is for weekends and 0003 for ferrys
 	# feed.filter_services('service_0001', clean_all = True) 
 	# feed.filter_services('service_0003', clean_all = True)
+
+	# For Harare, drop the weekends
+	# feed.filter_services('service_0001', clean_all = True)
+
+	# For Cairo, drop the public transport
+	# feed.filter_agency('CTA', clean_all = True)
+
 
 	# feed.check_all()
 

@@ -811,7 +811,7 @@ class GTFSFeed:
     ##########################################
 
     def filter_services(self, service_id, clean_all = True):
-        """ Drop the trips belonging to a specific service, for example to consider only weekdays
+        """ Drop the data belonging to a specific service, for example to consider only weekdays
         """
 
         print(f"INFO \t Filtering out all the data from the following service: {service_id}")
@@ -820,6 +820,20 @@ class GTFSFeed:
         self.trips.drop(self.trips[self.trips['service_id'] == service_id].index, inplace=True)
 
         # Clean all the dataset to be consistent with the trips
+        if clean_all:
+            with redirect_stdout(None): 
+                self.clean_all()
+
+    def filter_agency(self, agency_id, clean_all = True):
+        """ Drop the data belonging to a specific agency, for example to consider only paratransit
+        """
+
+        print(f"INFO \t Filtering out all the data from the following agency: {agency_id}")
+
+        # Drop the routes associated to a specific agency       
+        self.routes.drop(self.routes[self.routes['agency_id'] == agency_id].index, inplace=True)
+
+        # Clean all the dataset to be consistent with the routes
         if clean_all:
             with redirect_stdout(None): 
                 self.clean_all()
