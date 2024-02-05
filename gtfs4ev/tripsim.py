@@ -403,8 +403,6 @@ class TripSim:
             if transient_state:
                 decay_time = df['n_vehicles'].iloc[-1]*df['headway_secs'].iloc[-1]
 
-            print(decay_time)
-
             # If the current datime has no running vehicles, set the power and the additionnal energy to 0
             # Else assess the power and energy of the vehicle fleet
             mask = (df['start_time'] <= current_datetime) & (current_datetime <= df['end_time']) 
@@ -431,9 +429,6 @@ class TripSim:
                     n_vehicles = max(round(t_local / headway_sec), 1) 
                 else:
                     n_vehicles = max(round(df.loc[index, 'n_vehicles']), 1)
-
-                print(current_datetime)
-                print(max_datetime)
      
                 # Loop over the vehicles
                 # For each vehicle, add the power for the local time delayed by the headway time 
@@ -446,8 +441,7 @@ class TripSim:
                     # If we are in the datetime of the vehicles of the last time slot, give a dummy index to ensure the code works  
                     if current_datetime > max_datetime:
                         index = index + 1
-                        t_local = (current_datetime - df.loc[index-1, 'end_time']).total_seconds()
-                        print("Hello")                                             
+                        t_local = (current_datetime - df.loc[index-1, 'end_time']).total_seconds()                                           
 
                     headway_sec = df.loc[index-1, 'headway_secs']                    
                     n_vehicles_previous = int(round(df.loc[index-1, 'n_vehicles']))            
