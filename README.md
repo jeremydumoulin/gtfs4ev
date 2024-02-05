@@ -98,8 +98,8 @@ Please also make sure to update tests as appropriate.
 
 ### Open tasks
 
+- [ ] Import: double check the profile estimation, seems there is a small error at the beginning of each time slot (small transient regime)
 - [ ] Potential benefits of electrification
-- [ ] Spatio-temporal visualisation of the fleet evolution
 - [ ] Speed-up profile calculation
 - [ ] Improve closest point mapping (interpolate between points)
 
@@ -117,6 +117,7 @@ Please also make sure to update tests as appropriate.
 - [x] Get the code ready for collaboration: upload to GitLab and better comment classes
 - [x] Upgrade data filtering
 - [x] Map GTFS shapes with OSM data
+- [x] Spatio-temporal visualisation of the fleet evolution: added in the main for the time being
 
 ## License
 

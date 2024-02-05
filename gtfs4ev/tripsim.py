@@ -391,6 +391,8 @@ class TripSim:
 
         time_values = np.arange(0, duration, time_step)
 
+        print(f"TRIP: {self.trip_id}")
+
         for t in time_values:
             # Get the current datetime and reset the power            
             current_datetime = start_datetime + timedelta(seconds=t)
@@ -401,11 +403,13 @@ class TripSim:
             if transient_state:
                 decay_time = df['n_vehicles'].iloc[-1]*df['headway_secs'].iloc[-1]
 
+            print(decay_time)
+
             # If the current datime has no running vehicles, set the power and the additionnal energy to 0
             # Else assess the power and energy of the vehicle fleet
             mask = (df['start_time'] <= current_datetime) & (current_datetime <= df['end_time']) 
-            if (current_datetime < min_datetime) or (current_datetime > (max_datetime + timedelta(seconds=decay_time)) ) or not mask.any():
-                #print("Specified datime is not associated to any frequency")
+
+            if (current_datetime < min_datetime) or (current_datetime > (max_datetime + timedelta(seconds=decay_time)) ):
                 power = .0
                 energy += .0
             else:                
@@ -427,6 +431,9 @@ class TripSim:
                     n_vehicles = max(round(t_local / headway_sec), 1) 
                 else:
                     n_vehicles = max(round(df.loc[index, 'n_vehicles']), 1)
+
+                print(current_datetime)
+                print(max_datetime)
      
                 # Loop over the vehicles
                 # For each vehicle, add the power for the local time delayed by the headway time 
@@ -436,16 +443,18 @@ class TripSim:
 
                 # Add also the decay of the fleet of the previous time slot if the transient state neeeds to be calculated
                 if transient_state and (index > 0 or current_datetime > max_datetime):
-                    # If we are in the datetime of the vehicles of the last time slot, give a dummy index to ensure the code works
+                    # If we are in the datetime of the vehicles of the last time slot, give a dummy index to ensure the code works  
                     if current_datetime > max_datetime:
                         index = index + 1
-                        t_local = (current_datetime - df.loc[index-1, 'end_time']).total_seconds()                                             
+                        t_local = (current_datetime - df.loc[index-1, 'end_time']).total_seconds()
+                        print("Hello")                                             
 
                     headway_sec = df.loc[index-1, 'headway_secs']                    
-                    n_vehicles_previous = int(round(df.loc[index-1, 'n_vehicles']))                    
+                    n_vehicles_previous = int(round(df.loc[index-1, 'n_vehicles']))            
 
                     if (t_local - self.trip_duration_sec) < 0 :
-                        n_vehicles_previous = n_vehicles_previous- round(t_local / headway_sec)
+                        n_vehicles_previous = n_vehicles_previous - round(t_local / headway_sec)
+                        
                     else:
                         n_vehicles_previous = 0
 
