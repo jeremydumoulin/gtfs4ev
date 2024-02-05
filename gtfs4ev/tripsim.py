@@ -51,7 +51,7 @@ class TripSim:
     """ Constructor """
 
     def __init__(self, feed, trip_id, ev_consumption):
-        print(f"Initializing a new vehicle with trip_id = {trip_id}")
+        print(f"INFO \t Initializing a new vehicle with trip_id = {trip_id}", end="\r")
 
         self.set_ev_consumption(ev_consumption)
 
@@ -374,6 +374,7 @@ class TripSim:
 
         energy = .0
         power = .0
+        n_vehicles = .0
         n_vehicles_previous = 1
 
         # 3. Get the operation estimates and other usefull values
@@ -456,7 +457,8 @@ class TripSim:
             output_data.append({
                 't': t,
                 'power_kW': power,
-                'energy_kWh': energy
+                'energy_kWh': energy,
+                'n_vehicles': n_vehicles
             })  
 
         output_df = pd.DataFrame(output_data) 

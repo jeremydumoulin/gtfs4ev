@@ -100,6 +100,7 @@ Please also make sure to update tests as appropriate.
 
 - [ ] Potential benefits of electrification
 - [ ] Spatio-temporal visualisation of the fleet evolution
+- [ ] Speed-up profile calculation
 - [ ] Improve closest point mapping (interpolate between points)
 
 ### Backlog

@@ -9,7 +9,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import folium
-from folium.plugins import MarkerCluster, MeasureControl
+from folium.plugins import MarkerCluster, MeasureControl, HeatMap
+from scipy.interpolate import interp1d
 
 from gtfs4ev.gtfsfeed import GTFSFeed
 from gtfs4ev.tripsim import TripSim
@@ -30,7 +31,7 @@ def main():
 	############################################
 
 	# Populate the feed with the raw data (do not comment!)
-	feed = GTFSFeed("GTFS_AddisAbaba")
+	feed = GTFSFeed("GTFS_Nairobi")
 
 	feed.general_feed_info() # General information before data cleaning
 
@@ -53,7 +54,6 @@ def main():
 
 	# For Cairo, drop the public transport
 	# feed.filter_agency('CTA', clean_all = True)
-
 
 	# feed.check_all()
 
@@ -166,15 +166,15 @@ def main():
 	# 3. Extract global metrics of the GTFS Feed
 	############################################
 
-	print(f"Simulation area: {feed.simulation_area_km2()} km2")
-	print(feed.trip_statistics())
-	print(feed.stop_statistics())
+	# print(f"Simulation area: {feed.simulation_area_km2()} km2")
+	# print(feed.trip_statistics())
+	# print(feed.stop_statistics())
 
-	# Average distance between stops along the trips
-	dist = feed.ave_distance_between_stops_all(False)
-	weighted_average = np.average(dist['stop_dist_km'], weights=dist['n_stops'])
+	# # Average distance between stops along the trips
+	# dist = feed.ave_distance_between_stops_all(False)
+	# weighted_average = np.average(dist['stop_dist_km'], weights=dist['n_stops'])
 
-	print(f"Average distance between stops: {weighted_average} km")
+	# print(f"Average distance between stops: {weighted_average} km")
 
 	# ############################################
 	# 4. Extract topological information 
@@ -296,29 +296,75 @@ def main():
 	# 9. Profile of a the whole traffic network
 	###########################################
 
-	# trips = list(feed.trips['trip_id'])
+	trips = list(feed.trips['trip_id'])
 
 	# print(trips)
-	# ev_con = [0.4] * len(trips)
+	ev_con = [0.4] * len(trips)
 
-	# traffic_sim = TrafficSim(feed, trips, ev_con)
+	traffic_sim = TrafficSim(feed, trips, ev_con)
 
-	# print(traffic_sim.operation_estimates().sum())
-	# df = traffic_sim.profile(start_time = "00:00:00", stop_time = "23:59:59", time_step = 20, transient_state = False)
+	print(traffic_sim.operation_estimates().sum())
+	df = traffic_sim.profile(start_time = "00:00:00", stop_time = "23:59:59", time_step = 30, transient_state = False)
 
-	# df.to_csv("output/Freetown_profile_20s_0h-23h59m59s.csv", index=False)
+	df.to_csv("output/Nairobi_profile_30s_0h-23h59m59s.csv", index=False)
 
-	# # Plot the function
-	# plt.plot(df['t'], df['power_kW'], marker='o')
-	# plt.xlabel('Time (seconds)')
-	# plt.ylabel('Power')
-	# plt.title('Power vs. Time')
-	# plt.grid(True)
+	# Plot the function
+	plt.plot(df['t'], df['power_kW'], marker='o')
+	plt.xlabel('Time (seconds)')
+	plt.ylabel('Power')
+	plt.title('Power vs. Time')
+	plt.grid(True)
 
-	# # plt.savefig('power_vs_time.png')
-	# plt.show()
+	# plt.savefig('power_vs_time.png')
+	plt.show()
 
-		
+	##########################################################################################
+	# 10. Visualize the activity of the fleet (aver. number of vehicles) in a given time frame
+	##########################################################################################
+
+	# Warning: could take a great amount of time
+
+	# start_time = "12:00:00"
+	# stop_time = "12:20:00"
+
+	# print(feed.trips)
+
+	# # Create a Folium Map centered at a specific location
+	# mymap = folium.Map(location=(feed.get_shape('1107D110').centroid.y, feed.get_shape('1107D110').centroid.x), zoom_start=12, control_scale=True)
+
+	# # Initialize a list to store the trip coordinates and values
+	# trip_data = []
+
+	# for index, row in feed.trips.iterrows():
+	#     trip_id = row['trip_id']
+
+	#     # Get the shape of the trip_id
+	#     shape = feed.get_shape(trip_id) 
+
+	#     # Extract coordinates from the LineString
+	#     coordinates = list(shape.coords)
+
+	#     # Extract value associated with the trip
+	#     trip_sim = TripSim(feed = feed, trip_id=trip_id, ev_consumption = 0.4)
+	#     trip_sim.simulate_vehicle_fleet(start_time, stop_time, 20, transient_state = False)
+
+	#     # operation_estimates = trip_sim.operation_estimates_aggregated()
+	#     # value = operation_estimates['ave_nbr_vehicles']
+
+	#     value = trip_sim.trip_profile['n_vehicles'].mean()
+	#     print(value)
+
+	#     # Append trip coordinates and value to the trip_data list
+	#     trip_data.extend([[coord[1], coord[0], value] for coord in shape.coords])
+
+	# # Create a HeatMap layer with the trip data
+	# heatmap = HeatMap(trip_data, radius=10)
+
+	# # Add the HeatMap layer to the map
+	# heatmap.add_to(mymap)
+
+	# # Save the map to an HTML file
+	# mymap.save(f"{env.OUTPUT_PATH}/activity_Nairobi_noon.html")
 
 if __name__ == "__main__":
 	main()
