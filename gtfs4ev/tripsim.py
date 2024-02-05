@@ -73,7 +73,7 @@ class TripSim:
         try:       
             ev_consumption = float(ev_consumption)
         except Exception as e:
-            print(f"\t Error: Impossible to convert the specified ev consumption into a float. - {e}")
+            print(f"ERROR \t Impossible to convert the specified ev consumption into a float. - {e}")
         else:            
             self.ev_consumption = ev_consumption
 
@@ -84,9 +84,9 @@ class TripSim:
         try:       
             # Check if the value is an instance of the expected type
             if not isinstance(feed, GTFSFeed):
-                raise TypeError(f"Expected an instance of YourCustomType, but got {type(value)}")
+                raise TypeError(f"ERROR \t Expected an instance of GTFSFeed, but got {type(value)}")
         except TypeError:
-            print(f"\t Error: Impossible to initiate the traffic feed")
+            print(f"ERROR \t Impossible to initiate the traffic feed")
         else:            
             self.feed = feed
 
@@ -97,7 +97,7 @@ class TripSim:
             # Check if the value exists
             row_trip_id = self.feed.trips[self.feed.trips['trip_id'] == trip_id].iloc[0]
         except Exception:
-            print(f"\t Error: Impossible to find the trip_id in the feed.")
+            print(f"ERROR \t Impossible to find the trip_id in the feed.")
         else:            
             self.trip_id = trip_id
 
@@ -365,7 +365,7 @@ class TripSim:
             # Calculate duration
             duration = (stop_datetime - start_datetime).total_seconds()
         else:
-            print("Error: Stop time must be greater than the start_time")
+            print("ERROR \t Stop time must be greater than the start_time")
             return None
 
         # 2. Initialize the output data variables      

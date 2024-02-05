@@ -51,9 +51,9 @@ class TrafficSim:
         try:       
             # Check if the value is an instance of the expected type
             if not isinstance(feed, GTFSFeed):
-                raise TypeError(f"Expected an instance of YourCustomType, but got {type(value)}")
+                raise TypeError(f"ERROR \t Expected an instance of GTFSFeed, but got {type(value)}")
         except TypeError:
-            print(f"\t Error: Impossible to initiate the traffic feed")
+            print(f"ERROR \t: Impossible to initiate the traffic feed")
         else:            
             self.feed = feed
 
@@ -64,7 +64,7 @@ class TrafficSim:
             if not len(trip_ids) == len(ev_consumptions):
                 raise Exception()
         except Exception:
-            print(f"Error: The length of the ev_consumptions must be equal to the length of trip_ids")
+            print(f"ERROR \t The length of the ev_consumptions must be equal to the length of trip_ids")
         else:            
             for i in range(0, len(trip_ids)):
                 trip_sim = TripSim(feed = self.feed, trip_id = trip_ids[i], ev_consumption = ev_consumptions[i])
@@ -89,19 +89,21 @@ class TrafficSim:
 
         trip = self.trip_simulations
 
-        print("Calculating the power and energy profile for the whole trips:")
+        print("INFO \t Calculating the power and energy profile for the whole trips:")
 
         trip[0].simulate_vehicle_fleet(start_time, stop_time, time_step, transient_state)
         df['t'] = trip[0].trip_profile['t']
+        df['n_vehicles'] = trip[0].trip_profile['n_vehicles'] 
         df['power_kW'] = trip[0].trip_profile['power_kW'] 
         df['energy_kWh'] = trip[0].trip_profile['energy_kWh']   
 
         # Iterate over rows of df1 and append rows to df2
         i = 1
         for trip in self.trip_simulations[1:]:
-            print(f"\t Completion: {i / len(self.trip_simulations) * 100}%")
+            print(f"INFO: \t Completion: {i / len(self.trip_simulations) * 100}%", end="\r")
             trip.simulate_vehicle_fleet(start_time, stop_time, time_step, transient_state)
 
+            df['n_vehicles'] += trip.trip_profile['n_vehicles']
             df['power_kW'] += trip.trip_profile['power_kW']
             df['energy_kWh'] += trip.trip_profile['energy_kWh']
             i = i+1           

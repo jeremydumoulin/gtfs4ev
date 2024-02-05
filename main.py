@@ -304,9 +304,9 @@ def main():
 	traffic_sim = TrafficSim(feed, trips, ev_con)
 
 	print(traffic_sim.operation_estimates().sum())
-	df = traffic_sim.profile(start_time = "00:00:00", stop_time = "23:59:59", time_step = 30, transient_state = False)
+	df = traffic_sim.profile(start_time = "00:00:00", stop_time = "23:59:59", time_step = 20, transient_state = False)
 
-	df.to_csv("output/Nairobi_profile_30s_0h-23h59m59s.csv", index=False)
+	df.to_csv("output/Nairobi_profile_20s_0h-23h59m59s.csv", index=False)
 
 	# Plot the function
 	plt.plot(df['t'], df['power_kW'], marker='o')
