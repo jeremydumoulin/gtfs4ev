@@ -150,8 +150,10 @@ MANIFEST
 *.spec
 
 # input output log 
-/output/*
+output/*
+!output/.gitkeep 
 /input/*
+!input/.gitkeep 
 
 # Installer logs
 pip-log.txt
