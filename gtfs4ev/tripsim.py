@@ -17,10 +17,7 @@ from shapely.ops import transform
 import pyproj
 from datetime import datetime, timedelta
 
-from gtfs4ev import constants as cst
-from gtfs4ev import environment as env
 from gtfs4ev import helpers as hlp
-
 from gtfs4ev.gtfsfeed import GTFSFeed
 
 class TripSim:  

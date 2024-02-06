@@ -23,12 +23,36 @@ contact = jeremy.dumoulin@epfl.ch
 langage = python 3  
 repository = https://gitlab.epfl.ch/PVLAB/SYSTEM/openmod4africa/gtfs4ev 
 
+## Project structure
+```bash
+│   .gitattributes  
+│   .gitignore  
+│   .env  
+│   environment.yml  
+│   LICENSE.md  
+│   main.py  
+│   README.md  
+│     
+├───doc  
+│       gtfs_data_structure.png  
+│         
+├───gtfs4ev  
+│   │   gtfsfeed.py  
+│   │   helpers.py  
+│   │   topology.py  
+│   │   trafficsim.py  
+│   │   tripsim.py  
+│   │   __init__.py  
+│
+├───input  
+└───output
+```  
 
 ## Installation
 
 1. Get the latest version of the code on GitLab on your local machine. If you are not familiar with git, you can also manually download the folder from GitLab and then run the code. However, you won't be able to have access to contribute to the project.
 ```bash
-$ git clone https://gitlab.inl90.ec-lyon.fr/jdumoulin/sqbalance.git
+$ git clone https://gitlab.epfl.ch/PVLAB/SYSTEM/openmod4africa/gtfs4ev.git
 ```
 
 2. Create a conda environment with the required dependencies. 
@@ -55,20 +79,14 @@ The **input data** should be placed in the dedicated `/input` folder. The input 
 
 After running the simulation, some **output data** will be automatically stored in the dedicated `/output` folder. We also recommend using this folder to store any other simulation results.
 
-> :memo: **Note:** If you would like to use other folders to store input and output data, you can set your own path by changing the values of the OUTPUT_PATH and INPUT_PATH variables defined in the `gtfs4ev/environment.yml` file. You can do it either by changing directly the values in the file or at the beginning of the python script used to run the simulation (see next section).
-```python
-from gtfs4ev import environment as env
-
-env.OUTPUT_PATH = "my_output_path"
-env.INPUT_PATH = "my_input_path"
-``` 
+> :memo: **Note:** If you would like to use other folders to store input and output data, you can set your own path by changing the values of the OUTPUT_PATH and INPUT_PATH variables defined in the `.env` file. This file also contains some other usefull variables, such a physical constants. 
 
 ### Running simulations
 
 To run the code, you need to import the various modules you want to use from the `gtfs4ev/` package into a new python script. For the time being, you will find two types of modules in the package:
 
 * The core **classes** of gtfs4ev: GTFSFeed, TripSim, TrafficSim
-* Some more generic **helpers**: environment.py, helpers.py, constants.py, topology.py 
+* Some more generic **helpers**: helpers.py, topology.py 
 
 Both can be imported as modules to be used in the python script.
 ```python
@@ -77,9 +95,7 @@ from gtfs4ev.gtfsfeed import GTFSFeed
 from gtfs4ev.tripsim import TripSim
 from gtfs4ev.trafficsim import TrafficSim
 
-# Helpers
-from gtfs4ev import constants as cst
-from gtfs4ev import environment as env
+# Optionnally, helpers
 from gtfs4ev import helpers as hlp
 ```
 
@@ -120,6 +136,7 @@ Please also make sure to update tests as appropriate.
 - [x] Upgrade data filtering
 - [x] Map GTFS shapes with OSM data
 - [x] Spatio-temporal visualisation of the fleet evolution: added in the main for the time being
+- [x] Enhance code following Paul comments
 
 ## License
 

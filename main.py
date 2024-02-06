@@ -8,17 +8,16 @@ import pyproj
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+import os
 import folium
 from folium.plugins import MarkerCluster, MeasureControl, HeatMap
 from scipy.interpolate import interp1d
+from dotenv import load_dotenv
 
 from gtfs4ev.gtfsfeed import GTFSFeed
 from gtfs4ev.tripsim import TripSim
 from gtfs4ev.trafficsim import TrafficSim
 from gtfs4ev.topology import Topology
-
-from gtfs4ev import constants as cst
-from gtfs4ev import environment as env
 from gtfs4ev import helpers as hlp
 
 """
@@ -30,10 +29,15 @@ def main():
 	# GTFS Feed initialization and preprocessing
 	############################################
 
-	# Populate the feed with the raw data (do not comment!)
-	feed = GTFSFeed("GTFS_Harare")
+	# Load environment variables (do not comment!)
+	load_dotenv() # take environment variables from .env
+	INPUT_PATH = str(os.getenv("INPUT_PATH"))
+	OUTPUT_PATH = str(os.getenv("OUTPUT_PATH"))
 
-	feed.general_feed_info() # General information before data cleaning
+	# Populate the feed with the raw data (do not comment!)
+	feed = GTFSFeed("GTFS_Nairobi")
+
+	# feed.general_feed_info() # General information before data cleaning
 
 	# Check data consistency, and perform cleaning if needed
 	feed.check_all()
@@ -44,15 +48,16 @@ def main():
 	# Optionnal: snap trip shapes to OSM road network
 	# feed.snap_shapes_to_osm() # Takes a lot of time
 
-	# Optionnal. If needed, filter out trips belonging to specific services	
-	# For example, this is needed fo Freetown, as service 0001 is for weekends and 0003 for ferrys
+	# Optionnal. If needed, filter out trips belonging to specific services
+
+	# -> For Freetown, service 0001 is for weekends and 0003 for ferrys
 	# feed.filter_services('service_0001', clean_all = True) 
 	# feed.filter_services('service_0003', clean_all = True)
 
-	# For Harare, drop the weekends
+	# -> For Harare, drop the weekends
 	# feed.filter_services('service_0001', clean_all = True)
 
-	# For Cairo, drop the public transport
+	# -> For Cairo, drop the public transport
 	# feed.filter_agency('CTA', clean_all = True)
 
 	# feed.check_all()
@@ -67,7 +72,7 @@ def main():
 	# 2. Visualize the paratransit network
 	######################################
 
-	# """ Visualize a trip using the trip_id """
+	""" Visualize a trip using the trip_id """
 	# trip_id = '1107D110'
 
 	# # Get the shape of the trip_id
@@ -84,9 +89,9 @@ def main():
 	# folium.PolyLine(locations=[[coord[1], coord[0]] for coord in shape.coords], color='blue').add_to(mymap)
 
 	# # Save the map to an HTML file
-	# mymap.save(f"{env.OUTPUT_PATH}/trip_{trip_id}.html")	
+	# mymap.save(f"{OUTPUT_PATH}/trip_{trip_id}.html")	
 
-	# """ Add the stops to the path """
+	# # """ Add the stops to the path """
 	# # Get the stop locations
 	# stop_coordinates = feed.get_stop_locations(trip_id) 
 
@@ -95,7 +100,7 @@ def main():
 	#     folium.Marker([point.y, point.x], icon=folium.Icon(color='red')).add_to(mymap)
 
 	# # Save the map to an HTML file
-	# mymap.save(f"{env.OUTPUT_PATH}/trip_{trip_id}_withstops.html")
+	# mymap.save(f"{OUTPUT_PATH}/trip_{trip_id}_withstops.html")
 
 	# """ Map the stop frequencies """
 	# df = feed.stop_frequencies()
@@ -134,7 +139,7 @@ def main():
 	# mymap.add_child(MeasureControl(primary_length_unit='kilometers'))
 
 	# # Save the map to an HTML file
-	# mymap.save(f"{env.OUTPUT_PATH}/stop_frequencies.html")
+	# mymap.save(f"{OUTPUT_PATH}/stop_frequencies.html")
 
 	# """ Visualize all trips """
 	# Warning: could take a great amount of time
@@ -159,7 +164,7 @@ def main():
 	#     folium.PolyLine(locations=[[coord[1], coord[0]] for coord in shape.coords], color='blue').add_to(mymap)
 
 	#     # Save the map to an HTML file
-	#     mymap.save(f"{env.OUTPUT_PATH}/all_trips_Nairobi.html")	
+	#     mymap.save(f"{OUTPUT_PATH}/all_trips_Nairobi.html")	
 	#     print(trip_id)
 
 	############################################
@@ -296,27 +301,27 @@ def main():
 	# 9. Profile of a the whole traffic network
 	###########################################
 
-	trips = list(feed.trips['trip_id'])
+	# trips = list(feed.trips['trip_id'])
 
-	# print(trips)
-	ev_con = [0.4] * len(trips)
+	# # print(trips)
+	# ev_con = [0.4] * len(trips)
 
-	traffic_sim = TrafficSim(feed, trips, ev_con)
+	# traffic_sim = TrafficSim(feed, trips, ev_con)
 
-	print(traffic_sim.operation_estimates().sum())
-	df = traffic_sim.profile(start_time = "00:00:00", stop_time = "23:59:59", time_step = 50, transient_state = True)
+	# print(traffic_sim.operation_estimates().sum())
+	# df = traffic_sim.profile(start_time = "00:00:00", stop_time = "23:59:59", time_step = 50, transient_state = True)
 
-	df.to_csv("output/Harare_profile_50s_0h-23h59m59s_transient.csv", index = False)
+	# df.to_csv("output/Harare_profile_50s_0h-23h59m59s_transient.csv", index = False)
 
-	# Plot the function
-	plt.plot(df['t'], df['power_kW'], marker='o')
-	plt.xlabel('Time (seconds)')
-	plt.ylabel('Power')
-	plt.title('Power vs. Time')
-	plt.grid(True)
+	# # Plot the function
+	# plt.plot(df['t'], df['power_kW'], marker='o')
+	# plt.xlabel('Time (seconds)')
+	# plt.ylabel('Power')
+	# plt.title('Power vs. Time')
+	# plt.grid(True)
 
-	# plt.savefig('power_vs_time.png')
-	plt.show()
+	# # plt.savefig('power_vs_time.png')
+	# plt.show()
 
 	##########################################################################################
 	# 10. Visualize the activity of the fleet (aver. number of vehicles) in a given time frame
@@ -364,7 +369,7 @@ def main():
 	# heatmap.add_to(mymap)
 
 	# # Save the map to an HTML file
-	# mymap.save(f"{env.OUTPUT_PATH}/activity_Nairobi_noon.html")
+	# mymap.save(f"{OUTPUT_PATH}/activity_Nairobi_noon.html")
 
 if __name__ == "__main__":
 	main()

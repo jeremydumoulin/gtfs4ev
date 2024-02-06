@@ -16,9 +16,6 @@ from shapely.ops import transform, nearest_points
 import pyproj
 
 from gtfs4ev.gtfsfeed import GTFSFeed
-
-from gtfs4ev import constants as cst
-from gtfs4ev import environment as env
 from gtfs4ev import helpers as hlp
 
 class Topology:  

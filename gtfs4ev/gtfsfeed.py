@@ -21,9 +21,8 @@ import pyproj
 from pyproj import Geod
 from contextlib import redirect_stdout
 import osmnx
+from dotenv import load_dotenv
 
-from gtfs4ev import constants as cst
-from gtfs4ev import environment as env
 from gtfs4ev import helpers as hlp
 
 class GTFSFeed:
@@ -83,7 +82,10 @@ class GTFSFeed:
         Checks if the GTFS datafolder exists and contains all the required files
         """
         try:
-            abs_path = env.INPUT_PATH / str(gtfs_foldername)
+            load_dotenv() # take environment variables from .env
+
+            abs_path = Path(str(os.getenv("INPUT_PATH"))) / str(gtfs_foldername) # Get the input path
+
             # Check if required files are present : 1) required files from the GTFS specification 2) required files for gtfs4ev
             files_to_check = ['agency.txt', 'routes.txt', 'stop_times.txt', 'calendar.txt', 'frequencies.txt', 'shapes.txt', 'stops.txt', 'trips.txt']          
 
