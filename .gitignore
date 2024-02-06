@@ -150,9 +150,8 @@ MANIFEST
 *.spec
 
 # input output log 
-output/
-input/
-log/
+/output/*
+/input/*
 
 # Installer logs
 pip-log.txt

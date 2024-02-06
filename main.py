@@ -31,7 +31,7 @@ def main():
 	############################################
 
 	# Populate the feed with the raw data (do not comment!)
-	feed = GTFSFeed("GTFS_Nairobi")
+	feed = GTFSFeed("GTFS_Harare")
 
 	feed.general_feed_info() # General information before data cleaning
 
@@ -304,9 +304,9 @@ def main():
 	traffic_sim = TrafficSim(feed, trips, ev_con)
 
 	print(traffic_sim.operation_estimates().sum())
-	df = traffic_sim.profile(start_time = "20:00:00", stop_time = "22:00:00", time_step = 100, transient_state = True)
+	df = traffic_sim.profile(start_time = "00:00:00", stop_time = "23:59:59", time_step = 50, transient_state = True)
 
-	df.to_csv("output/Nairobi_profile_50s_0h-23h59m59s_transient.csv", index = False)
+	df.to_csv("output/Harare_profile_50s_0h-23h59m59s_transient.csv", index = False)
 
 	# Plot the function
 	plt.plot(df['t'], df['power_kW'], marker='o')

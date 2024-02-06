@@ -391,8 +391,6 @@ class TripSim:
 
         time_values = np.arange(0, duration, time_step)
 
-        print(f"TRIP: {self.trip_id}")
-
         for t in time_values:
             # Get the current datetime and reset the power            
             current_datetime = start_datetime + timedelta(seconds=t)
