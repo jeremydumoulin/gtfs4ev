@@ -411,7 +411,13 @@ class TripSim:
                 if transient_state and current_datetime > max_datetime:
                     index = df.tail(1).index[0]
                 else:
-                    index = df[mask].index[0]
+                    df_masked = df[mask] 
+                    # Check if there is value 
+                    if not df_masked.empty:
+                        index = df[mask].index[0]
+                    else:
+                        power = .0
+                        energy += .0
                 
                 # Get the corresponding headway_sec and the elapsed time between the beginning of the time slot and the current time (local time)    
                 headway_sec = df.loc[index, 'headway_secs']

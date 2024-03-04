@@ -35,7 +35,7 @@ def main():
 	OUTPUT_PATH = str(os.getenv("OUTPUT_PATH"))
 
 	# Populate the feed with the raw data (do not comment!)
-	feed = GTFSFeed("GTFS_Kampala")
+	feed = GTFSFeed("GTFS_Freetown")
 
 	# feed.general_feed_info() # Info on raw data
 
@@ -68,17 +68,17 @@ def main():
 	# feed.filter_agency('CTA_M', clean_all = True)
 
 	# -> Freetown: keep only weekdays and poda-podas
-	# feed.filter_services('service_0001', clean_all = True) 
-	# feed.filter_services('service_0003', clean_all = True)
-	# feed.filter_agency('Freetown_SLRTC_03', clean_all = True)
-	# feed.filter_agency('Freetown_Tagrin_Ferry_01', clean_all = True)
-	# feed.filter_agency('Freetown_Taxi_Cab_04', clean_all = True)
+	feed.filter_services('service_0001', clean_all = True) 
+	feed.filter_services('service_0003', clean_all = True)
+	feed.filter_agency('Freetown_SLRTC_03', clean_all = True)
+	feed.filter_agency('Freetown_Tagrin_Ferry_01', clean_all = True)
+	feed.filter_agency('Freetown_Taxi_Cab_04', clean_all = True)
 
 	# -> Harare: drop the weekends
 	# feed.filter_services('service_0001', clean_all = True)
 
 	# -> Kampala: drop buses
-	feed.filter_agency('bus', clean_all = True)
+	# feed.filter_agency('bus', clean_all = True)
 
 	##########################
 	# GTFS Feed pre-processing 
