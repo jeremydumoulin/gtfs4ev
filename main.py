@@ -25,9 +25,9 @@ Main function
 """
 def main():
 
-	############################################
-	# GTFS Feed initialization and preprocessing
-	############################################
+	##########################
+	# GTFS Feed initialization 
+	##########################
 
 	# Load environment variables (do not comment!)
 	load_dotenv() # take environment variables from .env
@@ -35,9 +35,54 @@ def main():
 	OUTPUT_PATH = str(os.getenv("OUTPUT_PATH"))
 
 	# Populate the feed with the raw data (do not comment!)
-	feed = GTFSFeed("GTFS_Nairobi")
+	feed = GTFSFeed("GTFS_Kampala")
 
-	# feed.general_feed_info() # General information before data cleaning
+	# feed.general_feed_info() # Info on raw data
+
+	# OPTIONNAL If needed, filter out trips belonging to specific services and/or agencies
+
+	# -> Abidjan: keep only gbaka minibus taxis
+	# feed.filter_agency('monbus', clean_all = True) 
+	# feed.filter_agency('monbus / Navette', clean_all = True) 
+	# feed.filter_agency('Express', clean_all = True) 
+	# feed.filter_agency('Wibus', clean_all = True) 
+	# feed.filter_agency('STL', clean_all = True) 
+	# feed.filter_agency('monbato', clean_all = True) 
+	# feed.filter_agency('Woro-woro de Cocody', clean_all = True) 
+	# feed.filter_agency('Woro-woro de Treichville', clean_all = True) 
+	# feed.filter_agency('Woro-woro de Yopougon', clean_all = True) 
+	# feed.filter_agency('Woro-woro d\'Adjamé', clean_all = True) 
+	# feed.filter_agency('Aqualines', clean_all = True) 
+	# feed.filter_agency('Woro-woro de Port-Bouët', clean_all = True) 
+	# feed.filter_agency('Woro-woro d\'Abobo', clean_all = True) 
+	# feed.filter_agency('Woro-woro de Koumassi', clean_all = True) 
+	# feed.filter_agency('Woro-woro de Marcory', clean_all = True) 
+	# feed.filter_agency('Woro-woro d\'Attecoubé', clean_all = True) 
+	# feed.filter_agency('Woro-woro de Bingerville', clean_all = True)
+
+	# -> Alexandria: drop buses
+	# feed.filter_agency('Bus', clean_all = True)
+
+	# -> Cairo: drop the public formal transport
+	# feed.filter_agency('CTA', clean_all = True)
+	# feed.filter_agency('CTA_M', clean_all = True)
+
+	# -> Freetown: keep only weekdays and poda-podas
+	# feed.filter_services('service_0001', clean_all = True) 
+	# feed.filter_services('service_0003', clean_all = True)
+	# feed.filter_agency('Freetown_SLRTC_03', clean_all = True)
+	# feed.filter_agency('Freetown_Tagrin_Ferry_01', clean_all = True)
+	# feed.filter_agency('Freetown_Taxi_Cab_04', clean_all = True)
+
+	# -> Harare: drop the weekends
+	# feed.filter_services('service_0001', clean_all = True)
+
+	# -> Kampala: drop buses
+	feed.filter_agency('bus', clean_all = True)
+
+	##########################
+	# GTFS Feed pre-processing 
+	##########################
 
 	# Check data consistency, and perform cleaning if needed
 	feed.check_all()
@@ -48,25 +93,14 @@ def main():
 	# Optionnal: snap trip shapes to OSM road network
 	# feed.snap_shapes_to_osm() # Takes a lot of time
 
-	# Optionnal. If needed, filter out trips belonging to specific services
-
-	# -> For Freetown, service 0001 is for weekends and 0003 for ferrys
-	# feed.filter_services('service_0001', clean_all = True) 
-	# feed.filter_services('service_0003', clean_all = True)
-
-	# -> For Harare, drop the weekends
-	# feed.filter_services('service_0001', clean_all = True)
-
-	# -> For Cairo, drop the public transport
-	# feed.filter_agency('CTA', clean_all = True)
-
-	# feed.check_all()
+	# feed.check_all()	
 
 	###############################################
 	# 1. Display general information about the feed
 	###############################################
 
 	feed.general_feed_info()
+	print(feed.simulation_area_km2())
 
 	######################################
 	# 2. Visualize the paratransit network
@@ -301,27 +335,27 @@ def main():
 	# 9. Profile of a the whole traffic network
 	###########################################
 
-	# trips = list(feed.trips['trip_id'])
+	trips = list(feed.trips['trip_id'])
 
-	# # print(trips)
-	# ev_con = [0.4] * len(trips)
+	# print(trips)
+	ev_con = [0.4] * len(trips)
 
-	# traffic_sim = TrafficSim(feed, trips, ev_con)
+	traffic_sim = TrafficSim(feed, trips, ev_con)
 
-	# print(traffic_sim.operation_estimates().sum())
-	# df = traffic_sim.profile(start_time = "00:00:00", stop_time = "23:59:59", time_step = 50, transient_state = True)
+	print(traffic_sim.operation_estimates().sum())
+	df = traffic_sim.profile(start_time = "00:00:00", stop_time = "23:59:59", time_step = 200, transient_state = False)
 
-	# df.to_csv("output/Harare_profile_50s_0h-23h59m59s_transient.csv", index = False)
+	#df.to_csv("output/Harare_profile_50s_0h-23h59m59s_transient.csv", index = False)
 
-	# # Plot the function
-	# plt.plot(df['t'], df['power_kW'], marker='o')
-	# plt.xlabel('Time (seconds)')
-	# plt.ylabel('Power')
-	# plt.title('Power vs. Time')
-	# plt.grid(True)
+	# Plot the function
+	plt.plot(df['t'], df['power_kW'], marker='o')
+	plt.xlabel('Time (seconds)')
+	plt.ylabel('Power')
+	plt.title('Power vs. Time')
+	plt.grid(True)
 
-	# # plt.savefig('power_vs_time.png')
-	# plt.show()
+	# plt.savefig('power_vs_time.png')
+	plt.show()
 
 	##########################################################################################
 	# 10. Visualize the activity of the fleet (aver. number of vehicles) in a given time frame
