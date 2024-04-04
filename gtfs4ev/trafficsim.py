@@ -74,8 +74,20 @@ class TrafficSim:
 
         # Iterate over rows of df1 and append rows to df2
         for trip in self.trip_simulations:
-            operation_estimates = trip.operation_estimates_aggregated()
+            operation_estimates = trip.operation_estimates_aggregated()            
             df = pd.concat([df, pd.DataFrame([operation_estimates])], ignore_index=True)
+
+        return df
+
+    """ Vehicle statistics """
+
+    def vehicle_statistics(self):
+        df = pd.DataFrame()
+
+        # Iterate over rows of df1 and append rows to df2
+        for trip in self.trip_simulations:
+            vehicle_statistics = trip.vehicle_statistics()               
+            df = pd.concat([df, pd.DataFrame([vehicle_statistics])], ignore_index=True)
 
         return df
 

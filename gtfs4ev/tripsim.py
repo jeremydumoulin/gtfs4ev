@@ -320,6 +320,8 @@ class TripSim:
 
         df['energy_kWh_per_vehicle'] = df['vkt'] * self.ev_consumption
 
+        df['energy_kWh_per_vehicle'] = df['vkt'] * self.ev_consumption
+
         return df
 
     def operation_estimates_aggregated(self):
@@ -405,6 +407,7 @@ class TripSim:
             if (current_datetime < min_datetime) or (current_datetime > (max_datetime + timedelta(seconds=decay_time)) ):
                 power = .0
                 energy += .0
+                n_vehicles = 0
             else:                
                 # Get the index of the row with the relevant operational information            
                 # If in the decay time of the last time slot, set to the index of the last time slot

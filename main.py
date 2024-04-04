@@ -35,7 +35,7 @@ def main():
 	OUTPUT_PATH = str(os.getenv("OUTPUT_PATH"))
 
 	# Populate the feed with the raw data (do not comment!)
-	feed = GTFSFeed("GTFS_Freetown")
+	feed = GTFSFeed("GTFS_Kampala")
 
 	# feed.general_feed_info() # Info on raw data
 
@@ -68,17 +68,17 @@ def main():
 	# feed.filter_agency('CTA_M', clean_all = True)
 
 	# -> Freetown: keep only weekdays and poda-podas
-	feed.filter_services('service_0001', clean_all = True) 
-	feed.filter_services('service_0003', clean_all = True)
-	feed.filter_agency('Freetown_SLRTC_03', clean_all = True)
-	feed.filter_agency('Freetown_Tagrin_Ferry_01', clean_all = True)
-	feed.filter_agency('Freetown_Taxi_Cab_04', clean_all = True)
+	# feed.filter_services('service_0001', clean_all = True) 
+	# feed.filter_services('service_0003', clean_all = True)
+	# feed.filter_agency('Freetown_SLRTC_03', clean_all = True)
+	# feed.filter_agency('Freetown_Tagrin_Ferry_01', clean_all = True)
+	# feed.filter_agency('Freetown_Taxi_Cab_04', clean_all = True)
 
 	# -> Harare: drop the weekends
 	# feed.filter_services('service_0001', clean_all = True)
 
 	# -> Kampala: drop buses
-	# feed.filter_agency('bus', clean_all = True)
+	feed.filter_agency('bus', clean_all = True)
 
 	##########################
 	# GTFS Feed pre-processing 
@@ -107,9 +107,9 @@ def main():
 	######################################
 
 	""" Visualize a trip using the trip_id """
-	# trip_id = '1107D110'
+	trip_id = 'TI1576360557'
 
-	# # Get the shape of the trip_id
+	# Get the shape of the trip_id
 	# shape = feed.get_shape(trip_id) 
 
 	# # Extract coordinates from the LineString
@@ -180,7 +180,7 @@ def main():
 
 	# print(feed.trips)
 
-	# mymap = folium.Map(location=(feed.get_shape('1107D110').centroid.y, feed.get_shape('1107D110').centroid.x), zoom_start=12, control_scale = True)
+	# mymap = folium.Map(location=(feed.get_shape('BOX_6O32_O (15-00-00)').centroid.y, feed.get_shape('BOX_6O32_O (15-00-00)').centroid.x), zoom_start=12, control_scale = True)
 
 	# for index, row in feed.trips.iterrows():
 	#     trip_id = row['trip_id']
@@ -243,28 +243,28 @@ def main():
 
 	""" For the whole system """
 
-	# trips = feed.trips	
+	trips = feed.trips	
 	
-	# df = pd.DataFrame()
+	df = pd.DataFrame()
 
-	# for index, row in trips.iterrows():
-	# 	trip_id = row['trip_id']
-	# 	trip_sim = TripSim(feed = feed, trip_id=trip_id, ev_consumption = 0.4)
+	for index, row in trips.iterrows():
+		trip_id = row['trip_id']
+		trip_sim = TripSim(feed = feed, trip_id=trip_id, ev_consumption = 0.4)
 
-	# 	trip_stats = trip_sim.operation_estimates_aggregated()
-	# 	df = pd.concat([df, pd.DataFrame([trip_stats])], ignore_index=True)
+		trip_stats = trip_sim.operation_estimates_aggregated()
+		df = pd.concat([df, pd.DataFrame([trip_stats])], ignore_index=True)
 	
-	# print(df)
+	print(df)
 
-	# print(df['ave_nbr_vehicles'].sum())
-	# print(df['n_trips'].sum())
-	# print(df['vkm'].sum())
-	# print(df['energy_kWh'].sum())
+	print(df['ave_nbr_vehicles'].sum())
+	print(df['n_trips'].sum())
+	print(df['vkm'].sum())
+	print(df['energy_kWh'].sum())
 
-	# print(df['vkt'].mean())
-	# print(df['energy_kWh_per_vehicle'].mean())
+	print(df['vkt'].mean())
+	print(df['energy_kWh_per_vehicle'].mean())
 
-	# df.to_csv("output/Nairobi_simulation.csv", index=False)
+	df.to_csv("output/Kampala_operational_metrics.csv", index=False)
 
 	##########################################################################################
 	# 6. Power/energy/speed profile of a single vehicle along a trip and associated statistics 
@@ -335,27 +335,29 @@ def main():
 	# 9. Profile of a the whole traffic network
 	###########################################
 
-	trips = list(feed.trips['trip_id'])
+	# trips = list(feed.trips['trip_id'])
 
-	# print(trips)
-	ev_con = [0.4] * len(trips)
+	# # # print(trips)
+	# ev_con = [0.40] * len(trips)
 
-	traffic_sim = TrafficSim(feed, trips, ev_con)
+	# traffic_sim = TrafficSim(feed, trips, ev_con)
 
-	print(traffic_sim.operation_estimates().sum())
-	df = traffic_sim.profile(start_time = "00:00:00", stop_time = "23:59:59", time_step = 200, transient_state = False)
+	# print(traffic_sim.operation_estimates().sum())
+	# print(traffic_sim.vehicle_statistics().mean())
 
-	#df.to_csv("output/Harare_profile_50s_0h-23h59m59s_transient.csv", index = False)
+	# df = traffic_sim.profile(start_time = "00:00:00", stop_time = "23:59:59", time_step = 50, transient_state = False)
 
-	# Plot the function
-	plt.plot(df['t'], df['power_kW'], marker='o')
-	plt.xlabel('Time (seconds)')
-	plt.ylabel('Power')
-	plt.title('Power vs. Time')
-	plt.grid(True)
+	# df.to_csv("output/Kampala_profile_50s_0h-23h59m59s.csv", index = False)
 
-	# plt.savefig('power_vs_time.png')
-	plt.show()
+	# # Plot the function
+	# plt.plot(df['t'], df['power_kW'], marker='o')
+	# plt.xlabel('Time (seconds)')
+	# plt.ylabel('Power')
+	# plt.title('Power vs. Time')
+	# plt.grid(True)
+
+	# # plt.savefig('power_vs_time.png')
+	# plt.show()
 
 	##########################################################################################
 	# 10. Visualize the activity of the fleet (aver. number of vehicles) in a given time frame

@@ -117,6 +117,7 @@ Please also make sure to update tests as appropriate.
 - [ ] Rewrite the calculation of the trip profile : should be made more clear
 - [ ] Transient state: seems there is a small problem (the rise and decay should be symmetric)
 - [ ] Import: double check the profile estimation, seems there is a small error at the beginning of each time slot (small transient regime)
+- [ ] Check consistency of energy estimation using operation_estimates and integration of power profile (seems there is sometimes a small difference, example for Alexandria)
 - [ ] Potential benefits of electrification
 - [ ] Speed-up profile calculation
 - [ ] Improve closest point mapping (interpolate between points)
