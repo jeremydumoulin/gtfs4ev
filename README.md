@@ -121,6 +121,7 @@ Please also make sure to update tests as appropriate.
 - [ ] Potential benefits of electrification
 - [ ] Speed-up profile calculation
 - [ ] Improve closest point mapping (interpolate between points)
+- [ ] Add helper function to preprocess GIS data or even create a class
 
 ### Backlog
 
