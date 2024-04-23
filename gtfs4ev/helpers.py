@@ -145,7 +145,6 @@ def length_km(linestring, geodesic = True):
 
     return distance
 
-
 def exponential_decay_kernel(size, decay_factor):
     center = (size - 1) / 2  # Center of the kernel
     x = np.arange(size) - center
