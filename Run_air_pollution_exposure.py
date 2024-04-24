@@ -27,7 +27,6 @@ import rasterio
 from rasterio.plot import reshape_as_image
 from rasterio.mask import mask
 import csv
-import pickle
 
 from gtfs4ev.gtfsfeed import GTFSFeed
 from gtfs4ev.tripsim import TripSim
@@ -38,7 +37,7 @@ from gtfs4ev import helpers as hlp
 import Run_preprocess_gtfs as pp
 
 """
-Parameters - To be Modified
+Parameters - PLEASE MODIFY ACCORDING TO YOUR NEEDS
 """
 
 city = "Nairobi" # Used to name intermediate outputs and do some city-dependent pre-processing
@@ -50,7 +49,7 @@ gtfs_feed_name = "GTFS_Nairobi" # Make sure the GTFS folder is in the input fold
 # Parameters related GTFS Feed and traffic simulation
 snap_to_osm_roads = False # Could take a long time. Data is generally already consistent with OSM network
 ev_consumption = 0.4 # EV consumption (kWh/km)
-store_and_reuse_trafficsim = True # If True, check if a Traffic simulation for the city has already been carried out with the same parameters. If yes, just take the
+reuse_traffic_output = True # If True, serializes the dataframe with operationnal data in order to avopid recomputing TrafficSimulation
 
 # Parameters related to TRAP exposure assessments
 decay_rate = 0.0
@@ -90,34 +89,34 @@ if snap_to_osm_roads:
 feed.general_feed_info()
 print(feed.simulation_area_km2())
 
-##########################################
-# Traffic simulation of the whole fleet
-##########################################
+#############################################################
+# Traffic simulation & Operation estimates of the whole fleet
+#############################################################
 
 trips = list(feed.trips['trip_id']) # Trips to consider
 ev_con = [ev_consumption] * len(trips) # List of EV consumption for all trips
 
 # If True, only compute Traffic simulation if it has not already been done before
-if store_and_reuse_trafficsim: 
-	filename = f"{city}_tmp_air_pollution_exposure_{ev_consumption}_kWhperkm.pkl"
+if reuse_traffic_output: 
+	filename = f"{city}_tmp_air_pollution_exposure_{ev_consumption}_operation.pkl"
 
 	# Check if a pickle file with same parameters already exists
-	if os.path.exists(f"{INPUT_PATH}/{filename}"):
-		print(f"WARNING \t Using existing pickle data for the TrafficSim object - Make sure it matches with the inputs")
-		# Load the object from the file
-		with open(f"{INPUT_PATH}/{filename}", 'rb') as f:
-			traffic_sim = pickle.load(f)
+	if os.path.exists(f"{OUTPUT_PATH}/{filename}"):
+		print(f"INFO \t Using existing pickle data for operationnal simulation - Make sure it matches with the inputs")
+		# Load the df from the file
+		op = pd.read_pickle(f"{OUTPUT_PATH}/{filename}")  
 	else:
-	    # Your object creation logic
+	    # Carry out the simulation
 	    traffic_sim = TrafficSim(feed, trips, ev_con) # Carry out the simulation for all trips
-	    # Serialize and save the object to a file
-	    with open(f"{INPUT_PATH}/{filename}", 'wb') as f:
-	    	pickle.dump(traffic_sim, f)
+	    op = traffic_sim.operation_estimates() # Get operation estimates
+
+	    # Serialize and save the df to a file	    
+	    op.to_pickle(f"{OUTPUT_PATH}/{filename}")  
 else:
+	# Carry out the simulation
 	traffic_sim = TrafficSim(feed, trips, ev_con) # Carry out the simulation for all trips
+	op = traffic_sim.operation_estimates() # Get operation estimates
 
-# PROBLEM : NOT WORKING !!
-
-op = traffic_sim.operation_estimates() # Get operation estimates
-
-print(op)
+# Get the main metrics needed for TRAP exposure calculation
+vkm_list = op['vkm'].tolist() # VKM of trips
+linestring_list = [feed.get_shape(row['trip_id']) for index, row in op.iterrows()] # Associated linestrings
