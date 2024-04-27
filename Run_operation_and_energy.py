@@ -39,16 +39,18 @@ import Run_preprocess_gtfs as pp
 Parameters - PLEASE MODIFY ACCORDING TO YOUR NEEDS
 """
 
-city = "Freetown" # Used to name intermediate outputs and do some city-dependent pre-processing
+city = "Kampala" # Used to name intermediate outputs and do some city-dependent pre-processing
 
 # Input data
-population_raster_name = "Freetown_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R9_C17.tif" # Make sure it is in the input folder as defined in the .env file
-gtfs_feed_name = "GTFS_Freetown" # Make sure the GTFS folder is in the input folder
+gtfs_feed_name = "GTFS_Kampala" # Make sure the GTFS folder is in the input folder
 
 # Parameters related GTFS Feed and traffic simulation
 snap_to_osm_roads = False # Could take a long time. Data is generally already consistent with OSM network
 ev_consumption = 0.4 # EV consumption (kWh/km) - Value should not affect the output
 reuse_traffic_output = True # If True, serializes the dataframe with operationnal data in order to avopid recomputing TrafficSimulation
+
+# Parameters related to timeseries
+time_step = 50 # Time step in seconds
 
 """
 Environment variables
@@ -93,7 +95,7 @@ ev_con = [ev_consumption] * len(trips) # List of EV consumption for all trips
 
 # If True, only compute Traffic simulation if it has not already been done before
 if reuse_traffic_output: 
-	filename = f"{city}_tmp_air_pollution_exposure_{ev_consumption}_operation.pkl"
+	filename = f"{city}_tmp_operation_and_energy_{ev_consumption}_operation.pkl"
 
 	# Check if a pickle file with same parameters already exists
 	if os.path.exists(f"{OUTPUT_PATH}/{filename}"):
@@ -112,6 +114,31 @@ else:
 	traffic_sim = TrafficSim(feed, trips, ev_con) # Carry out the simulation for all trips
 	op = traffic_sim.operation_estimates() # Get operation estimates
 
-# Get the main metrics needed for TRAP exposure calculation
-vkm_list = op['vkm'].tolist() # VKM of trips
-linestring_list = [feed.get_shape(row['trip_id']) for index, row in op.iterrows()] # Associated linestrings
+op.to_csv(f"{OUTPUT_PATH}/{city}_operation_estimates_{ev_consumption}.csv", index = False)
+
+###########
+# Timeserie
+###########
+
+# df = traffic_sim.profile(start_time = "00:00:00", stop_time = "23:59:59", time_step = time_step, transient_state = False)
+# df.to_csv(f"{OUTPUT_PATH}/{city}_powerprofile.csv", index = False)
+
+####################
+# Aggregated metrics
+####################
+
+print(f"Total energy demand (kWh): {op['energy_kWh'].sum()}")
+
+print(f"Total VKM (km): {op['vkm'].sum()}")
+print(f"Total number of vehicles: {op['ave_nbr_vehicles'].sum()}")
+print(f"Average distance travelled by vehicle: {sum(op['vkt'] * op['ave_nbr_vehicles'])/op['ave_nbr_vehicles'].sum()}")
+
+################################
+# VKT per trip (distribution)
+################################
+
+# Different from the average distance by vehicle because not weigthed by the number 
+# of vehicles per trip. Therefore, generally a bit higher because often they are only
+# a small amount of trips yith very high VKT and/or they have a small number of vehicles 
+print(f"Average distance travelled by vehicles on each trip: {op['vkt'].mean()}")
+
