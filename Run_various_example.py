@@ -423,9 +423,9 @@ def main():
 
 	# Pre-processing. Comment if already done, crop the population raster to the bounding box
 	##################
-	# hlp.crop_raster(str(os.getenv("INPUT_PATH")) + "/Population_rasters/GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R10_C22.tif", 
-	# 	feed.bounding_box(), 
-	# 	str(os.getenv("INPUT_PATH")) + f"/Population_rasters/{city}_pop.tif")
+	hlp.crop_raster(str(os.getenv("INPUT_PATH")) + "/Population_rasters/GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R10_C22.tif", 
+		feed.bounding_box(), 
+		str(os.getenv("INPUT_PATH")) + f"/Population_rasters/{city}_pop.tif")
 
 	# Compute the local emission index map, based on the cropped population data as a blueprint for the output raster. Comment to avoid recomputing. 
 	##################
@@ -454,110 +454,110 @@ def main():
 
 	# Compute the exposure index. Comment to avoid recomputing. 
 	##################
-	with rasterio.open(str(os.getenv("OUTPUT_PATH")) + f"/{city}_local_em.tif") as src:
-	    # Read the raster data
-	    raster_data = src.read(1).astype(float) # assuming it's a single band raster
+	# with rasterio.open(str(os.getenv("OUTPUT_PATH")) + f"/{city}_local_em.tif") as src:
+	#     # Read the raster data
+	#     raster_data = src.read(1).astype(float) # assuming it's a single band raster
 	    
-	    # Define the convolution kernel (e.g., exponential decay)
-	    kernel_size = 21 # 5 to left, 5 to the right + current pixel
-	    decay_factor = 0.64  # NO2 = 0.0064 per meter, so 0,64 per pixel | 0.02 in some other refs
-	    kernel = hlp.exponential_decay_kernel(kernel_size, decay_factor)
+	#     # Define the convolution kernel (e.g., exponential decay)
+	#     kernel_size = 21 # 5 to left, 5 to the right + current pixel
+	#     decay_factor = 0.64  # NO2 = 0.0064 per meter, so 0,64 per pixel | 0.02 in some other refs
+	#     kernel = hlp.exponential_decay_kernel(kernel_size, decay_factor)
 
-	    # # Define the mask for the 5-pixel (500m) radius
-	    # mask = hlp.mask_within_radius(kernel_size, radius=(kernel_size-1)/2)
+	#     # # Define the mask for the 5-pixel (500m) radius
+	#     # mask = hlp.mask_within_radius(kernel_size, radius=(kernel_size-1)/2)
 	    
-	    # # Apply the mask to the kernel
-	    # kernel = kernel*mask
+	#     # # Apply the mask to the kernel
+	#     # kernel = kernel*mask
 	    
-	    # Perform the convolution operation
-	    convolved_data = convolve2d(raster_data, kernel, mode='same', boundary='wrap')
+	#     # Perform the convolution operation
+	#     convolved_data = convolve2d(raster_data, kernel, mode='same', boundary='wrap')
 	    
-	    # Create a new raster file with the convolved data
-	    profile = src.profile
-	    profile.update(dtype=rasterio.float32)  # Update data type to float32
-	    with rasterio.open(str(os.getenv("OUTPUT_PATH")) + f"/{city}_exposure_index.tif", 'w', **profile) as dst:
-	        dst.write(convolved_data.astype(rasterio.float32), 1)  # assuming it's a single band raster
+	#     # Create a new raster file with the convolved data
+	#     profile = src.profile
+	#     profile.update(dtype=rasterio.float32)  # Update data type to float32
+	#     with rasterio.open(str(os.getenv("OUTPUT_PATH")) + f"/{city}_exposure_index.tif", 'w', **profile) as dst:
+	#         dst.write(convolved_data.astype(rasterio.float32), 1)  # assuming it's a single band raster
 
 	# Get histogram of population counts by exposure. 
 	##################
 
-	# Open the population raster file
-	with rasterio.open(str(os.getenv("INPUT_PATH")) + f"/Population_rasters/{city}_pop.tif") as population_src:
-	    # Read the population raster data
-	    population_data = population_src.read(1)  # assuming it's a single band raster
+	# # Open the population raster file
+	# with rasterio.open(str(os.getenv("INPUT_PATH")) + f"/Population_rasters/{city}_pop.tif") as population_src:
+	#     # Read the population raster data
+	#     population_data = population_src.read(1)  # assuming it's a single band raster
 	    
-	    # Get the raster profile to use for writing the histogram
-	    profile = population_src.profile
+	#     # Get the raster profile to use for writing the histogram
+	#     profile = population_src.profile
 
-	# Open the property raster file
-	with rasterio.open(str(os.getenv("OUTPUT_PATH")) + f"/{city}_exposure_index.tif") as property_src:
-	    # Read the property raster data
-	    exposure_data = property_src.read(1)  # assuming it's a single band raster
+	# # Open the property raster file
+	# with rasterio.open(str(os.getenv("OUTPUT_PATH")) + f"/{city}_exposure_index.tif") as property_src:
+	#     # Read the property raster data
+	#     exposure_data = property_src.read(1)  # assuming it's a single band raster
 
-	# Define the property range for the histogram
-	property_min = 1  # Define your minimum property value
-	property_max = np.max(exposure_data)  # Define your maximum property value
+	# # Define the property range for the histogram
+	# property_min = 1  # Define your minimum property value
+	# property_max = np.max(exposure_data)  # Define your maximum property value
 
-	# Initialize histogram bins
-	num_bins = 10  # Define the number of bins for the histogram
-	bins = np.linspace(property_min, property_max, num_bins + 1)
+	# # Initialize histogram bins
+	# num_bins = 10  # Define the number of bins for the histogram
+	# bins = np.linspace(property_min, property_max, num_bins + 1)
 
-	# Create an empty histogram to store the counts
-	histogram_counts = np.zeros(num_bins)
+	# # Create an empty histogram to store the counts
+	# histogram_counts = np.zeros(num_bins)
 
-	# Iterate over each pixel in the property raster
-	for i in range(exposure_data.shape[0]):
-	    for j in range(exposure_data.shape[1]):
-	        # Get the property value at the current pixel
-	        property_value = exposure_data[i, j]
+	# # Iterate over each pixel in the property raster
+	# for i in range(exposure_data.shape[0]):
+	#     for j in range(exposure_data.shape[1]):
+	#         # Get the property value at the current pixel
+	#         property_value = exposure_data[i, j]
 	        
-	        # Check if the property value is within the specified range
-	        if property_min <= property_value <= property_max:
-	            # If it is, increment the corresponding histogram bin based on the population at this pixel
-	            for k in range(len(bins) - 1):
-	                if bins[k] <= property_value < bins[k + 1]:
-	                    histogram_counts[k] += population_data[i, j]
+	#         # Check if the property value is within the specified range
+	#         if property_min <= property_value <= property_max:
+	#             # If it is, increment the corresponding histogram bin based on the population at this pixel
+	#             for k in range(len(bins) - 1):
+	#                 if bins[k] <= property_value < bins[k + 1]:
+	#                     histogram_counts[k] += population_data[i, j]
 
-	# Print the histogram counts
-	print("Histogram counts:", histogram_counts)
+	# # Print the histogram counts
+	# print("Histogram counts:", histogram_counts)
 
-	# Plot the histogram
-	plt.bar(bins[:-1], histogram_counts, width=np.diff(bins), align='edge')
-	plt.xlabel('Property Range')
-	plt.ylabel('Population Count')
-	plt.title('Population Distribution Histogram by Property Range')
-	plt.grid(True)
-	plt.show()
+	# # Plot the histogram
+	# plt.bar(bins[:-1], histogram_counts, width=np.diff(bins), align='edge')
+	# plt.xlabel('Property Range')
+	# plt.ylabel('Population Count')
+	# plt.title('Population Distribution Histogram by Property Range')
+	# plt.grid(True)
+	# plt.show()
 
-	# Calculate the sum of the histogram values
-	total_population = np.sum(histogram_counts)
-	print("Total population exposed:", total_population)
+	# # Calculate the sum of the histogram values
+	# total_population = np.sum(histogram_counts)
+	# print("Total population exposed:", total_population)
 
-	# Write histogram counts to CSV
-	with open(str(os.getenv("OUTPUT_PATH")) + f"/{city}_exposure_distribution.csv", "w", newline="") as csvfile:
-	    writer = csv.writer(csvfile)
-	    writer.writerow(["Exposure Index", "Population Count"])
-	    for i in range(num_bins):
-	        writer.writerow([f"{bins[i]} - {bins[i+1]}", histogram_counts[i]])
+	# # Write histogram counts to CSV
+	# with open(str(os.getenv("OUTPUT_PATH")) + f"/{city}_exposure_distribution.csv", "w", newline="") as csvfile:
+	#     writer = csv.writer(csvfile)
+	#     writer.writerow(["Exposure Index", "Population Count"])
+	#     for i in range(num_bins):
+	#         writer.writerow([f"{bins[i]} - {bins[i+1]}", histogram_counts[i]])
 
 
 	# Population-weighted exposure 
 	##################
 
-	# Open the population raster file
-	with rasterio.open(str(os.getenv("INPUT_PATH")) + f"/Population_rasters/{city}_pop.tif") as population_src:
-	    # Read the population raster data
-	    population_data = population_src.read(1)  # assuming it's a single band raster
+	# # Open the population raster file
+	# with rasterio.open(str(os.getenv("INPUT_PATH")) + f"/Population_rasters/{city}_pop.tif") as population_src:
+	#     # Read the population raster data
+	#     population_data = population_src.read(1)  # assuming it's a single band raster
 
-	# Open the property raster file
-	with rasterio.open(str(os.getenv("OUTPUT_PATH")) + f"/{city}_exposure_index.tif") as property_src:
-	    # Read the property raster data
-	    exposure_data = property_src.read(1)  # assuming it's a single band raster
+	# # Open the property raster file
+	# with rasterio.open(str(os.getenv("OUTPUT_PATH")) + f"/{city}_exposure_index.tif") as property_src:
+	#     # Read the property raster data
+	#     exposure_data = property_src.read(1)  # assuming it's a single band raster
 
-	    popweighted_exposure = exposure_data * population_data
+	#     popweighted_exposure = exposure_data * population_data
 
-	    with rasterio.open(str(os.getenv("OUTPUT_PATH")) + f"/{city}_popweighted_exposure.tif", 'w', **profile) as dst:
-	    	dst.write(popweighted_exposure, 1)  # assuming it's a single band raster
+	#     with rasterio.open(str(os.getenv("OUTPUT_PATH")) + f"/{city}_popweighted_exposure.tif", 'w', **profile) as dst:
+	#     	dst.write(popweighted_exposure, 1)  # assuming it's a single band raster
 
 
 

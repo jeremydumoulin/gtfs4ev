@@ -152,12 +152,17 @@ def exponential_decay_kernel(size, decay_factor):
     for i in range(size):
         for j in range(size):
             distance = np.sqrt((i - center) ** 2 + (j - center) ** 2)
-            kernel_2d[i, j] = np.exp(-decay_factor * np.abs(distance))
-    #kernel_2d /= np.sum(kernel_2d)  # Normalize the kernel
 
+            # Correct the distance for the center pixel to take into account that people are not at a zero distance from road 
+            # We consider the average distance between 2 randomly distributed points within the square 
+            if distance == .0:
+                distance = 0.52 
+
+            kernel_2d[i, j] = np.exp(-decay_factor * np.abs(distance))
+    
     return kernel_2d
 
-# Define a mask for the 5-pixel radius
+# Define a mask for the pixel radius
 def mask_within_radius(size, radius):
     mask = np.zeros((size, size))
     center = size // 2
