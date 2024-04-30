@@ -39,10 +39,10 @@ import Run_preprocess_gtfs as pp
 Parameters - PLEASE MODIFY ACCORDING TO YOUR NEEDS
 """
 
-city = "Kampala" # Used to name intermediate outputs and do some city-dependent pre-processing
+city = "Nairobi" # Used to name intermediate outputs and do some city-dependent pre-processing
 
 # Input data
-gtfs_feed_name = "GTFS_Kampala" # Make sure the GTFS folder is in the input folder
+gtfs_feed_name = "GTFS_Nairobi" # Make sure the GTFS folder is in the input folder
 
 # Parameters related GTFS Feed and traffic simulation
 snap_to_osm_roads = False # Could take a long time. Data is generally already consistent with OSM network
@@ -51,6 +51,11 @@ reuse_traffic_output = True # If True, serializes the dataframe with operationna
 
 # Parameters related to timeseries
 time_step = 50 # Time step in seconds
+
+# Parameters related to baseline energy demand estimation
+population = 5000000 # Total number of people
+demand_per_capita = 400 # Yearly demand per capita (kWh)
+active_working_days = 260 # Number of operating days a year of the minibus taxis
 
 """
 Environment variables
@@ -86,48 +91,44 @@ if snap_to_osm_roads:
 feed.general_feed_info()
 print(feed.simulation_area_km2())
 
-#############################################################
-# Traffic simulation & Operation estimates of the whole fleet
-#############################################################
+##########################################################
+# Traffic simulation & Operation estimates & Power Profile 
+##########################################################
 
 trips = list(feed.trips['trip_id']) # Trips to consider
 ev_con = [ev_consumption] * len(trips) # List of EV consumption for all trips
 
 # If True, only compute Traffic simulation if it has not already been done before
 if reuse_traffic_output: 
-	filename = f"{city}_tmp_operation_and_energy_{ev_consumption}_operation.pkl"
+	filename = f"{city}_tmp_operation_{ev_consumption}.pkl"
 
-	# Check if a pickle file with same parameters already exists
-	if os.path.exists(f"{OUTPUT_PATH}/{filename}"):
+	# Check if a pickle file with same parameters already exists and the timeseries
+	if os.path.exists(f"{OUTPUT_PATH}/{filename}") and os.path.exists(f"{OUTPUT_PATH}/{city}_powerprofile.csv"):
 		print(f"INFO \t Using existing pickle data for operationnal simulation - Make sure it matches with the inputs")
 		# Load the df from the file
 		op = pd.read_pickle(f"{OUTPUT_PATH}/{filename}")  
 	else:
-	    # Carry out the simulation
-	    traffic_sim = TrafficSim(feed, trips, ev_con) # Carry out the simulation for all trips
-	    op = traffic_sim.operation_estimates() # Get operation estimates
-
-	    # Serialize and save the df to a file	    
-	    op.to_pickle(f"{OUTPUT_PATH}/{filename}")  
+		# Carry out the simulation
+		traffic_sim = TrafficSim(feed, trips, ev_con) # Carry out the simulation for all trips
+		op = traffic_sim.operation_estimates() # Get operation estimates
+		# Serialize and save the df to a file
+		op.to_pickle(f"{OUTPUT_PATH}/{filename}")
+		df = traffic_sim.profile(start_time = "00:00:00", stop_time = "23:59:59", time_step = time_step, transient_state = False)
+		df.to_csv(f"{OUTPUT_PATH}/{city}_powerprofile.csv", index = False)  
 else:
 	# Carry out the simulation
 	traffic_sim = TrafficSim(feed, trips, ev_con) # Carry out the simulation for all trips
 	op = traffic_sim.operation_estimates() # Get operation estimates
 
-op.to_csv(f"{OUTPUT_PATH}/{city}_operation_estimates_{ev_consumption}.csv", index = False)
-
-###########
-# Timeserie
-###########
-
-# df = traffic_sim.profile(start_time = "00:00:00", stop_time = "23:59:59", time_step = time_step, transient_state = False)
-# df.to_csv(f"{OUTPUT_PATH}/{city}_powerprofile.csv", index = False)
+	# Timeseries
+	df = traffic_sim.profile(start_time = "00:00:00", stop_time = "23:59:59", time_step = time_step, transient_state = False)
+	df.to_csv(f"{OUTPUT_PATH}/{city}_powerprofile.csv", index = False)
 
 ####################
 # Aggregated metrics
 ####################
 
-print(f"Total energy demand (kWh): {op['energy_kWh'].sum()}")
+print(f"Total energy demand per day (kWh): {op['energy_kWh'].sum()}")
 
 print(f"Total VKM (km): {op['vkm'].sum()}")
 print(f"Total number of vehicles: {op['ave_nbr_vehicles'].sum()}")
@@ -139,6 +140,15 @@ print(f"Average distance travelled by vehicle: {sum(op['vkt'] * op['ave_nbr_vehi
 
 # Different from the average distance by vehicle because not weigthed by the number 
 # of vehicles per trip. Therefore, generally a bit higher because often they are only
-# a small amount of trips yith very high VKT and/or they have a small number of vehicles 
+# a small amount of trips yith very high VKT and/or they have a small number of vehicles
+op['vkt'].to_csv(f"{OUTPUT_PATH}/{city}_vkt_per_trip.csv", index = False) 
 print(f"Average distance travelled by vehicles on each trip: {op['vkt'].mean()}")
+
+###############################
+# Comparaison with local demand
+###############################
+
+print(f"Total yearly demand in kWh (pop x demand_per_capita): {population * demand_per_capita}")
+print(f"Relative additionnal demand (%): {op['energy_kWh'].sum()*active_working_days/(population * demand_per_capita)*100}")
+
 

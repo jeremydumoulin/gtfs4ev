@@ -103,7 +103,7 @@ ev_con = [ev_consumption] * len(trips) # List of EV consumption for all trips
 
 # If True, only compute Traffic simulation if it has not already been done before
 if reuse_traffic_output: 
-	filename = f"{city}_tmp_air_pollution_exposure_{ev_consumption}_operation.pkl"
+	filename = f"{city}_tmp_operation_{ev_consumption}.pkl"
 
 	# Check if a pickle file with same parameters already exists
 	if os.path.exists(f"{OUTPUT_PATH}/{filename}"):
