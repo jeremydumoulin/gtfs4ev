@@ -96,12 +96,12 @@ Global parameters
 """
 
 # General
-output_folder_name = "all_cities"
+output_folder_name = "res_all_cities"
 snap_to_osm_roads = False # Could take a long time. Data is generally already consistent with OSM network
 reuse_traffic_output = True # If True, serializes the dataframe with operationnal data in order to avopid recomputing TrafficSimulation
 active_working_days = 260 # Number of operating days a year of the minibus taxis
 pop_from_raster = True # If True, estimates the number of people using the cropped bbox and population raster
-time_step = 50 # Time step in seconds for the power/energy profile
+time_step = 100 # Time step in seconds for the power/energy profile
 
 # Energy, economy, environmental implications 
 ev_consumption = 0.4 # EV consumption (kWh/km) - Value should not affect the output
@@ -149,9 +149,13 @@ general_parameters = {
     "high_threshold": high_threshold
 }
 
-
 # Combine city data and general_parameters into a single dictionary
 final_data = {"data": cities, **general_parameters}
+
+if not os.path.exists(str(OUTPUT_PATH)):
+   # Create a new directory because it does not exist
+   os.makedirs(str(OUTPUT_PATH))
+   print("New directory created to store output")
 
 # Write the list of dictionaries to a JSON file
 with open(f"{OUTPUT_PATH}/{filename}", 'w') as json_file:
@@ -165,16 +169,16 @@ columns = ["City", "Area (km2)", "VKM (km)", "VKT per vehicle (km)", "VKT per tr
 
 out_df = pd.DataFrame(columns=columns)
 
-if not os.path.exists(str(OUTPUT_PATH)):
-   # Create a new directory because it does not exist
-   os.makedirs(str(OUTPUT_PATH))
-   print("New directory created to store output")
-
 ###########
 # MAIN CODE
 ###########
 
 for city in cities:
+	"""
+	Message
+	"""
+	print(f"\n*********  RUNNING THE SCRIPT FOR THE CITY OF {city["name"]} ********* \n")
+
 	"""
 	Init variables
 	"""
@@ -330,7 +334,7 @@ for city in cities:
 	# SUBSTEP 1 : Compute the emission index map (i.e., traffic volume map, VKM) using the cropped pop raster as a reference layer
 	# IF NO CHANGE IN PARAMETERS, COMMENT IF ALREADY DONE
 
-	# hlp.local_emission_index(vkm_list, linestring_list, pop_raster, f"{OUTPUT_PATH}/{city_name}_tmp_local_em.tif")
+	hlp.local_emission_index(vkm_list, linestring_list, pop_raster, f"{OUTPUT_PATH}/{city_name}_tmp_local_em.tif")
 
 	# SUBSTEP 2 : Compute the distance-weigthed emission exposure map 
 	# IF NO CHANGE IN PARAMETERS, COMMENT IF ALREADY DONE
