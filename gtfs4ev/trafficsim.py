@@ -57,6 +57,8 @@ class TrafficSim:
     def set_trip_simulations(self, trip_ids, ev_consumptions):
         """ 
         """
+        self.trip_simulations = []
+
         try:     
             if not len(trip_ids) == len(ev_consumptions):
                 raise Exception()

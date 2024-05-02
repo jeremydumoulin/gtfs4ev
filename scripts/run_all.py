@@ -101,7 +101,7 @@ snap_to_osm_roads = False # Could take a long time. Data is generally already co
 reuse_traffic_output = True # If True, serializes the dataframe with operationnal data in order to avopid recomputing TrafficSimulation
 active_working_days = 260 # Number of operating days a year of the minibus taxis
 pop_from_raster = True # If True, estimates the number of people using the cropped bbox and population raster
-time_step = 100 # Time step in seconds for the power/energy profile
+time_step = 1000 # Time step in seconds for the power/energy profile
 
 # Energy, economy, environmental implications 
 ev_consumption = 0.4 # EV consumption (kWh/km) - Value should not affect the output
@@ -243,6 +243,7 @@ for city in cities:
 	ev_con = [ev_consumption] * len(trips) # List of EV consumption for all trips
 
 	op = pd.DataFrame()
+	traffic_sim = None
 
 	# If True, only compute Traffic simulation if it has not already been done before
 	if reuse_traffic_output: 
@@ -256,7 +257,9 @@ for city in cities:
 		else:
 			# Carry out the simulation
 			traffic_sim = TrafficSim(feed, trips, ev_con) # Carry out the simulation for all trips
+			
 			op = traffic_sim.operation_estimates() # Get operation estimates
+			
 			# Serialize and save the df to a file
 			op.to_pickle(f"{OUTPUT_PATH}/{filename}")
 
@@ -275,6 +278,8 @@ for city in cities:
 	vkt_per_vehicle = sum(op['vkt'] * op['ave_nbr_vehicles'])/op['ave_nbr_vehicles'].sum()
 	vkt_per_trip = op['vkt'].mean()
 	n_vehicles = op['ave_nbr_vehicles'].sum()
+
+	#print(op)
 
 	# Get the main metrics needed for TRAP exposure calculation
 	vkm_list = op['vkm'].tolist() # VKM of trips
