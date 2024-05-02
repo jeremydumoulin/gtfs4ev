@@ -1,7 +1,7 @@
 # coding: utf-8
 
 """ 
-A python script that reproduces the operation and energy metrics for the 
+A python script that reproduces that calculates the economic savings for the 
 different cities.
 """
 
@@ -27,13 +27,16 @@ from rasterio.plot import reshape_as_image
 from rasterio.mask import mask
 import csv
 
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))) # Append parent directory
+
 from gtfs4ev.gtfsfeed import GTFSFeed
 from gtfs4ev.tripsim import TripSim
 from gtfs4ev.trafficsim import TrafficSim
 from gtfs4ev.topology import Topology
 from gtfs4ev import helpers as hlp
 
-import Run_preprocess_gtfs as pp
+import preprocess_gtfs as pp
 
 """
 Parameters - PLEASE MODIFY ACCORDING TO YOUR NEEDS
@@ -46,17 +49,18 @@ gtfs_feed_name = "GTFS_Nairobi" # Make sure the GTFS folder is in the input fold
 
 # Parameters related GTFS Feed and traffic simulation
 snap_to_osm_roads = False # Could take a long time. Data is generally already consistent with OSM network
-ev_consumption = 0.4 # EV consumption (kWh/km) - Value should not affect the output
 reuse_traffic_output = True # If True, serializes the dataframe with operationnal data in order to avopid recomputing TrafficSimulation
-charging_efficiency = 0.9 
-
-# Parameters related to timeseries
-time_step = 50 # Time step in seconds
-
-# Parameters related to baseline energy demand estimation
-population = 5000000 # Total number of people
-demand_per_capita = 400 # Yearly demand per capita (kWh)
 active_working_days = 260 # Number of operating days a year of the minibus taxis
+
+# Parameters related to Diesel cost
+diesel_consumption = 0.1 # Diesel consumption (L/km)
+diesel_price = 1.5 # Diesel price (US$/L)
+diesel_subsidies = 0.1 # Diesel explicit subsidies (US$/L)
+
+# Parameters related to EV cost
+ev_consumption = 0.4 # EV consumption (kWh/km) - Value should not affect the output
+charging_efficiency = 0.9 
+electricity_price = 0.15 # Electricity price (US$/kWh)
 
 """
 Environment variables
@@ -92,9 +96,9 @@ if snap_to_osm_roads:
 feed.general_feed_info()
 print(feed.simulation_area_km2())
 
-##########################################################
-# Traffic simulation & Operation estimates & Power Profile 
-##########################################################
+##########################################
+# Traffic simulation & Operation estimates 
+##########################################
 
 trips = list(feed.trips['trip_id']) # Trips to consider
 ev_con = [ev_consumption] * len(trips) # List of EV consumption for all trips
@@ -104,7 +108,7 @@ if reuse_traffic_output:
 	filename = f"{city}_tmp_operation_{ev_consumption}.pkl"
 
 	# Check if a pickle file with same parameters already exists and the timeseries
-	if os.path.exists(f"{OUTPUT_PATH}/{filename}") and os.path.exists(f"{OUTPUT_PATH}/{city}_powerprofile.csv"):
+	if os.path.exists(f"{OUTPUT_PATH}/{filename}"):
 		print(f"INFO \t Using existing pickle data for operationnal simulation - Make sure it matches with the inputs")
 		# Load the df from the file
 		op = pd.read_pickle(f"{OUTPUT_PATH}/{filename}")  
@@ -114,42 +118,27 @@ if reuse_traffic_output:
 		op = traffic_sim.operation_estimates() # Get operation estimates
 		# Serialize and save the df to a file
 		op.to_pickle(f"{OUTPUT_PATH}/{filename}")
-		df = traffic_sim.profile(start_time = "00:00:00", stop_time = "23:59:59", time_step = time_step, transient_state = False)
-		df.to_csv(f"{OUTPUT_PATH}/{city}_powerprofile.csv", index = False)  
 else:
 	# Carry out the simulation
 	traffic_sim = TrafficSim(feed, trips, ev_con) # Carry out the simulation for all trips
 	op = traffic_sim.operation_estimates() # Get operation estimates
 
-	# Timeseries
-	df = traffic_sim.profile(start_time = "00:00:00", stop_time = "23:59:59", time_step = time_step, transient_state = False)
-	df.to_csv(f"{OUTPUT_PATH}/{city}_powerprofile.csv", index = False)
+#############################
+# Per vehicle metrics savings
+#############################
 
-####################
-# Aggregated metrics
-####################
+n_vehicles = op['ave_nbr_vehicles'].sum()
+vkm = op['vkm'].sum()
+distance_per_vehicle = sum(op['vkt'] * op['ave_nbr_vehicles'])/op['ave_nbr_vehicles'].sum()
 
-print(f"Total energy demand per day (kWh): {op['energy_kWh'].sum() / charging_efficiency}")
+savings_per_km = (diesel_consumption * diesel_price) - (ev_consumption / charging_efficiency * electricity_price)
+savings_per_km_without_subsidies = (diesel_consumption * (diesel_price+diesel_subsidies)) - (ev_consumption / charging_efficiency * electricity_price)
 
-print(f"Total VKM (km): {op['vkm'].sum()}")
-print(f"Total number of vehicles: {op['ave_nbr_vehicles'].sum()}")
-print(f"Average distance travelled by vehicle: {sum(op['vkt'] * op['ave_nbr_vehicles'])/op['ave_nbr_vehicles'].sum()}")
+print(f"Average daily driven distance per vehicle (km): {distance_per_vehicle}")
+print(f"Savings per km w/ subsidies ($/km): {savings_per_km}")
+print(f"Savings per km w/o subsidies ($/km): {savings_per_km_without_subsidies}")
 
-################################
-# VKT per trip (distribution)
-################################
-
-# Different from the average distance by vehicle because not weigthed by the number 
-# of vehicles per trip. Therefore, generally a bit higher because often they are only
-# a small amount of trips yith very high VKT and/or they have a small number of vehicles
-op['vkt'].to_csv(f"{OUTPUT_PATH}/{city}_vkt_per_trip.csv", index = False) 
-print(f"Average distance travelled by vehicles on each trip: {op['vkt'].mean()}")
-
-###############################
-# Comparaison with local demand
-###############################
-
-print(f"Total yearly demand in kWh (pop x demand_per_capita): {population * demand_per_capita}")
-print(f"Relative additionnal demand (%): {op['energy_kWh'].sum()/charging_efficiency*active_working_days/(population * demand_per_capita)*100}")
+print(f"Average per vehicle savings w/ subsidies (US$/year): {distance_per_vehicle*active_working_days*savings_per_km}")
+print(f"Average per vehicle savings w/o subsidies (US$/year): {distance_per_vehicle*active_working_days*savings_per_km_without_subsidies}")
 
 

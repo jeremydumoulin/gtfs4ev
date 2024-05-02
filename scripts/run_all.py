@@ -47,13 +47,16 @@ from rasterio.mask import mask
 import csv
 import json
 
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))) # Append parent directory
+
 from gtfs4ev.gtfsfeed import GTFSFeed
 from gtfs4ev.tripsim import TripSim
 from gtfs4ev.trafficsim import TrafficSim
 from gtfs4ev.topology import Topology
 from gtfs4ev import helpers as hlp
 
-import Run_preprocess_gtfs as pp
+import preprocess_gtfs as pp
 
 #############################################
 # PARAMETERS - MODIFY ACCORDING TO YOUR NEEDS

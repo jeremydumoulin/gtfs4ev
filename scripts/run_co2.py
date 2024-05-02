@@ -1,7 +1,7 @@
 # coding: utf-8
 
 """ 
-A python script that reproduces that calculates the economic savings for the 
+A python script that reproduces that calculates the co2 savings for the 
 different cities.
 """
 
@@ -27,13 +27,16 @@ from rasterio.plot import reshape_as_image
 from rasterio.mask import mask
 import csv
 
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))) # Append parent directory
+
 from gtfs4ev.gtfsfeed import GTFSFeed
 from gtfs4ev.tripsim import TripSim
 from gtfs4ev.trafficsim import TrafficSim
 from gtfs4ev.topology import Topology
 from gtfs4ev import helpers as hlp
 
-import Run_preprocess_gtfs as pp
+import preprocess_gtfs as pp
 
 """
 Parameters - PLEASE MODIFY ACCORDING TO YOUR NEEDS
@@ -49,15 +52,14 @@ snap_to_osm_roads = False # Could take a long time. Data is generally already co
 reuse_traffic_output = True # If True, serializes the dataframe with operationnal data in order to avopid recomputing TrafficSimulation
 active_working_days = 260 # Number of operating days a year of the minibus taxis
 
-# Parameters related to Diesel cost
+# Parameters related to Diesel emissions
 diesel_consumption = 0.1 # Diesel consumption (L/km)
-diesel_price = 1.5 # Diesel price (US$/L)
-diesel_subsidies = 0.1 # Diesel explicit subsidies (US$/L)
+diesel_co2_intensity = 2.7 # Diesel CO2 intensity (kgCO2/L)
 
-# Parameters related to EV cost
+# Parameters related to EV emissions
 ev_consumption = 0.4 # EV consumption (kWh/km) - Value should not affect the output
 charging_efficiency = 0.9 
-electricity_price = 0.15 # Electricity price (US$/kWh)
+electricity_co2_intensity = 0.368 # Electricity CO2 intensity (kgCO2/kWh)
 
 """
 Environment variables
@@ -120,22 +122,28 @@ else:
 	traffic_sim = TrafficSim(feed, trips, ev_con) # Carry out the simulation for all trips
 	op = traffic_sim.operation_estimates() # Get operation estimates
 
-#############################
-# Per vehicle metrics savings
-#############################
+#####################
+# Per vehicle metrics
+#####################
 
 n_vehicles = op['ave_nbr_vehicles'].sum()
 vkm = op['vkm'].sum()
 distance_per_vehicle = sum(op['vkt'] * op['ave_nbr_vehicles'])/op['ave_nbr_vehicles'].sum()
 
-savings_per_km = (diesel_consumption * diesel_price) - (ev_consumption / charging_efficiency * electricity_price)
-savings_per_km_without_subsidies = (diesel_consumption * (diesel_price+diesel_subsidies)) - (ev_consumption / charging_efficiency * electricity_price)
+ev_emissions = ev_consumption / charging_efficiency * electricity_co2_intensity
+diesel_emissions = diesel_consumption*diesel_co2_intensity
 
 print(f"Average daily driven distance per vehicle (km): {distance_per_vehicle}")
-print(f"Savings per km w/ subsidies ($/km): {savings_per_km}")
-print(f"Savings per km w/o subsidies ($/km): {savings_per_km_without_subsidies}")
+print(f"Carbon intensity of the electricity mix (kgCO2/kWh): {electricity_co2_intensity}")
 
-print(f"Average per vehicle savings w/ subsidies (US$/year): {distance_per_vehicle*active_working_days*savings_per_km}")
-print(f"Average per vehicle savings w/o subsidies (US$/year): {distance_per_vehicle*active_working_days*savings_per_km_without_subsidies}")
+print(f"Diesel emissions (kgCO2/km): {diesel_emissions}")
+print(f"EV emissions (kgCO2/km): {ev_emissions}")
 
+print(f"Average per vehicle emission reduction (tCO2/year): {distance_per_vehicle*active_working_days*(diesel_emissions-ev_emissions)/1000}")
 
+####################
+# Aggregated metrics
+####################
+
+print(f"Diesel savings (L/year): {vkm*diesel_consumption * active_working_days}")
+print(f"Total emission reductions (tCO2/year): {vkm*(diesel_emissions-ev_emissions)/1000 * active_working_days}")
