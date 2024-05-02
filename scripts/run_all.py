@@ -130,7 +130,7 @@ OUTPUT_PATH = f"{str(os.getenv("OUTPUT_PATH"))}/{output_folder_name}"
 ################################
 
 # Define the file path
-filename = "input_parameters.json"
+filename = "_INPUTS.json"
 
 general_parameters = {
     "snap_to_osm_roads": snap_to_osm_roads,
@@ -177,7 +177,7 @@ for city in cities:
 	"""
 	Message
 	"""
-	print(f"\n*********  RUNNING THE SCRIPT FOR THE CITY OF {city["name"]} ********* \n")
+	print(f"\n********* RUNNING THE SCRIPT FOR THE CITY OF {city["name"]} ********* \n")
 
 	"""
 	Init variables
@@ -242,6 +242,8 @@ for city in cities:
 	trips = list(feed.trips['trip_id']) # Trips to consider
 	ev_con = [ev_consumption] * len(trips) # List of EV consumption for all trips
 
+	op = pd.DataFrame()
+
 	# If True, only compute Traffic simulation if it has not already been done before
 	if reuse_traffic_output: 
 		filename = f"{city_name}_tmp_operation_{ev_consumption}.pkl"
@@ -257,6 +259,7 @@ for city in cities:
 			op = traffic_sim.operation_estimates() # Get operation estimates
 			# Serialize and save the df to a file
 			op.to_pickle(f"{OUTPUT_PATH}/{filename}")
+
 			df = traffic_sim.profile(start_time = "00:00:00", stop_time = "23:59:59", time_step = time_step, transient_state = False)
 			df.to_csv(f"{OUTPUT_PATH}/{city_name}_powerprofile.csv", index = False)  
 	else:
@@ -334,7 +337,8 @@ for city in cities:
 	# SUBSTEP 1 : Compute the emission index map (i.e., traffic volume map, VKM) using the cropped pop raster as a reference layer
 	# IF NO CHANGE IN PARAMETERS, COMMENT IF ALREADY DONE
 
-	hlp.local_emission_index(vkm_list, linestring_list, pop_raster, f"{OUTPUT_PATH}/{city_name}_tmp_local_em.tif")
+	if not os.path.exists(f"{OUTPUT_PATH}/{city_name}_tmp_local_em.tif"):
+		hlp.local_emission_index(vkm_list, linestring_list, pop_raster, f"{OUTPUT_PATH}/{city_name}_tmp_local_em.tif")
 
 	# SUBSTEP 2 : Compute the distance-weigthed emission exposure map 
 	# IF NO CHANGE IN PARAMETERS, COMMENT IF ALREADY DONE
@@ -462,4 +466,4 @@ for city in cities:
 ###########
 
 # Write the DataFrame to a CSV file
-out_df.to_csv(f"{OUTPUT_PATH}/output.csv", index=False)
+out_df.to_csv(f"{OUTPUT_PATH}/_OUTPUTS.csv", index=False)
