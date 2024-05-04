@@ -53,6 +53,30 @@ def gtfs_preprocessing(feed, city):
 		# Kampala: drop buses
 		feed.filter_agency('bus', clean_all = True)
 
+		# Delete the repeated trips (i.e. those who correspond to the same taxi but a different timespan)
+		df = feed.trips
+		
+		df['common_trip_id'] = df['trip_id'].str.extract(r'(.+?)\s*\(') # Extract common part of trip_id
+		
+		unique_df = df.drop_duplicates(subset=['route_id', 'service_id', 'common_trip_id', 'shape_id']) # Keep only unique rows
+
+		unique_df = unique_df.drop(columns=['common_trip_id']) # Drop the extra column
+		
+		unique_df.reset_index(drop=True, inplace=True) # Reset the index
+
+		feed.trips = unique_df
+
+		# Correct to frequencies so that they match with the trips
+		df = feed.frequencies 
+		
+		df['common_trip_id'] = df['trip_id'].str.extract(r'(.+?)\s*\(') # Extract common part of trip_id
+		
+		df['trip_id'] = df['common_trip_id'] + ' (19-00-00)' # Replace the time part with '(19-00-00)'
+		
+		df = df.drop(columns=['common_trip_id']) # Drop the extra column
+
+		feed.frequencies = df		
+
 	else:
 		print(f"INFO \t Preprocessing: The city named {city} is not associated with any GTFS preprocessing rules")
 
