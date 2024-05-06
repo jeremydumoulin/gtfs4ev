@@ -165,9 +165,15 @@ class TripSim:
                 # Calculate the segment indicators 
                 duration = (current_stop['arrival_time']-previous_stop['departure_time']).total_seconds()
                 distance_along_line = abs(linestring_web_mercator_projection.project(start_point) - linestring_web_mercator_projection.project(end_point)) 
-                speed = distance_along_line / duration * 3.6 # Average speed in km/h
-                consumption = distance_along_line * 1e-3 * self.ev_consumption # consumption in kWh
-                power = consumption * 3.6e3 / duration # Electrical power in kW
+
+                if duration == .0:
+                    speed = .0
+                    consumption = .0
+                    power = .0
+                else:
+                    speed = distance_along_line / duration * 3.6 # Average speed in km/h
+                    consumption = distance_along_line * 1e-3 * self.ev_consumption # consumption in kWh
+                    power = consumption * 3.6e3 / duration # Electrical power in kW
 
                 time += duration
                 cumulative_consumption += consumption

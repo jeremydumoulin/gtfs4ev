@@ -72,99 +72,99 @@ cities = [
 	# 	'gtfs_feed': "GTFS_Nairobi",
 	# 	'pop_raster': "Nairobi_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R10_C22.tif",
 	# 	'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
-	# 	'demand_per_capita': 400, # Yearly demand per capita (kWh)
-	# 	'diesel_price': 1.5, # Diesel price (US$/L)
-	# 	'diesel_subsidies': 0.1, # Diesel explicit subsidies (US$/L)
-	# 	'electricity_price': 0.15, # Electricity price (US$/kWh)
-	# 	'electricity_co2_intensity': 0.368 # Electricity CO2 intensity (kgCO2/kWh)
+	# 	'demand_per_capita': 223.2, # Yearly demand per capita (kWh)
+	# 	'diesel_price': 1.385, # Diesel price (US$/L)
+	# 	'diesel_subsidies': 0.0, # Diesel explicit subsidies (US$/L)
+	# 	'electricity_price': 0.212, # Electricity price (US$/kWh)
+	# 	'electricity_co2_intensity': 0.101 # Electricity CO2 intensity (kgCO2/kWh)
 	# },
 	# {
 	# 	'name': "Freetown",
 	# 	'gtfs_feed': "GTFS_Freetown",
 	# 	'pop_raster': "Freetown_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R9_C17.tif",
 	# 	'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
-	# 	'demand_per_capita': 400, # Yearly demand per capita (kWh)
-	# 	'diesel_price': 1.5, # Diesel price (US$/L)
-	# 	'diesel_subsidies': 0.1, # Diesel explicit subsidies (US$/L)
-	# 	'electricity_price': 0.15, # Electricity price (US$/kWh)
-	# 	'electricity_co2_intensity': 0.368 # Electricity CO2 intensity (kgCO2/kWh)
+	# 	'demand_per_capita': 24.9, # Yearly demand per capita (kWh)
+	# 	'diesel_price': 1.524, # Diesel price (US$/L)
+	# 	'diesel_subsidies': 0.0, # Diesel explicit subsidies (US$/L)
+	# 	'electricity_price': 0.155, # Electricity price (US$/kWh)
+	# 	'electricity_co2_intensity': 0.048 # Electricity CO2 intensity (kgCO2/kWh)
 	# },
 	# {
 	# 	'name': "Abidjan",
 	# 	'gtfs_feed': "GTFS_Abidjan",
 	# 	'pop_raster': "Freetown_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R9_C17.tif",
 	# 	'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
-	# 	'demand_per_capita': 400, # Yearly demand per capita (kWh)
-	# 	'diesel_price': 1.5, # Diesel price (US$/L)
+	# 	'demand_per_capita': 399.6, # Yearly demand per capita (kWh)
+	# 	'diesel_price': 1.165, # Diesel price (US$/L)
 	# 	'diesel_subsidies': 0.1, # Diesel explicit subsidies (US$/L)
-	# 	'electricity_price': 0.15, # Electricity price (US$/kWh)
-	# 	'electricity_co2_intensity': 0.368 # Electricity CO2 intensity (kgCO2/kWh)
+	# 	'electricity_price': 0.118, # Electricity price (US$/kWh)
+	# 	'electricity_co2_intensity': 0.411 # Electricity CO2 intensity (kgCO2/kWh)
 	# },
 	# {
 	# 	'name': "Accra",
 	# 	'gtfs_feed': "GTFS_Accra",
-	# 	'pop_raster': "Freetown_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R9_C17.tif",
+	# 	'pop_raster': "Abidjan_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R9_C18.tif",
 	# 	'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
-	# 	'demand_per_capita': 400, # Yearly demand per capita (kWh)
-	# 	'diesel_price': 1.5, # Diesel price (US$/L)
-	# 	'diesel_subsidies': 0.1, # Diesel explicit subsidies (US$/L)
-	# 	'electricity_price': 0.15, # Electricity price (US$/kWh)
-	# 	'electricity_co2_intensity': 0.368 # Electricity CO2 intensity (kgCO2/kWh)
+	# 	'demand_per_capita': 637.8, # Yearly demand per capita (kWh)
+	# 	'diesel_price': 1.087, # Diesel price (US$/L)
+	# 	'diesel_subsidies': 0.0, # Diesel explicit subsidies (US$/L)
+	# 	'electricity_price': 0.122, # Electricity price (US$/kWh)
+	# 	'electricity_co2_intensity': 0.361 # Electricity CO2 intensity (kgCO2/kWh)
 	# },
 	# {
 	# 	'name': "Alexandria",
 	# 	'gtfs_feed': "GTFS_Alexandria",
-	# 	'pop_raster': "Freetown_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R9_C17.tif",
+	# 	'pop_raster': "Alexandria_Cairo_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R6_C21_C22.tif",
 	# 	'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
-	# 	'demand_per_capita': 400, # Yearly demand per capita (kWh)
-	# 	'diesel_price': 1.5, # Diesel price (US$/L)
-	# 	'diesel_subsidies': 0.1, # Diesel explicit subsidies (US$/L)
-	# 	'electricity_price': 0.15, # Electricity price (US$/kWh)
-	# 	'electricity_co2_intensity': 0.368 # Electricity CO2 intensity (kgCO2/kWh)
+	# 	'demand_per_capita': 1851.1, # Yearly demand per capita (kWh)
+	# 	'diesel_price': 0.209, # Diesel price (US$/L)
+	# 	'diesel_subsidies': 0.58, # Diesel explicit subsidies (US$/L)
+	# 	'electricity_price': 0.017, # Electricity price (US$/kWh)
+	# 	'electricity_co2_intensity': 0.470 # Electricity CO2 intensity (kgCO2/kWh)
 	# },
 	# {
 	# 	'name': "Bamako",
 	# 	'gtfs_feed': "GTFS_Bamako",
-	# 	'pop_raster': "Freetown_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R9_C17.tif",
+	# 	'pop_raster': "Bamako_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R8_C18.tif",
 	# 	'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
-	# 	'demand_per_capita': 400, # Yearly demand per capita (kWh)
-	# 	'diesel_price': 1.5, # Diesel price (US$/L)
-	# 	'diesel_subsidies': 0.1, # Diesel explicit subsidies (US$/L)
-	# 	'electricity_price': 0.15, # Electricity price (US$/kWh)
-	# 	'electricity_co2_intensity': 0.368 # Electricity CO2 intensity (kgCO2/kWh)
+	# 	'demand_per_capita': 154.8, # Yearly demand per capita (kWh)
+	# 	'diesel_price': 1.304, # Diesel price (US$/L)
+	# 	'diesel_subsidies': 0.0, # Diesel explicit subsidies (US$/L)
+	# 	'electricity_price': 0.214, # Electricity price (US$/kWh)
+	# 	'electricity_co2_intensity': 0.463 # Electricity CO2 intensity (kgCO2/kWh)
 	# },
 	# {
 	# 	'name': "Cairo",
 	# 	'gtfs_feed': "GTFS_Cairo",
-	# 	'pop_raster': "Freetown_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R9_C17.tif",
+	# 	'pop_raster': "Alexandria_Cairo_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R6_C21_C22.tif",
 	# 	'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
-	# 	'demand_per_capita': 400, # Yearly demand per capita (kWh)
-	# 	'diesel_price': 1.5, # Diesel price (US$/L)
-	# 	'diesel_subsidies': 0.1, # Diesel explicit subsidies (US$/L)
-	# 	'electricity_price': 0.15, # Electricity price (US$/kWh)
-	# 	'electricity_co2_intensity': 0.368 # Electricity CO2 intensity (kgCO2/kWh)
+	# 	'demand_per_capita': 1851.1, # Yearly demand per capita (kWh)
+	# 	'diesel_price': 0.209 # Diesel price (US$/L)
+	# 	'diesel_subsidies': 0.58, # Diesel explicit subsidies (US$/L)
+	# 	'electricity_price': 0.017, # Electricity price (US$/kWh)
+	# 	'electricity_co2_intensity': 0.470 # Electricity CO2 intensity (kgCO2/kWh)
 	# },
 	# {
 	# 	'name': "Harare",
 	# 	'gtfs_feed': "GTFS_Harare",
-	# 	'pop_raster': "Freetown_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R9_C17.tif",
+	# 	'pop_raster': "Harare_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R11_C22.tif",
 	# 	'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
-	# 	'demand_per_capita': 400, # Yearly demand per capita (kWh)
-	# 	'diesel_price': 1.5, # Diesel price (US$/L)
-	# 	'diesel_subsidies': 0.1, # Diesel explicit subsidies (US$/L)
-	# 	'electricity_price': 0.15, # Electricity price (US$/kWh)
-	# 	'electricity_co2_intensity': 0.368 # Electricity CO2 intensity (kgCO2/kWh)
+	# 	'demand_per_capita': 502.7, # Yearly demand per capita (kWh)
+	# 	'diesel_price': 1.680, # Diesel price (US$/L)
+	# 	'diesel_subsidies': 0.0, # Diesel explicit subsidies (US$/L)
+	# 	'electricity_price': 0.064, # Electricity price (US$/kWh)
+	# 	'electricity_co2_intensity': 0.392 # Electricity CO2 intensity (kgCO2/kWh)
 	# },
 	{
 		'name': "Kampala",
 		'gtfs_feed': "GTFS_Kampala",
-		'pop_raster': "Freetown_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R9_C17.tif",
+		'pop_raster': "Kampala_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R9_C22.tif",
 		'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
-		'demand_per_capita': 400, # Yearly demand per capita (kWh)
-		'diesel_price': 1.5, # Diesel price (US$/L)
-		'diesel_subsidies': 0.1, # Diesel explicit subsidies (US$/L)
-		'electricity_price': 0.15, # Electricity price (US$/kWh)
-		'electricity_co2_intensity': 0.368 # Electricity CO2 intensity (kgCO2/kWh)
+		'demand_per_capita': 96.0, # Yearly demand per capita (kWh)
+		'diesel_price': 1.309, # Diesel price (US$/L)
+		'diesel_subsidies': 0.0, # Diesel explicit subsidies (US$/L)
+		'electricity_price': 0.169, # Electricity price (US$/kWh)
+		'electricity_co2_intensity': 0.052 # Electricity CO2 intensity (kgCO2/kWh)
 	}
 ]
 
@@ -175,13 +175,13 @@ Global parameters
 # General
 output_folder_name = "res_all_cities"
 snap_to_osm_roads = False # Could take a long time. Data is generally already consistent with OSM network
-reuse_traffic_output = True # If True, serializes the dataframe with operationnal data in order to avopid recomputing TrafficSimulation
-active_working_days = 260 # Number of operating days a year of the minibus taxis
+reuse_traffic_output = False # If True, serializes the dataframe with operationnal data in order to avopid recomputing TrafficSimulation
+active_working_days = 250 # Number of operating days a year of the minibus taxis
 pop_from_raster = True # If True, estimates the number of people using the cropped bbox and population raster
-time_step = 100 # Time step in seconds for the power/energy profile
+time_step = 1000 # Time step in seconds for the power/energy profile
 
 # Energy, economy, environmental implications 
-ev_consumption = 0.4 # EV consumption (kWh/km) - Value should not affect the output
+ev_consumption = 0.39 # EV consumption (kWh/km) - Value should not affect the output
 charging_efficiency = 0.9 # Loss during charging process
 
 diesel_consumption = 0.1 # Diesel consumption (L/km)
