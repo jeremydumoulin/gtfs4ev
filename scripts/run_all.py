@@ -67,94 +67,94 @@ City-specific parameters
 """
 
 cities = [
-	# {
-	# 	'name': "Nairobi",
-	# 	'gtfs_feed': "GTFS_Nairobi",
-	# 	'pop_raster': "Nairobi_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R10_C22.tif",
-	# 	'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
-	# 	'demand_per_capita': 223.2, # Yearly demand per capita (kWh)
-	# 	'diesel_price': 1.385, # Diesel price (US$/L)
-	# 	'diesel_subsidies': 0.0, # Diesel explicit subsidies (US$/L)
-	# 	'electricity_price': 0.212, # Electricity price (US$/kWh)
-	# 	'electricity_co2_intensity': 0.101 # Electricity CO2 intensity (kgCO2/kWh)
-	# },
-	# {
-	# 	'name': "Freetown",
-	# 	'gtfs_feed': "GTFS_Freetown",
-	# 	'pop_raster': "Freetown_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R9_C17.tif",
-	# 	'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
-	# 	'demand_per_capita': 24.9, # Yearly demand per capita (kWh)
-	# 	'diesel_price': 1.524, # Diesel price (US$/L)
-	# 	'diesel_subsidies': 0.0, # Diesel explicit subsidies (US$/L)
-	# 	'electricity_price': 0.155, # Electricity price (US$/kWh)
-	# 	'electricity_co2_intensity': 0.048 # Electricity CO2 intensity (kgCO2/kWh)
-	# },
-	# {
-	# 	'name': "Abidjan",
-	# 	'gtfs_feed': "GTFS_Abidjan",
-	# 	'pop_raster': "Freetown_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R9_C17.tif",
-	# 	'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
-	# 	'demand_per_capita': 399.6, # Yearly demand per capita (kWh)
-	# 	'diesel_price': 1.165, # Diesel price (US$/L)
-	# 	'diesel_subsidies': 0.1, # Diesel explicit subsidies (US$/L)
-	# 	'electricity_price': 0.118, # Electricity price (US$/kWh)
-	# 	'electricity_co2_intensity': 0.411 # Electricity CO2 intensity (kgCO2/kWh)
-	# },
-	# {
-	# 	'name': "Accra",
-	# 	'gtfs_feed': "GTFS_Accra",
-	# 	'pop_raster': "Abidjan_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R9_C18.tif",
-	# 	'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
-	# 	'demand_per_capita': 637.8, # Yearly demand per capita (kWh)
-	# 	'diesel_price': 1.087, # Diesel price (US$/L)
-	# 	'diesel_subsidies': 0.0, # Diesel explicit subsidies (US$/L)
-	# 	'electricity_price': 0.122, # Electricity price (US$/kWh)
-	# 	'electricity_co2_intensity': 0.361 # Electricity CO2 intensity (kgCO2/kWh)
-	# },
-	# {
-	# 	'name': "Alexandria",
-	# 	'gtfs_feed': "GTFS_Alexandria",
-	# 	'pop_raster': "Alexandria_Cairo_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R6_C21_C22.tif",
-	# 	'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
-	# 	'demand_per_capita': 1851.1, # Yearly demand per capita (kWh)
-	# 	'diesel_price': 0.209, # Diesel price (US$/L)
-	# 	'diesel_subsidies': 0.58, # Diesel explicit subsidies (US$/L)
-	# 	'electricity_price': 0.017, # Electricity price (US$/kWh)
-	# 	'electricity_co2_intensity': 0.470 # Electricity CO2 intensity (kgCO2/kWh)
-	# },
-	# {
-	# 	'name': "Bamako",
-	# 	'gtfs_feed': "GTFS_Bamako",
-	# 	'pop_raster': "Bamako_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R8_C18.tif",
-	# 	'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
-	# 	'demand_per_capita': 154.8, # Yearly demand per capita (kWh)
-	# 	'diesel_price': 1.304, # Diesel price (US$/L)
-	# 	'diesel_subsidies': 0.0, # Diesel explicit subsidies (US$/L)
-	# 	'electricity_price': 0.214, # Electricity price (US$/kWh)
-	# 	'electricity_co2_intensity': 0.463 # Electricity CO2 intensity (kgCO2/kWh)
-	# },
-	# {
-	# 	'name': "Cairo",
-	# 	'gtfs_feed': "GTFS_Cairo",
-	# 	'pop_raster': "Alexandria_Cairo_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R6_C21_C22.tif",
-	# 	'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
-	# 	'demand_per_capita': 1851.1, # Yearly demand per capita (kWh)
-	# 	'diesel_price': 0.209 # Diesel price (US$/L)
-	# 	'diesel_subsidies': 0.58, # Diesel explicit subsidies (US$/L)
-	# 	'electricity_price': 0.017, # Electricity price (US$/kWh)
-	# 	'electricity_co2_intensity': 0.470 # Electricity CO2 intensity (kgCO2/kWh)
-	# },
-	# {
-	# 	'name': "Harare",
-	# 	'gtfs_feed': "GTFS_Harare",
-	# 	'pop_raster': "Harare_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R11_C22.tif",
-	# 	'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
-	# 	'demand_per_capita': 502.7, # Yearly demand per capita (kWh)
-	# 	'diesel_price': 1.680, # Diesel price (US$/L)
-	# 	'diesel_subsidies': 0.0, # Diesel explicit subsidies (US$/L)
-	# 	'electricity_price': 0.064, # Electricity price (US$/kWh)
-	# 	'electricity_co2_intensity': 0.392 # Electricity CO2 intensity (kgCO2/kWh)
-	# },
+	{
+		'name': "Nairobi",
+		'gtfs_feed': "GTFS_Nairobi",
+		'pop_raster': "Nairobi_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R10_C22.tif",
+		'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
+		'demand_per_capita': 223.2, # Yearly demand per capita (kWh)
+		'diesel_price': 1.385, # Diesel price (US$/L)
+		'diesel_subsidies': 0.0, # Diesel explicit subsidies (US$/L)
+		'electricity_price': 0.212, # Electricity price (US$/kWh)
+		'electricity_co2_intensity': 0.101 # Electricity CO2 intensity (kgCO2/kWh)
+	},
+	{
+		'name': "Freetown",
+		'gtfs_feed': "GTFS_Freetown",
+		'pop_raster': "Freetown_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R9_C17.tif",
+		'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
+		'demand_per_capita': 24.9, # Yearly demand per capita (kWh)
+		'diesel_price': 1.524, # Diesel price (US$/L)
+		'diesel_subsidies': 0.0, # Diesel explicit subsidies (US$/L)
+		'electricity_price': 0.155, # Electricity price (US$/kWh)
+		'electricity_co2_intensity': 0.048 # Electricity CO2 intensity (kgCO2/kWh)
+	},
+	{
+		'name': "Abidjan",
+		'gtfs_feed': "GTFS_Abidjan",
+		'pop_raster': "Abidjan_Accra_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R9_C18.tif",
+		'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
+		'demand_per_capita': 399.6, # Yearly demand per capita (kWh)
+		'diesel_price': 1.165, # Diesel price (US$/L)
+		'diesel_subsidies': 0.1, # Diesel explicit subsidies (US$/L)
+		'electricity_price': 0.118, # Electricity price (US$/kWh)
+		'electricity_co2_intensity': 0.411 # Electricity CO2 intensity (kgCO2/kWh)
+	},
+	{
+		'name': "Accra",
+		'gtfs_feed': "GTFS_Accra",
+		'pop_raster': "Abidjan_Accra_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R9_C18.tif",
+		'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
+		'demand_per_capita': 637.8, # Yearly demand per capita (kWh)
+		'diesel_price': 1.087, # Diesel price (US$/L)
+		'diesel_subsidies': 0.0, # Diesel explicit subsidies (US$/L)
+		'electricity_price': 0.122, # Electricity price (US$/kWh)
+		'electricity_co2_intensity': 0.361 # Electricity CO2 intensity (kgCO2/kWh)
+	},
+	{
+		'name': "Alexandria",
+		'gtfs_feed': "GTFS_Alexandria",
+		'pop_raster': "Alexandria_Cairo_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R6_C21_C22.tif",
+		'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
+		'demand_per_capita': 1851.1, # Yearly demand per capita (kWh)
+		'diesel_price': 0.209, # Diesel price (US$/L)
+		'diesel_subsidies': 0.58, # Diesel explicit subsidies (US$/L)
+		'electricity_price': 0.017, # Electricity price (US$/kWh)
+		'electricity_co2_intensity': 0.470 # Electricity CO2 intensity (kgCO2/kWh)
+	},
+	{
+		'name': "Bamako",
+		'gtfs_feed': "GTFS_Bamako",
+		'pop_raster': "Bamako_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R8_C18.tif",
+		'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
+		'demand_per_capita': 154.8, # Yearly demand per capita (kWh)
+		'diesel_price': 1.304, # Diesel price (US$/L)
+		'diesel_subsidies': 0.0, # Diesel explicit subsidies (US$/L)
+		'electricity_price': 0.214, # Electricity price (US$/kWh)
+		'electricity_co2_intensity': 0.463 # Electricity CO2 intensity (kgCO2/kWh)
+	},
+	{
+		'name': "Cairo",
+		'gtfs_feed': "GTFS_Cairo",
+		'pop_raster': "Alexandria_Cairo_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R6_C21_C22.tif",
+		'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
+		'demand_per_capita': 1851.1, # Yearly demand per capita (kWh)
+		'diesel_price': 0.209, # Diesel price (US$/L)
+		'diesel_subsidies': 0.58, # Diesel explicit subsidies (US$/L)
+		'electricity_price': 0.017, # Electricity price (US$/kWh)
+		'electricity_co2_intensity': 0.470 # Electricity CO2 intensity (kgCO2/kWh)
+	},
+	{
+		'name': "Harare",
+		'gtfs_feed': "GTFS_Harare",
+		'pop_raster': "Harare_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R11_C22.tif",
+		'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
+		'demand_per_capita': 502.7, # Yearly demand per capita (kWh)
+		'diesel_price': 1.680, # Diesel price (US$/L)
+		'diesel_subsidies': 0.0, # Diesel explicit subsidies (US$/L)
+		'electricity_price': 0.064, # Electricity price (US$/kWh)
+		'electricity_co2_intensity': 0.392 # Electricity CO2 intensity (kgCO2/kWh)
+	},
 	{
 		'name': "Kampala",
 		'gtfs_feed': "GTFS_Kampala",
@@ -173,12 +173,12 @@ Global parameters
 """
 
 # General
-output_folder_name = "res_all_cities"
+output_folder_name = "results_all"
 snap_to_osm_roads = False # Could take a long time. Data is generally already consistent with OSM network
-reuse_traffic_output = False # If True, serializes the dataframe with operationnal data in order to avopid recomputing TrafficSimulation
+reuse_traffic_output = True # If True, serializes the dataframe with operationnal data in order to avopid recomputing TrafficSimulation
 active_working_days = 250 # Number of operating days a year of the minibus taxis
 pop_from_raster = True # If True, estimates the number of people using the cropped bbox and population raster
-time_step = 1000 # Time step in seconds for the power/energy profile
+time_step = 30 # Time step in seconds for the power/energy profile
 
 # Energy, economy, environmental implications 
 ev_consumption = 0.39 # EV consumption (kWh/km) - Value should not affect the output
@@ -190,9 +190,9 @@ diesel_co2_intensity = 2.7 # Diesel CO2 intensity (kgCO2/L)
 decay_rate = 0.0064 # Exponential decay rate (1/m)
 buffer_distance = 300 # Buffer ditance in meters
 low_threshold = 1  # Minimum treshold to consider population exposed to TRAP (km)
-medium_threshold = 200 # Medium threshold for population exposure to TRAP (km)
-high_threshold = 600 # High threshold for population exposure to TRAP (km) - Corresponds roughly to an exposure of 0.5 hour to the emission of a 100m road segment (when located at the middle of it) of a busy road 
-#(5*3600*(30/60)*100)*exp(-0.0064*50)/1000 (5 vehicles per second)
+medium_threshold = 100 # Medium threshold for population exposure to TRAP (km)
+high_threshold = 300 # High threshold for population exposure to TRAP (km) - Corresponds roughly to an exposure of 0.5 hour to the emission of a 100m road segment (when located at the middle of it) of a busy road 
+#1*3600*(60/60)*100)*exp(-0.0064*25)/1000)
 
 """
 Environment variables
@@ -389,7 +389,7 @@ for city in cities:
 	baseline_demand = population * demand_per_capita
 	additionnal_demand = op['energy_kWh'].sum() / charging_efficiency * active_working_days
 
-	daily_demand_per_trip = op['energy_kWh'] / charging_efficiency
+	daily_demand_per_trip = (op['energy_kWh'] / op['ave_nbr_vehicles'])  / charging_efficiency
 	daily_demand_per_trip.to_csv(f"{OUTPUT_PATH}/{city_name}_daily_demand_per_trip_kWh.csv", index = False)
 
 	"""
