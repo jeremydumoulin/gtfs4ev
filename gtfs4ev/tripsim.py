@@ -413,7 +413,7 @@ class TripSim:
             if (current_datetime < min_datetime) or (current_datetime > (max_datetime + timedelta(seconds=decay_time)) ):
                 power = .0
                 energy += .0
-                n_vehicles = 0
+                n_vehicles = 0                
             else:                
                 # Get the index of the row with the relevant operational information            
                 # If in the decay time of the last time slot, set to the index of the last time slot
@@ -438,13 +438,13 @@ class TripSim:
                 if transient_state and ((t_local - self.trip_duration_sec) < 0):
                     n_vehicles = max(round(t_local / headway_sec), 1) 
                 else:
-                    n_vehicles = max(round(df.loc[index, 'n_vehicles']), 1)
+                    n_vehicles = max(round(df.loc[index, 'n_vehicles']), 1)                    
      
                 # Loop over the vehicles
                 # For each vehicle, add the power for the local time delayed by the headway time 
                 if current_datetime <= max_datetime:
                     for vehicle_index in range(n_vehicles):                                  
-                        power += self.power_profile(t_local + vehicle_index * headway_sec, loop=True)                  
+                        power += self.power_profile(t_local + vehicle_index * headway_sec, loop=True)                                  
 
                 # Add also the decay of the fleet of the previous time slot if the transient state neeeds to be calculated
                 if transient_state and (index > 0 or current_datetime > max_datetime):
@@ -465,7 +465,7 @@ class TripSim:
                     for vehicle_index in range(n_vehicles_previous):                                  
                         power += self.power_profile(t_local + vehicle_index * headway_sec, loop=True)
 
-                energy += power * time_step / 3600                    
+                energy += power * time_step / 3600                  
   
             output_data.append({
                 't': t,

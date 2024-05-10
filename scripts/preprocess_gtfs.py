@@ -54,6 +54,9 @@ def gtfs_preprocessing(feed, city):
 		df['trip_id'] = df['common_trip_id'] + ' (15-00-00)' # Replace the time part with '(19-00-00)'		
 		df = df.drop(columns=['common_trip_id']) # Drop the extra column
 
+		# Sort the DataFrame by trip_id and start_time
+		df = df.sort_values(by=['trip_id', 'start_time'])
+
 		feed.frequencies = df	
 
 	elif city == "Freetown":
@@ -88,6 +91,9 @@ def gtfs_preprocessing(feed, city):
 		df['common_trip_id'] = df['trip_id'].str.extract(r'(.+?)\s*\(') # Extract common part of trip_id		
 		df['trip_id'] = df['common_trip_id'] + ' (19-00-00)' # Replace the time part with '(19-00-00)'		
 		df = df.drop(columns=['common_trip_id']) # Drop the extra column
+
+		# Sort the DataFrame by trip_id and start_time
+		df = df.sort_values(by=['trip_id', 'start_time'])
 
 		feed.frequencies = df		
 
