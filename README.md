@@ -30,7 +30,6 @@ repository = https://gitlab.epfl.ch/PVLAB/SYSTEM/openmod4africa/gtfs4ev
 │   .env  
 │   environment.yml  
 │   LICENSE.md  
-│   main.py  
 │   README.md  
 │     
 ├───doc  
@@ -44,6 +43,7 @@ repository = https://gitlab.epfl.ch/PVLAB/SYSTEM/openmod4africa/gtfs4ev
 │   │   tripsim.py  
 │   │   __init__.py  
 │
+├───scripts
 ├───input  
 └───output
 ```  
