@@ -100,17 +100,17 @@ cities = [
 	# 	'electricity_price': 0.118, # Electricity price (US$/kWh)
 	# 	'electricity_co2_intensity': 0.411 # Electricity CO2 intensity (kgCO2/kWh)
 	# },
-	# {
-	# 	'name': "Accra",
-	# 	'gtfs_feed': "GTFS_Accra",
-	# 	'pop_raster': "Abidjan_Accra_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R9_C18.tif",
-	# 	'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
-	# 	'demand_per_capita': 637.8, # Yearly demand per capita (kWh)
-	# 	'diesel_price': 1.087, # Diesel price (US$/L)
-	# 	'diesel_subsidies': 0.0, # Diesel explicit subsidies (US$/L)
-	# 	'electricity_price': 0.122, # Electricity price (US$/kWh)
-	# 	'electricity_co2_intensity': 0.361 # Electricity CO2 intensity (kgCO2/kWh)
-	# },
+	{
+		'name': "Accra",
+		'gtfs_feed': "GTFS_Accra",
+		'pop_raster': "Abidjan_Accra_GHS_POP_E2020_GLOBE_R2023A_4326_3ss_V1_0_R9_C18.tif",
+		'population': 0, # Will not be used if you decide to calculate it using the pop raster layer
+		'demand_per_capita': 637.8, # Yearly demand per capita (kWh)
+		'diesel_price': 1.087, # Diesel price (US$/L)
+		'diesel_subsidies': 0.0, # Diesel explicit subsidies (US$/L)
+		'electricity_price': 0.122, # Electricity price (US$/kWh)
+		'electricity_co2_intensity': 0.361 # Electricity CO2 intensity (kgCO2/kWh)
+	},
 	# {
 	# 	'name': "Alexandria",
 	# 	'gtfs_feed': "GTFS_Alexandria",
@@ -207,7 +207,7 @@ OUTPUT_PATH = f"{str(os.getenv("OUTPUT_PATH"))}/{output_folder_name}"
 ################################
 
 # Define the file path
-filename = "_INPUTS.json"
+filename = "_InputSummary.json"
 
 general_parameters = {
     "snap_to_osm_roads": snap_to_osm_roads,
@@ -442,7 +442,7 @@ for city in cities:
 	    kernel = kernel*mask
 		    
 	    # Distance-weigthing: perform the convolution operation 
-	    convolved_data = convolve2d(raster_data, kernel, mode='same', boundary='wrap')
+	    convolved_data = convolve2d(raster_data, kernel, mode='same', boundary='fill')
 		    
 	    # Create a new raster file with the convolved data
 	    profile = src.profile
@@ -547,4 +547,4 @@ for city in cities:
 ###########
 
 # Write the DataFrame to a CSV file
-out_df.to_csv(f"{OUTPUT_PATH}/_OUTPUTS.csv", index=False)
+out_df.to_csv(f"{OUTPUT_PATH}/_OutputSummary.csv", index=False)
