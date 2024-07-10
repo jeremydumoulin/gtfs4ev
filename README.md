@@ -1,5 +1,5 @@
 # GTFS4EV
-**GTFS4EV (GTFS for Electric Vehicles) is a python code aiming to simulate the daily electric energy demand of a transport system powered by electric vehicles using GTFS data.** 
+**GTFS4EV (GTFS for Electric Vehicles) is a python code simulating the daily electric energy demand of a transport system powered by electric vehicles using GTFS data. It also comes wit hhelper functions and scripts to estimate the main environmental (exposure to air pollution, reduction in CO2 emissions) and economic benefits (savings for owner-operators) of vehicle electrification.** 
 
 GTFS data is used to model the operation of a the vehicles along each trip according to the stop_times.txt and shapes.txt files. Then, the frequencies.txt file is used to estimate the number of vehicles in operation on each trip. Estimated electrical power dissipation and energy consumption are based on a user-specified energy demand per kilometer (kWh/km). 
 
