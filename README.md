@@ -91,7 +91,7 @@ After running the simulation, some **output data** will be automatically stored 
 
 To run the code, you need to import the various modules you want to use from the `gtfs4ev/` package into a new python script. 
 
-> :bulb: **Tip:** For a quick start, we recommend looking at the "run" files in the `scripts/` file. These files come with different sections of code that you can simply uncomment to get to familiar with the code step by step. Note that thee folder also contains a ' `preprocess_gtfs.py` file, which is a script containing pre-processing rules for some GTFS data.
+> :bulb: **Tip:** For a quick start, we recommend looking at the "run" files in the `scripts/` file. These files come with different sections of code that you can simply uncomment to get to familiar with the code step by step. In particular, we recommend looking at the `run_all.py` script, which contains a script that could run a batch simulation of different GTFS files and assess tha main energy, economy, and environmental implications based on additionnal inputs. Note that thee folder also contains a `preprocess_gtfs.py` file, which is a script containing pre-processing rules for some GTFS data.
 
 You will find two types of modules in the package:
 * The core **classes** of gtfs4ev: GTFSFeed, TripSim, TrafficSim
