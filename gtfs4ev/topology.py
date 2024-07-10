@@ -99,7 +99,7 @@ class Topology:
         return df 
 
     def trip_crossovers(self):
-        """ Number of crossovers in the networj
+        """ Number of crossovers in the network
             Todo: eliminate the crossovers on the same route
         """
         shapes = self.feed.shapes['geometry'].tolist()

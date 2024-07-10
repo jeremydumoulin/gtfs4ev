@@ -1,15 +1,15 @@
 # GTFS4EV
 **GTFS4EV (GTFS for Electric Vehicles) is a python code aiming to simulate the daily electric energy demand of a transport system powered by electric vehicles using GTFS data.** 
 
-GTFS data is used to model the mobility behaviour of a vehicle along each trip according to the stop_times.txt file. Then, the frequencies.txt file is used to estimate the number and distribution of vehicles on each trip. Estimated electrical power dissipation and energy consumption are based on a user-specified energy demand per kilometer (kWh/km). 
+GTFS data is used to model the operation of a the vehicles along each trip according to the stop_times.txt and shapes.txt files. Then, the frequencies.txt file is used to estimate the number of vehicles in operation on each trip. Estimated electrical power dissipation and energy consumption are based on a user-specified energy demand per kilometer (kWh/km). 
 
 More generally, the code provides the following features:
 
-- GTFS data acheck-up and filtering
-- Assessment of general transit feed indicators based on the GTFS data: area covered by the system, average trip length, distance between stops, etc.
-- Assessment of topological characteristics of the transit system
-- Simulation of the transport system operation and associated indicators: number of vehicles on the road, speed, distance travelled, etc.
+- GTFS data consistency and filtering
+- Assessment of general transit indicators based on the GTFS data: area (km2) covered by the routes, average trip length, distance between stops, etc.
+- Simulation of the transport system operation and associated indicators: number of vehicles in operation, speed, distance travelled, etc.
 - Power and energy profile of the electric vehicle fleet
+- Helper functions to calculat topological characteristics (under development) and exposure to traffic-related air pollution 
 
 > :memo: **Note:** GTFS stands for General Transit Feed Specification. It is a standardized data format designed for scheduled transport systems, in the form of a set of .txt files describing various aspects of the system and linked together using a relational data structure. Importantly, it contains both spatial and temporal data, paving the way for mobility simulation. The main useful files and their links are shown in the following figure. Note that for the code to work, some GTFS files that are officially optionnal are required, such as shapes.txt and frequencies.txt. For more detailed information about GTFS data, please visit the [google documentation](https://developers.google.com/transit/gtfs).
 
@@ -18,10 +18,10 @@ More generally, the code provides the following features:
 	<p><font size="-1">GTFS data structure showing the relations between the different tables. Adapted from: J. Vieira, Transp. Res. Part D, 2023.</font></p>
 </center>
 
-authors = Jeremy Dumoulin, Alejandro Pena-Bello, Noémie Jeannin, Nicolas Wyrsch  
+authors = Jeremy Dumoulin, Alejandro Pena-Bello, Noémie Jeannin, Nicolas Wyrsch 
+institution = EPFL, Switzerland, PV-LAB
 contact = jeremy.dumoulin@epfl.ch  
 langage = python 3  
-repository = https://gitlab.epfl.ch/PVLAB/SYSTEM/openmod4africa/gtfs4ev 
 
 ## Project structure
 ```bash
@@ -69,13 +69,19 @@ To-be-implemented
 
 ## Usage
 
+### Environment variables
+Open the .env file and set the paths of the various environment variables to the desired paths:
+
+- INPUT_PATH: Path to the input files
+- OUTPUT_PATH: Path to store the output files
+
 ### Input and output data
 The **input data** should be placed in the dedicated `/input` folder. The input files are of two types:   
 
-- GTFS data sets  
+- GTFS datasets  
 - GIS data (such as OSM roads)
 
-> :warning: <span style="color:#dd8828">**Important:** If your GTFS data is in the form of a .zip file, you'll need to extract it manually into the '/input' folder.</span>
+> :warning: <span style="color:#dd8828">**Important:** If your GTFS data is in the form of a .zip file, you'll need to extract it manually into the `/input` folder.</span>
 
 After running the simulation, some **output data** will be automatically stored in the dedicated `/output` folder. We also recommend using this folder to store any other simulation results.
 
@@ -89,7 +95,7 @@ To run the code, you need to import the various modules you want to use from the
 
 You will find two types of modules in the package:
 * The core **classes** of gtfs4ev: GTFSFeed, TripSim, TrafficSim
-* **helpers.py**: various helper functions
+* Helper functions: **helpers.py** and **topology.py** (under development)
 
 Both can be imported as modules to be used in the python script.
 ```python
