@@ -83,10 +83,13 @@ After running the simulation, some **output data** will be automatically stored 
 
 ### Running simulations
 
-To run the code, you need to import the various modules you want to use from the `gtfs4ev/` package into a new python script. For the time being, you will find two types of modules in the package:
+To run the code, you need to import the various modules you want to use from the `gtfs4ev/` package into a new python script. 
 
+> :bulb: **Tip:** For a quick start, we recommend looking at the "run" files in the `scripts/` file. These files come with different sections of code that you can simply uncomment to get to familiar with the code step by step. Note that thee folder also contains a ' `preprocess_gtfs.py` file, which is a script containing pre-processing rules for some GTFS data.
+
+You will find two types of modules in the package:
 * The core **classes** of gtfs4ev: GTFSFeed, TripSim, TrafficSim
-* Some more generic **helpers**: helpers.py, topology.py 
+* **helpers.py**: various helper functions
 
 Both can be imported as modules to be used in the python script.
 ```python
@@ -116,18 +119,14 @@ Please also make sure to update tests as appropriate.
 
 - [ ] Rewrite the calculation of the trip profile : should be made more clear
 - [ ] Transient state: seems there is a small problem (the rise and decay should be symmetric)
-- [ ] Import: double check the profile estimation, seems there is a small error at the beginning of each time slot (small transient regime)
-- [ ] Check consistency of energy estimation using operation_estimates and integration of power profile (seems there is sometimes a small difference, example for Alexandria)
-- [ ] Potential benefits of electrification
 - [ ] Speed-up profile calculation
 - [ ] Improve closest point mapping (interpolate between points)
-- [ ] Add helper function to preprocess GIS data or even create a class
+- [ ] Write some unit tests 
 
 ### Backlog
 
 - [ ] Let the user set the desired projection CRS
 - [ ] Assess some accessibility metrics by crossing the data with other GIS data 
-- [ ] Write some unit tests 
 - [ ] Improve a bit GTFS data analysis, cleaning, and filtering ; perhaps by relying on an external library
 
 ### Done
