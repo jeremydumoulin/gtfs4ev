@@ -9,6 +9,7 @@ from shapely.geometry import LineString, Point, shape, Polygon, box
 import numpy as np
 import rasterio
 from rasterio.features import geometry_mask
+from rasterio.mask import mask
 from pyproj import Geod
 
 def check_dataframe(df):
@@ -121,7 +122,7 @@ def crop_raster(raster_path, bbox, output_raster_path):
     data_path = raster_path
 
     with rasterio.open(data_path) as src:
-        out_image, out_transform = rasterio.mask.mask(src, [bbox], crop=True)
+        out_image, out_transform = mask(src, [bbox], crop=True)
         out_meta = src.meta
 
     out_meta.update({"driver": "GTiff",

@@ -54,10 +54,10 @@ reuse_traffic_output = True # If True, serializes the dataframe with operationna
 charging_efficiency = 0.9 
 
 # Parameters related to timeseries
-time_step = 50 # Time step in seconds
+time_step = 60*10 # Time step in seconds
 
 # Parameters related to baseline energy demand estimation
-population = 5000000 # Total number of people
+population = 5000000 # Total number of people (can also be estimated from GIS data if)
 demand_per_capita = 400 # Yearly demand per capita (kWh)
 active_working_days = 260 # Number of operating days a year of the minibus taxis
 
@@ -93,7 +93,7 @@ if snap_to_osm_roads:
 
 # Display general information about the data
 feed.general_feed_info()
-print(feed.simulation_area_km2())
+print(f"\t Simulation area: {feed.simulation_area_km2()} km2")
 
 ##########################################################
 # Traffic simulation & Operation estimates & Power Profile 
