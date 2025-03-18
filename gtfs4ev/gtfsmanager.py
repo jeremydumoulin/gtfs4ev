@@ -456,6 +456,8 @@ class GTFSManager:
         group_sizes = self.frequencies.groupby('trip_id').size().reset_index(name='row_count')
         are_all_values_same = group_sizes['row_count'].nunique() == 1
 
+        print(f"\t Simulation area: {self.simulation_area_km2()} km2")
+
         if are_all_values_same:
             print("\t Temporal Analysis:")
             print(f"\t  - Frequency intervals: {group_sizes['row_count'][0]}")
@@ -466,8 +468,8 @@ class GTFSManager:
 
     """ Per trip transit indicators """
 
-    def trip_length_km(self, trip_id, geodesic = True):
-        """ Calculates the lenght in km of a trip
+    def trip_length_km(self, trip_id, geodesic = True) -> float:
+        """ Calculates the lenght in km of a trip.
         """
         # Get the shape of the corresponding trip and project it into epsg:3857 crs
         gdf = pd.merge(self.trips, self.shapes[['shape_id', 'geometry']], on='shape_id', how='left')
@@ -483,7 +485,7 @@ class GTFSManager:
 
         return distance
 
-    def trip_duration_sec(self, trip_id):
+    def trip_duration_sec(self, trip_id) -> float:
         """ Calculates the time in sec of a trip
         """
         trip_stop_times = self.stop_times[self.stop_times['trip_id'] == trip_id]
@@ -491,7 +493,7 @@ class GTFSManager:
 
         return duration
 
-    def ave_distance_between_stops(self, trip_id, correct_stop_loc = True):
+    def ave_distance_between_stops(self, trip_id, correct_stop_loc = True) -> float:
         """ Calculates the average distance between stops in km along a trip
         If needed, the stop location can by clipped to the closest point along the shape of the trip
         """
@@ -528,7 +530,7 @@ class GTFSManager:
 
         return result_df['stop_dist_km'].mean() / 1000.0
 
-    def n_stops(self, trip_id):
+    def n_stops(self, trip_id) -> int:
         """ Number of stops of a trip
         """        
         stop_times = self.stop_times       
@@ -536,10 +538,9 @@ class GTFSManager:
 
         return n_stops.loc[n_stops['trip_id'] == trip_id, 'row_count'].iloc[0]
 
-
     """ Per stop transit indicators """
 
-    def stop_frequencies(self):
+    def stop_frequencies(self) -> int:
         """ Returns the number of times a stop is used by all trips
         """
         stop_times = self.stop_times
@@ -551,7 +552,7 @@ class GTFSManager:
 
     """ Global transit indicators """
 
-    def bounding_box(self):
+    def bounding_box(self) -> box:
         """ Returns the bounding box for the simulation    
         """
         gdf = self.shapes
@@ -563,7 +564,7 @@ class GTFSManager:
 
         return box(self.min_longitude, self.min_latitude, self.max_longitude, self.max_latitude)
 
-    def simulation_area_km2(self):
+    def simulation_area_km2(self) -> float:
         """ Calculates the simulation area in km2
         """
         # Create a GeoDataFrame with the bounding box
@@ -577,7 +578,7 @@ class GTFSManager:
 
         return area_km2[0]  
 
-    def trip_length_km_all(self):
+    def trip_length_km_all(self) -> float:
         """ Length of all trips
         """        
         gdf = pd.merge(self.trips, self.shapes[['shape_id', 'geometry']], on='shape_id', how='left')
@@ -586,7 +587,7 @@ class GTFSManager:
 
         return gdf       
 
-    def ave_distance_between_stops_all(self, correct_stop_loc = True):
+    def ave_distance_between_stops_all(self, correct_stop_loc = True) -> float:
         """ Average distance between stops in km of all trips
         """        
         gdf = pd.merge(self.trips, self.shapes[['shape_id', 'geometry']], on='shape_id', how='left')
@@ -596,7 +597,7 @@ class GTFSManager:
 
         return gdf
 
-    def trip_statistics(self):
+    def trip_statistics(self) -> dict:
         """ Calculates some general statitistics regarding the trips
         """   
         number_of_trips = len(self.trips)
@@ -615,7 +616,7 @@ class GTFSManager:
         
         return statistics
 
-    def stop_statistics(self):
+    def stop_statistics(self) -> dict:
         """ Calculates some general statistics regarding the number of stops
         """
         # Add the route information to the stop_times by merging the two DataFrames on 'trip_id'
