@@ -38,3 +38,6 @@ if not gtfs.check_all():
 # gtfs.filter_services(service_id="DAILY")  # Keeps only trips operating under the specified service schedule.
 
 gtfs.general_feed_info()
+
+gtfs.to_map("output/GTFS_data.html")
+gtfs.export_statistics("output/GTFS_summary.txt")

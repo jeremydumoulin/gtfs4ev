@@ -17,6 +17,8 @@ import pyproj
 from pyproj import Geod
 import osmnx
 from contextlib import redirect_stdout
+import folium
+from folium.plugins import MarkerCluster
 
 from gtfs4ev import helpers as hlp
 
@@ -404,6 +406,22 @@ class GTFSManager:
 
         print("\t Data cleaning completed successfully. The dataset is now consistent and ready for simulation.")
 
+    def snap_shapes_to_osm(self):
+        """ Snapping the shapefile to the local OSM road network """ 
+        print("INFO \t Snapping the GTFS trip shapes to OSM road network. This might take a long time...")
+        bbox = self.bounding_box()
+        print("INFO \t Getting OSM data according to GTFS data boundaries")
+        graph = osmnx.graph_from_bbox(bbox = (bbox.bounds[3], bbox.bounds[1], bbox.bounds[2], bbox.bounds[0]), network_type='drive')
+
+        # Get the nodes from the road network graph
+        nodes = osmnx.graph_to_gdfs(graph, edges=False)
+
+        # Snap each LineString geometry to the nearest node in the road network
+        for idx, row in self.shapes.iterrows():
+            print(f"INFO \t Snapping in progress: {idx}/{len(self.shapes)}", end="\r")
+            snapped_line = snap(row.geometry, nodes.unary_union, tolerance=0.0001)
+            self._shapes.loc[idx, 'geometry'] = snapped_line     
+
     # Data filtering
 
     def filter_services(self, service_id, clean_all = True):
@@ -701,3 +719,109 @@ class GTFSManager:
         coordinates = gdf.loc[gdf['trip_id'] == trip_id, 'geometry']
 
         return coordinates.tolist()
+
+    # Export and visualisation
+
+    def to_map(self, filepath: str) -> None:
+        """
+        Visualizes the different routes on a Folium map and saves it to the specified file path.
+        
+        Parameters:
+        filepath (str): The path where the map will be saved as an HTML file.
+        """
+        print("INFO \t Generating the GTFS map visualization. This may take some time...")
+        
+        # Get the bounding box center
+        bbox = self.bounding_box()
+        center_lat = (bbox.bounds[1] + bbox.bounds[3]) / 2
+        center_lon = (bbox.bounds[0] + bbox.bounds[2]) / 2
+        
+        # Initialize map
+        m = folium.Map(location=[center_lat, center_lon], zoom_start=12)
+        
+        # Add route polylines with popups for trip details
+        for _, row in self.shapes.iterrows():
+            related_trips = self.trips[self.trips['shape_id'] == row['shape_id']]
+            trip_info = ""
+            for _, trip in related_trips.iterrows():
+                trip_id = trip['trip_id']
+                trip_length = self.trip_length_km(trip_id)
+                num_stops = self.n_stops(trip_id)
+                trip_info += f"<b>Trip ID:</b> {trip_id}<br><b>Length:</b> {trip_length:.2f} km<br><b>Stops:</b> {num_stops}<br><br>"
+            popup_content = f"<b>Shape ID:</b> {row['shape_id']}<br>{trip_info if trip_info else 'No trip information'}"
+            folium.PolyLine(
+                locations=[(lat, lon) for lon, lat in row['geometry'].coords],
+                color='blue',
+                weight=3,
+                opacity=0.7,
+                popup=folium.Popup(popup_content, max_width=300)
+            ).add_to(m)
+        
+        # Add stop markers
+        marker_cluster = MarkerCluster().add_to(m)
+        for _, row in self.stops.iterrows():
+            folium.Marker(
+                location=[row.geometry.y, row.geometry.x],
+                popup=f"Stop: {row['stop_name']} ({row['stop_id']})",
+                icon=folium.Icon(color='red', icon='info-sign')
+            ).add_to(marker_cluster)
+        
+        # Save the map
+        m.save(filepath)
+        print(f"INFO \t Map successfully generated and saved to {filepath}")
+
+    def export_statistics(self, filepath: str) -> None:
+        """
+        Exports key GTFS statistics and results to a text file.
+        
+        Parameters:
+        filepath (str): The path where the statistics will be saved.
+        """
+        print("INFO \t Exporting GTFS statistics to a text file...")
+        
+        trip_stats = self.trip_statistics()
+        stop_stats = self.stop_statistics()
+        area_km2 = self.simulation_area_km2()
+        
+        with open(filepath, 'w') as f:
+            f.write("GTFS Feed Summary:\n")
+            f.write("===========================================\n\n")
+            f.write(f"Trips: {trip_stats['total_trips']}  |  Routes: {len(self.routes)}  |  Services: {len(self.calendar)}\n")
+            f.write(f"Stops: {stop_stats['total_stops']}  |  Stop Times: {len(self.stop_times)}  |  Frequencies: {len(self.frequencies)}\n")
+            f.write(f"Agencies: {len(self.agency)}  |  Shapes: {len(self.shapes)}\n\n")
+            
+            if trip_stats['trip_to_route_ratio'] == 2.0:
+                f.write("Note: The number of trips is twice the number of routes, suggesting that each route is associated with a round trip.\n\n")
+            
+            f.write(f"Simulation area: {area_km2:.2f} km²\n\n")
+
+            f.write("===========================================\n\n")
+            
+            f.write("Temporal Analysis:\n")
+            f.write("=================\n\n")
+            
+            # Analyze frequency consistency
+            group_sizes = self.frequencies.groupby('trip_id').size().reset_index(name='row_count')
+            are_all_values_same = group_sizes['row_count'].nunique() == 1
+
+            if are_all_values_same:
+                f.write(f"Frequency intervals: {group_sizes['row_count'][0]} \n")
+                f.write(f"Operating from {self.frequencies['start_time'].min()} to {self.frequencies['end_time'].max()}")
+            else:
+                f.write("\t Note: The number of frequency intervals is inconsistent across trips.")
+            
+            f.write("\n\nTrip Statistics:\n")
+            f.write("=================\n\n")
+            f.write(f"Total Trip Length (km): {trip_stats['total_trip_len_km']:.2f}\n")
+            f.write(f"Average Trip Length (km): {trip_stats['ave_trip_len_km']:.2f}\n")
+            f.write(f"Min Trip Length (km): {trip_stats['min_trip_len_km']:.2f}\n")
+            f.write(f"Max Trip Length (km): {trip_stats['max_trip_len_km']:.2f}\n\n")
+            
+            f.write("Stop Statistics:\n")
+            f.write("=================\n\n")
+            f.write(f"Min Stops per Trip: {stop_stats['min_stops_per_trip']}\n")
+            f.write(f"Max Stops per Trip: {stop_stats['max_stops_per_trip']}\n")
+            f.write(f"Avg Stops per Trip: {stop_stats['ave_stops_per_trip']:.2f}\n")
+            f.write(f"Avg Stops per Route: {stop_stats['ave_stops_per_route']:.2f}\n\n")
+            
+        print(f"INFO \t Statistics successfully exported to {filepath}")
