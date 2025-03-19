@@ -19,6 +19,7 @@ import osmnx
 from contextlib import redirect_stdout
 import folium
 from folium.plugins import MarkerCluster
+from folium import PolyLine
 
 from gtfs4ev import helpers as hlp
 
@@ -723,12 +724,6 @@ class GTFSManager:
     # Export and visualisation
 
     def to_map(self, filepath: str) -> None:
-        """
-        Visualizes the different routes on a Folium map and saves it to the specified file path.
-        
-        Parameters:
-        filepath (str): The path where the map will be saved as an HTML file.
-        """
         print("INFO \t Generating the GTFS map visualization. This may take some time...")
         
         # Get the bounding box center
@@ -738,25 +733,52 @@ class GTFSManager:
         
         # Initialize map
         m = folium.Map(location=[center_lat, center_lon], zoom_start=12)
-        
-        # Add route polylines with popups for trip details
+
+        features = []
+
         for _, row in self.shapes.iterrows():
+            # Get trip details for popup
             related_trips = self.trips[self.trips['shape_id'] == row['shape_id']]
-            trip_info = ""
-            for _, trip in related_trips.iterrows():
-                trip_id = trip['trip_id']
-                trip_length = self.trip_length_km(trip_id)
-                num_stops = self.n_stops(trip_id)
-                trip_info += f"<b>Trip ID:</b> {trip_id}<br><b>Length:</b> {trip_length:.2f} km<br><b>Stops:</b> {num_stops}<br><br>"
+            trip_info = "".join(
+                f"<b>Trip ID:</b> {trip['trip_id']}<br>"
+                f"<b>Length:</b> {self.trip_length_km(trip['trip_id']):.2f} km<br>"
+                f"<b>Stops:</b> {self.n_stops(trip['trip_id'])}<br>"
+                for _, trip in related_trips.iterrows()
+            )
             popup_content = f"<b>Shape ID:</b> {row['shape_id']}<br>{trip_info if trip_info else 'No trip information'}"
-            folium.PolyLine(
-                locations=[(lat, lon) for lon, lat in row['geometry'].coords],
-                color='blue',
-                weight=3,
-                opacity=0.7,
-                popup=folium.Popup(popup_content, max_width=300)
-            ).add_to(m)
-        
+
+            # Create GeoJSON feature
+            feature = {
+                "type": "Feature",
+                "properties": {
+                    "shape_id": row["shape_id"],
+                    "popup": popup_content
+                },
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": [(lon, lat) for lon, lat in row["geometry"].coords]
+                }
+            }
+            features.append(feature)
+
+        geojson_data = {"type": "FeatureCollection", "features": features}
+
+        # Add route polylines using GeoJson
+        route_layer = folium.GeoJson(
+            geojson_data,
+            name="Routes",
+            style_function=lambda feature: {
+                "color": "blue",
+                "weight": 3,
+                "opacity": 0.7,
+            },
+            highlight_function=lambda feature: {
+                "color": "red",
+                "weight": 5,
+            },
+            tooltip=folium.GeoJsonTooltip(fields=["popup"], aliases=["Info"], parse_html=True),
+        ).add_to(m)
+
         # Add stop markers
         marker_cluster = MarkerCluster().add_to(m)
         for _, row in self.stops.iterrows():
@@ -765,7 +787,7 @@ class GTFSManager:
                 popup=f"Stop: {row['stop_name']} ({row['stop_id']})",
                 icon=folium.Icon(color='red', icon='info-sign')
             ).add_to(marker_cluster)
-        
+
         # Save the map
         m.save(filepath)
         print(f"INFO \t Map successfully generated and saved to {filepath}")
