@@ -1,13 +1,6 @@
 # coding: utf-8
 
-"""
-GTFSFeed
---------
-
-"""
-
 import os
-
 import pandas as pd
 import geopandas as gpd
 from pathlib import Path
@@ -32,7 +25,7 @@ class GTFSManager:
     Note: The calendar_dates.txt file is not considered, so some service exceptions are not handled.
     """
 
-    def __init__(self, gtfs_datafolder):
+    def __init__(self, gtfs_datafolder: str):
         print("=========================================")
         print(f"INFO \t Creation of a GTFSManager object.")
         print("=========================================")

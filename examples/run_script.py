@@ -11,6 +11,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))) 
 from gtfs4ev.vehicle import Vehicle
 from gtfs4ev.vehiclefleet import VehicleFleet
 from gtfs4ev.gtfsmanager import GTFSManager
+from gtfs4ev.tripsimulator import TripSimulator
 
 # STEP 1: Define the electric vehicle fleet
 # Create instances of Vehicle representing different types with specific attributes (e.g., battery capacity, consumption rate)
@@ -39,5 +40,24 @@ if not gtfs.check_all():
 
 gtfs.general_feed_info()
 
-gtfs.to_map("output/GTFS_data.html")
-gtfs.export_statistics("output/GTFS_summary.txt")
+# gtfs.to_map("output/GTFS_data.html")
+# gtfs.export_statistics("output/GTFS_summary.txt")
+
+print(gtfs.trip_length_km(trip_id = "10106110"))
+
+# STEP 2: Simulate the operation of the electric buses
+
+tripsim = TripSimulator(gtfs_manager = gtfs, trip_id = "10106110")
+
+print(tripsim.trip_duration_sec())
+print(tripsim.max_vehicles_in_operation())
+
+df = tripsim.simulate_fleet_operation(time_step=60*2)
+
+
+print("creating a map")
+
+vehicle_map = tripsim.create_map_with_slider()
+vehicle_map.save("vehicle_movement.html")
+
+
