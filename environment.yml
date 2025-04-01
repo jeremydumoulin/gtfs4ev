@@ -1,4 +1,4 @@
-name: gtfs4ev2
+name: gtfs4ev3
 channels:
   - conda-forge
   - defaults

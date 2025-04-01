@@ -487,15 +487,7 @@ class GTFSManager:
         gdf = pd.merge(self.trips, self.shapes[['shape_id', 'geometry']], on='shape_id', how='left')
         linestring = gdf.loc[gdf['trip_id'] == trip_id, 'geometry'].iloc[0]
 
-        if geodesic: 
-            geod = Geod(ellps="WGS84")
-            distance = geod.geometry_length(linestring) / 1000.0
-        else:
-            web_mercator_projection = pyproj.Transformer.from_crs("EPSG:4326", "EPSG:3857", always_xy=True).transform
-            linestring_projection = transform(web_mercator_projection, linestring)
-            distance = linestring_projection.length / 1000.0
-
-        return distance
+        return hlp.length_km(linestring)
 
     def trip_duration_sec(self, trip_id) -> float:
         """ Calculates the time in sec of a trip
@@ -650,7 +642,42 @@ class GTFSManager:
             'stops_to_routes_ratio': number_of_stops / number_of_routes            
         }
         
-        return statistics  
+        return statistics 
+
+    # Data manipulation
+
+    def add_idle_time(self, idle_time_seconds):
+        """
+        Adds an idle time to the terminal of each trip.
+        This idle time is split between the first and the last stop.
+        
+        Parameters:
+            idle_time_seconds (int): The number of seconds to add as idle time.
+        """
+        print(f"INFO \t Adding an idle time of {idle_time_seconds} s at terminal.")
+      
+        # Ensure stop_times is sorted by trip_id and stop_sequence
+        self.stop_times.sort_values(by=['trip_id', 'stop_sequence'], inplace=True)
+
+        # Identify last stop in each trip
+        last_stop_indices = self.stop_times.groupby('trip_id')['stop_sequence'].idxmax()
+
+        # Identify first stop in each trip
+        first_stop_indices = self.stop_times.groupby('trip_id')['stop_sequence'].idxmin()
+        
+        # Convert time columns to datetime if necessary
+        time_cols = ['arrival_time', 'departure_time']
+        for col in time_cols:
+            self.stop_times[col] = pd.to_datetime(self.stop_times[col])
+
+        # Add idle time
+        self.stop_times.loc[last_stop_indices, 'departure_time'] += pd.to_timedelta(idle_time_seconds/2, unit='s')
+        self.stop_times.loc[first_stop_indices, 'departure_time'] += pd.to_timedelta(idle_time_seconds/2, unit='s')
+
+        # Shift all subsequent stop times (except the first stop)
+        for trip_id, first_idx in first_stop_indices.items():
+            mask = (self.stop_times['trip_id'] == trip_id) & (self.stop_times.index > first_idx)
+            self.stop_times.loc[mask, time_cols] += pd.to_timedelta(idle_time_seconds / 2, unit='s')
 
     # Helper methods
 

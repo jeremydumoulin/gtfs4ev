@@ -45,6 +45,8 @@ gtfs.general_feed_info()
 
 print(gtfs.trip_length_km(trip_id = "10106110"))
 
+gtfs.add_idle_time(idle_time_seconds = 60*35)
+
 # STEP 2: Simulate the operation of the electric buses
 
 tripsim = TripSimulator(gtfs_manager = gtfs, trip_id = "10106110")
@@ -52,7 +54,10 @@ tripsim = TripSimulator(gtfs_manager = gtfs, trip_id = "10106110")
 print(tripsim.trip_duration_sec())
 print(tripsim.max_vehicles_in_operation())
 
-df = tripsim.simulate_fleet_operation(time_step=60*2)
+tripsim.simulate_fleet_operation(time_step=60*2)
+
+
+tripsim.fleet_operation.to_csv('out.csv', index=False) 
 
 
 print("creating a map")
