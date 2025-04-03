@@ -13,6 +13,7 @@ from contextlib import redirect_stdout
 import folium
 from folium.plugins import MarkerCluster
 from folium import PolyLine
+from shapely.ops import substring
 
 from gtfs4ev import helpers as hlp
 
@@ -414,7 +415,52 @@ class GTFSManager:
         for idx, row in self.shapes.iterrows():
             print(f"INFO \t Snapping in progress: {idx}/{len(self.shapes)}", end="\r")
             snapped_line = snap(row.geometry, nodes.unary_union, tolerance=0.0001)
-            self._shapes.loc[idx, 'geometry'] = snapped_line     
+            self._shapes.loc[idx, 'geometry'] = snapped_line
+
+    def snap_stops_to_tripshapes(self):
+        """
+        Adjusts stop locations to the nearest point on the trip shape.
+        """
+        print("INFO \t Snapping the stop locations to the nearest points on trip shapes, and trimming trip shapes accordingly. This might take a long time...")
+
+        snapped_stops = self.stops.copy()
+        
+        for trip_id in self.trips['trip_id'].unique():
+            gdf = pd.merge(self.trips, self.shapes[['shape_id', 'geometry']], on='shape_id', how='left')
+            linestring = gdf.loc[gdf['trip_id'] == trip_id, 'geometry'].iloc[0]
+            
+            filtered_stop_times = self.stop_times[self.stop_times['trip_id'] == trip_id]        
+            result_df = pd.merge(filtered_stop_times, self.stops[['stop_id', 'stop_name', 'geometry']], on='stop_id', how='left')
+            
+            result_df['geometry'] = result_df['geometry'].apply(lambda point: hlp.find_closest_point(linestring, point))
+            
+            for idx, row in result_df.iterrows():
+                snapped_stops.loc[snapped_stops['stop_id'] == row['stop_id'], 'geometry'] = row['geometry']
+            
+            # Trim the linestring to start at the first stop and end at the last stop
+            first_stop = result_df.iloc[0]['geometry']
+            last_stop = result_df.iloc[-1]['geometry']
+            first_point = hlp.find_closest_point(linestring, first_stop)
+            last_point = hlp.find_closest_point(linestring, last_stop)
+            
+            # Get the indices of first_point and last_point along the LineString
+            first_proj = linestring.project(first_point)
+            last_proj = linestring.project(last_point)
+
+            # Ensure the first projection is before the last
+            if first_proj > last_proj:
+                first_proj, last_proj = last_proj, first_proj
+
+            # Extract the trimmed LineString
+            trimmed_line = substring(linestring, first_proj, last_proj)
+
+            # Update the shape geometry in the dataset
+            self._shapes.loc[
+                self.shapes['shape_id'] == gdf.loc[gdf['trip_id'] == trip_id, 'shape_id'].iloc[0],
+                'geometry'
+            ] = trimmed_line
+
+        self._stops = snapped_stops
 
     # Data filtering
 
