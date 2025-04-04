@@ -41,7 +41,7 @@ if __name__ == "__main__":
     # 1.2) Check the consistency of the GTFS data, and clean it if necessary
     # This step ensures that the data is valid for simulation
     if not gtfs.check_all():
-        print("INFO: Data is inconsistent, cleaning data...")
+        print("INFO \t Data is inconsistent, cleaning data...")
         gtfs.clean_all()
 
     # 1.3) OPTIONAL - Additional filtering and data manipulation (uncomment to enable)
@@ -54,8 +54,9 @@ if __name__ == "__main__":
     # Example 3: Add additional idle time at trip terminals (optional based on specific fleet simulation needs)
     # gtfs.add_idle_time(idle_time_seconds=60*30)  # Adds 30 minutes idle time at trip terminals
 
-    # Example 4: Snap stops to trip shapes to improve consistency by ensuring stops are along the trip path
-    # gtfs.snap_stops_to_tripshapes()
+    # Example 4: Trim tripshapes to make sure their start and end points correspond to the projection of the start
+    # and stop stops locations once projected on the tripshape (needed later to calculate distance between stops)
+    gtfs.trim_tripshapes_to_terminal_locations()
 
     # 1.4) OPTIONAL - Display general information and export GTFS summary
     # General information about the GTFS feed (e.g., number of trips, agencies, etc.)
@@ -64,8 +65,10 @@ if __name__ == "__main__":
     # Export summary statistics to a text file
     gtfs.export_statistics("output/GTFS_summary.txt")
 
-    # OPTIONAL: Export a map of the GTFS data (e.g., stops, routes, and trips) as an HTML file
-    # gtfs.to_map("output/GTFS_data.html")
+    # OPTIONAL: Export a map of a trip or the entire GTFS data (e.g., stops, routes, and trips) as an HTML file 
+    #gtfs.map_all("output/map_GTFS_data.html")
+    trip_id = "2017B111"
+    gtfs.map_single_trip(trip_id = trip_id, filepath = f"output/map_{trip_id}.html", projected = True)
 
     ###############################################################################
     ############# STEP 2: Simulate the operation of the vehicle fleet ############# 

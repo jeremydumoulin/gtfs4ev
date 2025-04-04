@@ -20,8 +20,8 @@ Operating from 1900-01-01 06:00:00 to 1900-01-01 21:00:00
 Trip Statistics:
 =================
 
-Total Trip Length (km): 3445.37
-Average Trip Length (km): 13.05
+Total Trip Length (km): 3443.70
+Average Trip Length (km): 13.04
 Min Trip Length (km): 1.22
 Max Trip Length (km): 44.65
 

@@ -417,50 +417,63 @@ class GTFSManager:
             snapped_line = snap(row.geometry, nodes.unary_union, tolerance=0.0001)
             self._shapes.loc[idx, 'geometry'] = snapped_line
 
-    def snap_stops_to_tripshapes(self):
+    def trim_tripshapes_to_terminal_locations(self):
         """
-        Adjusts stop locations to the nearest point on the trip shape.
+        Efficiently trims trip shapes to start and end at the closest terminal stops
+        without modifying stop locations.
         """
-        print("INFO \t Snapping the stop locations to the nearest points on trip shapes, and trimming trip shapes accordingly. This might take a long time...")
+        print("INFO \t Trimming trip shapes using terminal location projections. This might take some time...")
 
-        snapped_stops = self.stops.copy()
-        
-        for trip_id in self.trips['trip_id'].unique():
-            gdf = pd.merge(self.trips, self.shapes[['shape_id', 'geometry']], on='shape_id', how='left')
-            linestring = gdf.loc[gdf['trip_id'] == trip_id, 'geometry'].iloc[0]
-            
-            filtered_stop_times = self.stop_times[self.stop_times['trip_id'] == trip_id]        
-            result_df = pd.merge(filtered_stop_times, self.stops[['stop_id', 'stop_name', 'geometry']], on='stop_id', how='left')
-            
-            result_df['geometry'] = result_df['geometry'].apply(lambda point: hlp.find_closest_point(linestring, point))
-            
-            for idx, row in result_df.iterrows():
-                snapped_stops.loc[snapped_stops['stop_id'] == row['stop_id'], 'geometry'] = row['geometry']
-            
-            # Trim the linestring to start at the first stop and end at the last stop
-            first_stop = result_df.iloc[0]['geometry']
-            last_stop = result_df.iloc[-1]['geometry']
-            first_point = hlp.find_closest_point(linestring, first_stop)
-            last_point = hlp.find_closest_point(linestring, last_stop)
-            
-            # Get the indices of first_point and last_point along the LineString
-            first_proj = linestring.project(first_point)
-            last_proj = linestring.project(last_point)
+        # Merge trips and shapes once
+        trip_shapes = pd.merge(
+            self.trips[['trip_id', 'shape_id']],
+            self.shapes[['shape_id', 'geometry']],
+            on='shape_id',
+            how='left'
+        )
 
-            # Ensure the first projection is before the last
-            if first_proj > last_proj:
-                first_proj, last_proj = last_proj, first_proj
+        # Group stop_times and get first/last stop geometries
+        stop_times_with_geom = pd.merge(
+            self.stop_times,
+            self.stops[['stop_id', 'geometry']],
+            on='stop_id',
+            how='left'
+        )
 
-            # Extract the trimmed LineString
-            trimmed_line = substring(linestring, first_proj, last_proj)
+        # Prepare dictionary to hold trimmed shapes by shape_id
+        trimmed_shapes = {}
 
-            # Update the shape geometry in the dataset
-            self._shapes.loc[
-                self.shapes['shape_id'] == gdf.loc[gdf['trip_id'] == trip_id, 'shape_id'].iloc[0],
-                'geometry'
-            ] = trimmed_line
+        for shape_id, shape_group in trip_shapes.groupby("shape_id"):
+            linestring = shape_group['geometry'].iloc[0]
 
-        self._stops = snapped_stops
+            # Get all trips using this shape
+            for _, row in shape_group.iterrows():
+                trip_id = row['trip_id']
+
+                stops = stop_times_with_geom[stop_times_with_geom['trip_id'] == trip_id]
+
+                if stops.empty:
+                    continue
+
+                first_geom = stops.iloc[0]['geometry']
+                last_geom = stops.iloc[-1]['geometry']
+
+                first_proj = linestring.project(hlp.find_closest_point(linestring, first_geom))
+                last_proj = linestring.project(hlp.find_closest_point(linestring, last_geom))
+
+                if first_proj > last_proj:
+                    first_proj, last_proj = last_proj, first_proj
+
+                trimmed_line = substring(linestring, first_proj, last_proj)
+
+                # Only update if this trip is the "canonical" one for this shape
+                # Or store all versions if you want trip-specific shapes (optional)
+                trimmed_shapes[shape_id] = trimmed_line
+                break  # Just do one trimming per shape_id (if all trips share the same shape)
+
+        # Apply the trimmed shapes back
+        for shape_id, trimmed_geom in trimmed_shapes.items():
+            self._shapes.loc[self._shapes['shape_id'] == shape_id, 'geometry'] = trimmed_geom
 
     # Data filtering
 
@@ -789,7 +802,7 @@ class GTFSManager:
 
     # Export and visualisation
 
-    def to_map(self, filepath: str) -> None:
+    def map_all(self, filepath: str) -> None:
         print("INFO \t Generating the GTFS map visualization. This may take some time...")
         
         # Get the bounding box center
@@ -857,6 +870,74 @@ class GTFSManager:
         # Save the map
         m.save(filepath)
         print(f"INFO \t Map successfully generated and saved to {filepath}")
+
+    def map_single_trip(self, trip_id: str, filepath: str = "trip_map.html", projected: bool = True):
+        """
+        Plots a specific trip and its stops on a Folium map.
+
+        Parameters:
+        - trip_id: ID of the trip to visualize.
+        - filepath: Where to save the map HTML file.
+        - projected: If True, project stops onto the trip shape.
+        """
+        print(f"INFO \t Creating map for trip {trip_id} (projected={projected})...")
+
+        # Get trip shape
+        trip_row = self.trips[self.trips['trip_id'] == trip_id].iloc[0]
+        shape_id = trip_row['shape_id']
+        linestring = self.shapes[self.shapes['shape_id'] == shape_id]['geometry'].iloc[0]
+
+        # Get and sort stops
+        stop_times_trip = self.stop_times[self.stop_times['trip_id'] == trip_id].sort_values("stop_sequence")
+        stops_with_geom = pd.merge(
+            stop_times_trip,
+            self.stops[['stop_id', 'stop_name', 'geometry']],
+            on='stop_id',
+            how='left'
+        )
+
+        # Project stops if requested
+        if projected:
+            stops_with_geom['proj_geom'] = stops_with_geom['geometry'].apply(
+                lambda pt: hlp.find_closest_point(linestring, pt)
+            )
+            stop_points = stops_with_geom['proj_geom'].tolist()
+        else:
+            stop_points = stops_with_geom['geometry'].tolist()
+
+        # Map center
+        center_lat = stop_points[0].y
+        center_lon = stop_points[0].x
+        m = folium.Map(location=[center_lat, center_lon], zoom_start=14)
+
+        # Add trip shape
+        folium.GeoJson(
+            data=linestring.__geo_interface__,
+            name="Trip Shape",
+            style_function=lambda _: {
+                "color": "blue",
+                "weight": 4,
+                "opacity": 0.8
+            }
+        ).add_to(m)
+
+        # Add stop markers
+        marker_cluster = MarkerCluster().add_to(m)
+        for i, pt in enumerate(stop_points):
+            stop_info = stops_with_geom.iloc[i]
+            stop_name = stop_info['stop_name']
+            stop_id = stop_info['stop_id']
+            stop_seq = stop_info['stop_sequence']
+
+            folium.Marker(
+                location=[pt.y, pt.x],
+                popup=f"<b>{stop_seq}. {stop_name}</b><br>ID: {stop_id}",
+                icon=folium.Icon(color='red', icon='info-sign')
+            ).add_to(marker_cluster)
+
+        # Save map
+        m.save(filepath)
+        print(f"INFO \t Map saved to {filepath}")
 
     def export_statistics(self, filepath: str) -> None:
         """
