@@ -60,15 +60,15 @@ if __name__ == "__main__":
 
     # 1.4) OPTIONAL - Display general information and export GTFS summary
     # General information about the GTFS feed (e.g., number of trips, agencies, etc.)
-    gtfs.general_feed_info()
+    gtfs.show_general_info()
 
     # Export summary statistics to a text file
-    gtfs.export_statistics("output/GTFS_summary.txt")
+    gtfs.generate_summary_report("output/GTFS_summary.txt")
 
     # OPTIONAL: Export a map of a trip or the entire GTFS data (e.g., stops, routes, and trips) as an HTML file 
-    #gtfs.map_all("output/map_GTFS_data.html")
+    #gtfs.generate_network_map("output/map_GTFS_data.html")
     trip_id = "2017B111"
-    gtfs.map_single_trip(trip_id = trip_id, filepath = f"output/map_{trip_id}.html", projected = True)
+    gtfs.generate_single_trip_map(trip_id = trip_id, filepath = f"output/map_{trip_id}.html", projected = True)
 
     ###############################################################################
     ############# STEP 2: Simulate the operation of the vehicle fleet ############# 
