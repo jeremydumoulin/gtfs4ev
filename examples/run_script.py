@@ -36,7 +36,7 @@ if __name__ == "__main__":
     #################################################################################
 
     # 1.1) Load GTFS data from the specified folder
-    gtfs = GTFSManager(gtfs_datafolder="input/GTFS_Nairobi")
+    gtfs = GTFSManager(gtfs_datafolder="input/GTFS_Nairobi_cleaned")
 
     # 1.2) Check the consistency of the GTFS data, and clean it if necessary
     # This step ensures that the data is valid for simulation
@@ -56,16 +56,19 @@ if __name__ == "__main__":
 
     # Example 4: Trim tripshapes to make sure their start and end points correspond to the projection of the start
     # and stop stops locations once projected on the tripshape (needed later to calculate distance between stops)
-    gtfs.trim_tripshapes_to_terminal_locations()
+    #gtfs.trim_tripshapes_to_terminal_locations()
 
     # 1.4) OPTIONAL - Display general information and export GTFS summary
-    # General information about the GTFS feed (e.g., number of trips, agencies, etc.)
+    # Show general information about the GTFS feed (e.g., number of trips, agencies, etc.)
     gtfs.show_general_info()
+
+    # Export cleaned/filtered GTFS data to GTFS file
+    #gtfs.export_to_csv("input/GTFS_Nairobi_cleaned")
 
     # Export summary statistics to a text file
     gtfs.generate_summary_report("output/GTFS_summary.txt")
 
-    # OPTIONAL: Export a map of a trip or the entire GTFS data (e.g., stops, routes, and trips) as an HTML file 
+    # Export a map of a trip or the entire GTFS data (e.g., stops, routes, and trips) as an HTML file 
     #gtfs.generate_network_map("output/map_GTFS_data.html")
     trip_id = "2017B111"
     gtfs.generate_single_trip_map(trip_id = trip_id, filepath = f"output/map_{trip_id}.html", projected = True)
