@@ -8,7 +8,6 @@ from shapely.geometry import LineString, Point, box
 from shapely.ops import transform, snap
 import pyproj
 from pyproj import Geod
-import osmnx
 from contextlib import redirect_stdout
 import folium
 from folium.plugins import MarkerCluster
@@ -31,16 +30,6 @@ class GTFSManager:
         print(f"INFO \t Creation of a GTFSManager object.")
         print("=========================================")
 
-        self._gtfs_datafolder = None
-        self._agency = pd.DataFrame()
-        self._routes = pd.DataFrame()
-        self._stop_times = pd.DataFrame()
-        self._stops = gpd.GeoDataFrame(columns=['stop_id', 'stop_name', 'geometry'], crs="EPSG:4326")
-        self._trips = pd.DataFrame()
-        self._calendar = pd.DataFrame()
-        self._frequencies = pd.DataFrame()
-        self._shapes = gpd.GeoDataFrame(columns=['shape_id', 'geometry'], crs="EPSG:4326")
-       
         self.gtfs_datafolder = gtfs_datafolder
 
         # Load the datasets using the helper method
@@ -401,22 +390,6 @@ class GTFSManager:
 
         print("\t Data cleaning completed successfully. The dataset is now consistent and ready for simulation.")
 
-    def snap_shapes_to_osm(self):
-        """ Snapping the shapefile to the local OSM road network """ 
-        print("INFO \t Snapping the GTFS trip shapes to OSM road network. This might take a long time...")
-        bbox = self.bounding_box()
-        print("INFO \t Getting OSM data according to GTFS data boundaries")
-        graph = osmnx.graph_from_bbox(bbox = (bbox.bounds[3], bbox.bounds[1], bbox.bounds[2], bbox.bounds[0]), network_type='drive')
-
-        # Get the nodes from the road network graph
-        nodes = osmnx.graph_to_gdfs(graph, edges=False)
-
-        # Snap each LineString geometry to the nearest node in the road network
-        for idx, row in self.shapes.iterrows():
-            print(f"INFO \t Snapping in progress: {idx}/{len(self.shapes)}", end="\r")
-            snapped_line = snap(row.geometry, nodes.unary_union, tolerance=0.0001)
-            self._shapes.loc[idx, 'geometry'] = snapped_line
-
     def trim_tripshapes_to_terminal_locations(self):
         """
         Efficiently trims trip shapes to start and end at the closest terminal stops
@@ -509,7 +482,7 @@ class GTFSManager:
 
     """ Basic aggregated indicators """
 
-    def general_feed_info(self):
+    def show_general_info(self):
         """Displays general information about the GTFS feed in a clean and readable format."""        
 
         print("INFO \t 🚍 GTFS Feed Summary:")
@@ -802,8 +775,96 @@ class GTFSManager:
 
     # Export and visualisation
 
-    def map_all(self, filepath: str) -> None:
-        print("INFO \t Generating the GTFS map visualization. This may take some time...")
+    def export_to_csv(self, output_folder: str):
+        """
+        Export the loaded GTFS data back into CSV files.
+        
+        Args:
+            output_folder (str): Path to the folder where CSVs will be saved.
+        """
+        output_path = Path(output_folder)
+        output_path.mkdir(parents=True, exist_ok=True)
+
+        print("INFO \t Exporting GTFS data to CSV...")
+
+        export_map = {
+            "agency.txt": self.agency,
+            "routes.txt": self.routes,
+            "stop_times.txt": self.stop_times,
+            "calendar.txt": self.calendar,
+            "frequencies.txt": self.frequencies,
+            "stops.txt": self.stops,  
+            "trips.txt": self.trips,
+            "shapes.txt": self.shapes  # will handle below
+        }
+
+        # Export everything except shapes.txt first
+        for filename, df in export_map.items():
+            if filename != "shapes.txt":
+                try:
+                    # Create a temporary copy of the dataframe
+                    temp_df = df.copy()
+
+                    # Reformat time columns to strings during export (without modifying the class attributes)
+                    time_cols = ['arrival_time', 'departure_time', 'start_time', 'end_time']
+                    for col in time_cols:
+                        if col in temp_df.columns and pd.api.types.is_datetime64_any_dtype(temp_df[col]):
+                            temp_df[col] = temp_df[col].dt.strftime('%H:%M:%S')  # Convert datetime to string
+
+                    # Handle the calendar.txt export
+                    if filename == "calendar.txt":
+                        # Replace True with 1 and False with 0
+                        bool_cols = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+                        for col in bool_cols:
+                            if col in temp_df.columns:
+                                temp_df[col] = temp_df[col].astype(int)  # Convert booleans to 1/0
+
+                        # Format start and end date in the format YYYYMMDD
+                        if 'start_date' in temp_df.columns:
+                            temp_df['start_date'] = temp_df['start_date'].dt.strftime('%Y%m%d')
+                        if 'end_date' in temp_df.columns:
+                            temp_df['end_date'] = temp_df['end_date'].dt.strftime('%Y%m%d')
+
+                    # Handle stops.txt export (add lat/lon columns)
+                    if filename == "stops.txt":
+                        # Add lat/lon columns based on geometry
+                        if 'geometry' in temp_df.columns:
+                            temp_df['stop_lat'] = temp_df['geometry'].apply(lambda geom: geom.y if geom else None)
+                            temp_df['stop_lon'] = temp_df['geometry'].apply(lambda geom: geom.x if geom else None)
+                            temp_df = temp_df.drop(columns='geometry', errors='ignore')
+                        
+                    # Export the modified dataframe to CSV
+                    temp_df.to_csv(output_path / filename, index=False)
+                    print(f"\t - Exported: {filename}")
+                except Exception as e:
+                    print(f"\t - Failed to export {filename}: {e}")
+
+        # Special handling for shapes.txt (rebuild the lat/lon structure)
+        try:
+            if isinstance(self.shapes, gpd.GeoDataFrame):
+                shapes_df = self.shapes.copy()
+                shapes_rows = []
+
+                for _, row in shapes_df.iterrows():
+                    shape_id = row['shape_id']
+                    geometry = row['geometry']
+                    if isinstance(geometry, LineString):
+                        for i, (lon, lat) in enumerate(geometry.coords):
+                            shapes_rows.append({
+                                'shape_id': shape_id,
+                                'shape_pt_lat': lat,
+                                'shape_pt_lon': lon,
+                                'shape_pt_sequence': i
+                            })
+
+                shapes_out = pd.DataFrame(shapes_rows)
+                shapes_out.to_csv(output_path / "shapes.txt", index=False)
+                print(f"\t - Exported: shapes.txt")
+        except Exception as e:
+            print(f"\t - Failed to export shapes.txt: {e}")
+
+    def generate_network_map(self, filepath: str) -> None:
+        print("INFO \t Generating a HTML map for the visualization of the GTFS network. This may take some time...")
         
         # Get the bounding box center
         bbox = self.bounding_box()
@@ -871,7 +932,7 @@ class GTFSManager:
         m.save(filepath)
         print(f"INFO \t Map successfully generated and saved to {filepath}")
 
-    def map_single_trip(self, trip_id: str, filepath: str = "trip_map.html", projected: bool = True):
+    def generate_single_trip_map(self, trip_id: str, filepath: str = "trip_map.html", projected: bool = True):
         """
         Plots a specific trip and its stops on a Folium map.
 
@@ -880,7 +941,7 @@ class GTFSManager:
         - filepath: Where to save the map HTML file.
         - projected: If True, project stops onto the trip shape.
         """
-        print(f"INFO \t Creating map for trip {trip_id} (projected={projected})...")
+        print(f"INFO \t Creating a HTML map for trip {trip_id} (projecting stops to trip shapes={projected})...")
 
         # Get trip shape
         trip_row = self.trips[self.trips['trip_id'] == trip_id].iloc[0]
@@ -939,14 +1000,14 @@ class GTFSManager:
         m.save(filepath)
         print(f"INFO \t Map saved to {filepath}")
 
-    def export_statistics(self, filepath: str) -> None:
+    def generate_summary_report(self, filepath: str) -> None:
         """
         Exports key GTFS statistics and results to a text file.
         
         Parameters:
         filepath (str): The path where the statistics will be saved.
         """
-        print("INFO \t Exporting GTFS statistics to a text file...")
+        print("INFO \t Generating GTFS statistics and exporting the report to a text file...")
         
         trip_stats = self.trip_statistics()
         stop_stats = self.stop_statistics()

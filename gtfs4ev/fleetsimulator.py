@@ -3,6 +3,8 @@
 import pandas as pd
 import sys
 import multiprocessing as mp
+import time
+import gc
 
 from gtfs4ev.gtfsmanager import GTFSManager
 from gtfs4ev.tripsimulator import TripSimulator
@@ -70,14 +72,16 @@ class FleetSimulator:
     def fleet_operation(self):
         """Gets the pd dataframe with fleet operation."""
         return self._fleet_operation
+
+    # Fleet Operation
         
-    def compute_fleet_operation(self, use_multiprocessing = True):
+    def compute_fleet_operation(self, use_multiprocessing = False):
         """
         Runs the simulation for the selected trips and accumulates the results in a big dataframe.
         Uses parallel processing to speed up computation if 'use_multiprocessing' is True.
         """
         num_trips = len(self.trip_ids)
-        print(f"INFO \t Computing fleet operation of {num_trips} trips...")
+        print(f"INFO \t Computing fleet operation of {num_trips} trips (multiprocessing = {use_multiprocessing})...")
 
         # If use_multiprocessing is True, perform the computation in parallel
         if use_multiprocessing:
@@ -98,6 +102,7 @@ class FleetSimulator:
             for trip_id in self.trip_ids:
                 tripsim = TripSimulator(gtfs_manager=self.gtfs_manager, trip_id=trip_id)
                 tripsim.compute_fleet_operation()
+
                 result = pd.DataFrame(tripsim._fleet_operation)
 
                 sys.stdout.write(f"\r \t Progress: {counter}/{num_trips} trips.")
@@ -111,6 +116,89 @@ class FleetSimulator:
         self._fleet_operation = pd.concat(results, ignore_index=True)
 
         print("\n \t Fleet operation computation completed.")
+
+    # Fleet trajectory
+
+    def get_fleet_trajectory(self, time_step: int) -> pd.DataFrame:
+        """
+        Simulation of fleet operation. 
+        Warning: Not optimize (recalculation of the fleet operation) 
+        
+        Args:
+            time_step (int): Time step in seconds.
+        
+        Returns:
+            pd.DataFrame: DataFrame with a row per vehicle (indexed by vehicle ID)
+                          and columns for each time step (HH:MM:SS). Each cell contains 
+                          a Point object (or None) representing the vehicle location.
+        """
+        print(f"INFO \t Generating vehicle fleet trajectories...")
+
+        results = []
+
+        counter = 1
+        for trip_id in self.trip_ids:
+            tripsim = TripSimulator(gtfs_manager=self.gtfs_manager, trip_id=trip_id)
+            tripsim.compute_fleet_operation()
+
+            sys.stdout.write(f"\r \t Progress: {counter}/{len(self.trip_ids)} trips.")
+            sys.stdout.flush()
+            counter += 1
+
+            df = tripsim.get_fleet_trajectory(time_step=time_step)
+
+            results.append(df)
+
+        print(f"")
+
+        return pd.concat(results, keys=self.trip_ids, names=["trip_id", "vehicle_id"])
+
+    # Fleet trajectory
+
+    def generate_fleet_trajectory_map(self, fleet_trajectory: pd.DataFrame, filepath: str):
+        """
+        Generates an interactive folium map with a time slider using the simulated fleet operation data.
+
+        This function only works if the time step is exactly 2 minutes.
+
+        Args:
+            fleet_trajectory (pd.DataFrame): DataFrame containing vehicle trajectory data.
+
+        Returns:
+            folium.Map: A folium map with a time slider visualization of vehicle movements.
+        """
+        print(f"INFO \t Generating a HTML map with vehicle fleet trajectories. This may take some time...")
+
+        # Initialize a base map
+        merged_map = None
+
+        counter = 1
+        # Loop over all the unique trip_ids in the fleet_trajectory DataFrame
+        for trip_id in fleet_trajectory.index.get_level_values("trip_id").unique():
+            # Filter the fleet_trajectory DataFrame for the current trip_id
+            trip_data = fleet_trajectory.xs(trip_id, level="trip_id")
+
+            sys.stdout.write(f"\r \t Progress: {counter}/{len(fleet_trajectory.index.get_level_values("trip_id").unique())} trips.")
+            sys.stdout.flush()
+            counter += 1
+
+            # Generate the map for the current DataFrame
+            tripsim = TripSimulator(gtfs_manager=self.gtfs_manager, trip_id=trip_id)
+            m = tripsim.get_fleet_trajectory_map(fleet_trajectory=trip_data)            
+            
+            # If merged_map is None, initialize it with the first map
+            if merged_map is None:
+                merged_map = m
+            else:
+                # Merge the map (You can add layers or features here depending on the method)
+                for layer in m._children.values():
+                    # Add each feature layer from the new map to the merged map
+                    merged_map.add_child(layer)
+
+        # Save the final merged map
+        merged_map.save(filepath)
+
+# Helper function (outside the class) to process trips using multiprocessing
 
 def process_trip(trip_id, gtfs_manager, progress_counter, num_trips):
     """

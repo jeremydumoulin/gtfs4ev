@@ -67,247 +67,239 @@ class TripSimulator:
     def compute_single_trip_sequence(self):
         """
         Computes the travel sequence for a single trip based on GTFS data.
-
-        This function determines the sequence of events for a given trip, including stops,
-        travel distances, and durations. It returns a structured list of events, where each 
-        event contains:
-
-        - status: "at_terminal", "at_stop", or "travelling"
-        - distance: distance traveled (km) during "travelling"; 0 for stops
-        - duration: event duration in seconds
-        - distance_from_start: cumulative distance from trip start
-        - duration_from_start: cumulative duration from trip start
-        - location: a Point (lat, lon) for stops and terminals, or a LineString for travelling.
-
         Returns:
             List[Dict]: A structured list of trip events.
         """
+        self._single_trip_sequence = []
 
-        # --- Step 1: Extract and sort stop times for the trip ---
-        stop_times = self.gtfs_manager.stop_times[self.gtfs_manager.stop_times['trip_id'] == self.trip_id].copy()
-        stop_times.sort_values(by="arrival_time", inplace=True)
-
-        # Compute time offsets relative to the first arrival
+        # --- Step 1: Filter and sort stop times for the trip ---
+        # Use query to filter and copy the dataframe
+        stop_times = self.gtfs_manager.stop_times.query("trip_id == @self.trip_id").copy()
+        stop_times.sort_values("arrival_time", inplace=True)
         first_arrival = stop_times.iloc[0]["arrival_time"]
         stop_times["arrival_offset"] = (stop_times["arrival_time"] - first_arrival).dt.total_seconds()
         stop_times["departure_offset"] = (stop_times["departure_time"] - first_arrival).dt.total_seconds()
 
-        # --- Step 2: Retrieve stop locations as a dictionary {stop_id: Point(lat, lon)} ---
-        stop_geometries = {
-            row['stop_id']: Point(
-                self.gtfs_manager.stops.loc[self.gtfs_manager.stops['stop_id'] == row['stop_id'], 'geometry'].iloc[0].x,
-                self.gtfs_manager.stops.loc[self.gtfs_manager.stops['stop_id'] == row['stop_id'], 'geometry'].iloc[0].y
-            )
-            for _, row in stop_times.iterrows()
-        }
+        # --- Step 2: Get stop geometries from a pre-cached dictionary ---
+        # If not already cached on the gtfs_manager, do it once and store it.
+        if not hasattr(self.gtfs_manager, "_stop_geometry_dict"):
+            # Convert stop_id to string for consistent lookups
+            stops = self.gtfs_manager.stops.copy()
+            stops["stop_id"] = stops["stop_id"].astype(str)
+            self.gtfs_manager._stop_geometry_dict = stops.set_index("stop_id")["geometry"].to_dict()
+        stop_geometry_dict = self.gtfs_manager._stop_geometry_dict
 
-        # --- Step 3: Retrieve trip shape and compute distances to stops ---
+        # Ensure the stop_times stop IDs are strings
+        stop_times["stop_id"] = stop_times["stop_id"].astype(str)
+        # Build the dictionary only for stops in this trip
+        stop_ids_trip = stop_times["stop_id"].unique()
+        stop_geometries = {stop_id:  # We assume the stored geometry is already a Shapely geometry;
+                             # If needed, you can wrap it with Point(geom.x, geom.y) – but that may be redundant.
+                             stop_geometry_dict[stop_id]
+                             for stop_id in stop_ids_trip
+                             if stop_id in stop_geometry_dict}
+
+        # --- Step 3: Retrieve the trip shape and compute distances ---
         trip_shape = self.gtfs_manager.get_shape(self.trip_id)
 
-        # Compute stop distances along the trip shape
-        stop_distances = {
-            stop_id: trip_shape.project(hlp.find_closest_point(trip_shape, stop_geometries[stop_id]))
-            for stop_id in stop_times["stop_id"]
-        }
-
-        # Extract relevant numpy arrays for faster processing
+        # Build an array of stop IDs (in order)
         stop_ids = stop_times["stop_id"].to_numpy()
+        
+        # Compute distances along the trip for each stop.
+        # (This uses the find_closest_point function.)
+        stop_distances = np.array([
+            trip_shape.project(hlp.find_closest_point(trip_shape, stop_geometries[stop_id]))
+            for stop_id in stop_ids
+        ])
+
         arrival_times = stop_times["arrival_offset"].to_numpy()
         departure_times = stop_times["departure_offset"].to_numpy()
+        # Compute travel durations vectorized
+        travel_durations = np.maximum(0, arrival_times[1:] - departure_times[:-1])
 
-        # Compute travel distances and durations between stops
-        stop_distances_arr = np.array([stop_distances[stop_id] for stop_id in stop_ids])
-        travel_distances = np.diff(stop_distances_arr)  # Distance between consecutive stops
-        travel_durations = np.maximum(0, arrival_times[1:] - departure_times[:-1])  # Ensure non-negative durations
-
-        # --- Step 4: Build the travel sequence ---
+        # --- Step 4: Build travel sequence event-by-event ---
         sequence = []
         cumulative_distance = 0
         cumulative_duration = 0
 
-        # Add first stop (terminal)
+        # Add first event (at_terminal)
         sequence.append({
             "status": "at_terminal",
             "distance": 0,
             "duration": departure_times[0] - arrival_times[0],
             "distance_from_start": cumulative_distance,
             "duration_from_start": cumulative_duration,
-            "location": stop_geometries[stop_ids[0]]
+            "location": stop_geometries[stop_ids[0]],
+            "stop_id": stop_ids[0]
         })
         cumulative_duration += departure_times[0] - arrival_times[0]
 
-        # Process travel segments and intermediate stops
+        # Optionally, add a local cache for substring calls if many segments are identical:
+        sub_linestring_cache = {}
+
         for i in range(len(stop_ids) - 1):
-            prev_geom = stop_geometries[stop_ids[i]]
-            curr_geom = stop_geometries[stop_ids[i + 1]]
+            sid_current = stop_ids[i]
+            sid_next = stop_ids[i + 1]
+            start_distance = stop_distances[i]
+            end_distance = stop_distances[i + 1]
 
-            start_distance = trip_shape.project(prev_geom)
-            end_distance = trip_shape.project(curr_geom)
+            # Define a helper to get a substring with caching
+            def get_substring(s, e):
+                key = (s, e)
+                if key not in sub_linestring_cache:
+                    sub_linestring_cache[key] = substring(trip_shape, s, e)
+                return sub_linestring_cache[key]
 
-            # Handle cases where the shape loops around
+            # Handle potential wrap-around of the trip shape:
             if start_distance > end_distance:
-                sub_linestring1 = substring(trip_shape, start_distance, trip_shape.length)
-                sub_linestring2 = substring(trip_shape, 0, end_distance)
-
-                # Combine the two segments into a single LineString
+                sub_linestring1 = get_substring(start_distance, trip_shape.length)
+                sub_linestring2 = get_substring(0, end_distance)
+                # Create a combined LineString from the two segments
                 sub_linestring = LineString(list(sub_linestring1.coords) + list(sub_linestring2.coords))
-
                 travel_distance_km = hlp.length_km(sub_linestring1) + hlp.length_km(sub_linestring2)
             elif start_distance != end_distance:
-                sub_linestring = substring(trip_shape, start_distance, end_distance)
+                sub_linestring = get_substring(start_distance, end_distance)
                 travel_distance_km = hlp.length_km(sub_linestring)
             else:
                 sub_linestring = None
-                travel_distance_km = 0  # No movement
+                travel_distance_km = 0
 
-            # Add travelling event
+            # Travelling event:
             sequence.append({
                 "status": "travelling",
                 "distance": travel_distance_km,
                 "duration": travel_durations[i],
                 "distance_from_start": cumulative_distance,
                 "duration_from_start": cumulative_duration,
-                "location": sub_linestring  # LineString
+                "location": sub_linestring,  # LineString geometry
+                "stop_id": None
             })
             cumulative_distance += travel_distance_km
             cumulative_duration += travel_durations[i]
 
-            # Add stop event (either intermediate stop or terminal)
+            # Stop event:
             sequence.append({
                 "status": "at_terminal" if i + 1 == len(stop_ids) - 1 else "at_stop",
                 "distance": 0,
                 "duration": departure_times[i + 1] - arrival_times[i + 1],
                 "distance_from_start": cumulative_distance,
                 "duration_from_start": cumulative_duration,
-                "location": prev_geom  # Point
+                "location": stop_geometries[sid_next],
+                "stop_id": sid_next
             })
             cumulative_duration += departure_times[i + 1] - arrival_times[i + 1]
 
-        # Store the computed sequence
         self._single_trip_sequence = sequence
 
     def compute_fleet_operation(self):
-            """
-            Computes the travel sequences for all vehicles operating throughout the day.
+        """
+        Computes fleet operation using a compact representation:
+        - One row per vehicle.
+        - Each row stores all sequences for that vehicle with start/end times and offset.
+        - Partial trip repetitions are accounted for using float values.
+        - Total travel distance is accumulated across all repetitions.
+        - Total travel duration (in seconds) is also added to the results.
+        """
+        self._fleet_operation = []
 
-            This function determines how many vehicles are in operation based on the trip frequency data.
-            It generates a sequence of travel events for each vehicle, accounting for staggered departures,
-            repeated trips, and clipping of events that do not fully fit within the operational window.
+        self.compute_single_trip_sequence()
+        base_seq = self._single_trip_sequence
+        trip_duration = sum(event['duration'] for event in base_seq)
+        if trip_duration <= 0:
+            raise ValueError("Trip duration must be positive.")
 
-            - Vehicles are staggered along their trip at the start of each frequency interval.
-            - Trips are repeated as many times as possible within the interval.
-            - If a trip starts within the interval but doesn't fully fit, it is still included with clipped times.
+        # Total distance of one full trip
+        full_trip_distance = sum(
+            event["distance"] for event in base_seq if event["status"] == "travelling"
+        )
 
-            The computed fleet operation sequence is stored in `self._fleet_operation` as a list of dictionaries,
-            each containing:
-                - vehicle_id: unique identifier for the vehicle
-                - start_time: event start time (HH:MM:SS)
-                - end_time: event end time (HH:MM:SS)
-                - status: "at_terminal", "at_stop", or "travelling"
-                - distance: distance traveled in km (0 for stops)
-                - duration: duration of the event in seconds
-                - distance_from_start: cumulative distance from trip start
-                - duration_from_start: cumulative duration from trip start
-            """
-            # Compute the base trip sequence for a single vehicle.
-            self.compute_single_trip_sequence()
-            base_seq = self._single_trip_sequence
+        # Retrieve trip frequencies
+        trip_freq = self.gtfs_manager.frequencies[self.gtfs_manager.frequencies['trip_id'] == self.trip_id]
+        if trip_freq.empty:
+            raise ValueError(f"No frequency data available for trip ID {self.trip_id}.")
 
-            # Compute total trip duration (sum of all event durations)
-            trip_duration = sum(event['duration'] for event in base_seq)
-            if trip_duration <= 0:
-                raise ValueError("Trip duration must be positive.")
+        num_vehicles = self.max_vehicles_in_operation()
+        durations = np.array([event['duration'] for event in base_seq])
+        cum_times = np.concatenate(([0], np.cumsum(durations)))  # cumulative time from trip start
 
-            # Determine the maximum number of vehicles that can operate simultaneously
-            num_vehicles = self.max_vehicles_in_operation()
+        # Store results per vehicle
+        vehicle_records = {}
 
-            # Convert base sequence into numpy arrays for efficient processing
-            durations = np.array([event['duration'] for event in base_seq])
-            cum_times = np.concatenate(([0], np.cumsum(durations)))  # Cumulative event start times
-            event_status = np.array([event['status'] for event in base_seq])
-            event_distance = np.array([
-                event['distance'] if event['status'] == "travelling" else 0 for event in base_seq
-            ])
-            event_cum_distance = np.array([event['distance_from_start'] for event in base_seq])
-            event_cum_duration = np.array([event['duration_from_start'] for event in base_seq])
+        for _, freq in trip_freq.iterrows():
+            headway = freq['headway_secs']
+            freq_start_sec = (freq['start_time'].hour * 3600 + freq['start_time'].minute * 60 + freq['start_time'].second)
+            freq_end_sec = (freq['end_time'].hour * 3600 + freq['end_time'].minute * 60 + freq['end_time'].second)
 
-            rows = []  # Output container for processed fleet events
+            vehicles_in_operation = min(num_vehicles, max(1, round(trip_duration / headway)))
+            vehicle_indices = np.arange(vehicles_in_operation)
 
-            # Retrieve trip frequency intervals from GTFS data
-            trip_freq = self.gtfs_manager.frequencies[self.gtfs_manager.frequencies['trip_id'] == self.trip_id]
-            if trip_freq.empty:
-                raise ValueError(f"No frequency data available for trip ID {self.trip_id}.")
+            for veh in vehicle_indices:
+                vehicle_id = f"{self.trip_id}_{veh}"
+                initial_offset = veh * headway
+                trip_start_time = freq_start_sec - initial_offset
 
-            # Iterate over each frequency interval to schedule trips
-            for _, freq in trip_freq.iterrows():
-                headway = freq['headway_secs']  # Time between vehicle departures in seconds
-                freq_start_sec = (freq['start_time'].hour * 3600 + freq['start_time'].minute * 60 + freq['start_time'].second)
-                freq_end_sec = (freq['end_time'].hour * 3600 + freq['end_time'].minute * 60 + freq['end_time'].second)
+                if vehicle_id not in vehicle_records:
+                    vehicle_records[vehicle_id] = {
+                        "vehicle_id": vehicle_id,
+                        "travel_sequences": [],
+                        "trip_repetitions": 0.0,
+                        "total_distance_km": 0.0,
+                        "total_travel_time_s": 0.0,  # Initialize total duration to 0
+                        "terminal_time_s": 0.0,
+                        "stop_time_s": 0.0,
+                        "travel_time_s": 0.0
+                    }
 
-                # Compute the number of vehicles required for the interval
-                vehicles_in_operation = min(num_vehicles, max(1, round(trip_duration / headway)))
-                active_vehicles = np.arange(vehicles_in_operation)  # Vehicle indices
+                repetition_start = trip_start_time
+                while repetition_start < freq_end_sec:
+                    start_abs = repetition_start
+                    end_abs = repetition_start + trip_duration
 
-                # Assign trips to vehicles
-                for veh in active_vehicles:
-                    vehicle_id = f"{self.trip_id}_{veh}"
-                    initial_offset = veh * headway  # Stagger vehicle starts by headway interval
-                    trip_start_time = freq_start_sec - initial_offset
+                    # Clip to frequency interval
+                    clipped_start = max(start_abs, freq_start_sec)
+                    clipped_end = min(end_abs, freq_end_sec)
 
-                    # Repeat trips within the frequency interval
-                    repetition_start = trip_start_time
-                    while repetition_start < freq_end_sec:
-                        event_abs_starts = repetition_start + cum_times[:-1]  # Absolute start times
-                        event_abs_ends = repetition_start + cum_times[1:]  # Absolute end times
+                    if clipped_end <= clipped_start:
+                        break  # nothing to store
 
-                        # Determine which events fall within the frequency interval
-                        valid_mask = (event_abs_ends >= freq_start_sec) & (event_abs_starts <= freq_end_sec)
-                        if not np.any(valid_mask):
-                            break  # Stop if no events are valid
+                    # Compute the fraction of trip done
+                    clipped_duration = clipped_end - clipped_start
+                    repetition_fraction = clipped_duration / trip_duration
 
-                        valid_starts = event_abs_starts[valid_mask]
-                        valid_ends = event_abs_ends[valid_mask]
-                        valid_durations = durations[valid_mask]
-                        valid_status = event_status[valid_mask]
-                        valid_distances = event_distance[valid_mask]
-                        valid_cum_distances = event_cum_distance[valid_mask]
-                        valid_cum_durations = event_cum_duration[valid_mask]
+                    # Convert start/end to HH:MM:SS
+                    start_str = pd.to_datetime(clipped_start, unit="s").strftime("%H:%M:%S")
+                    end_str = pd.to_datetime(clipped_end, unit="s").strftime("%H:%M:%S")
 
-                        # Clip event start and end times to fit within the frequency interval
-                        clip_starts = np.maximum(valid_starts, freq_start_sec)
-                        clip_ends = np.minimum(valid_ends, freq_end_sec)
-                        clipped_durations = clip_ends - clip_starts
+                    # Iterate over the sequence of events for this trip
+                    for event in base_seq:
+                        event_status = event["status"]
+                        event_duration = event["duration"]
+                        event_distance = event["distance"]
 
-                        # Compute proportional travel distances for clipped travel events
-                        fractions = np.where(valid_durations > 0, clipped_durations / valid_durations, 0)
-                        clipped_distances = valid_distances * fractions
+                        # Accumulate the times based on the event status
+                        if event_status == "at_terminal":
+                            vehicle_records[vehicle_id]["terminal_time_s"] += event_duration * repetition_fraction
+                        elif event_status == "at_stop":
+                            vehicle_records[vehicle_id]["stop_time_s"] += event_duration * repetition_fraction
+                        elif event_status == "travelling":
+                            vehicle_records[vehicle_id]["travel_time_s"] += event_duration * repetition_fraction
 
-                        # Compute updated cumulative distances and durations
-                        clipped_cum_distances = valid_cum_distances + clipped_distances
-                        clipped_cum_durations = valid_cum_durations + clipped_durations
+                    # Store the travel sequence information
+                    vehicle_records[vehicle_id]["travel_sequences"].append({
+                        "start_time": start_str,
+                        "end_time": end_str,
+                        "offset_from_start": int(clipped_start - start_abs)  # how far from original start
+                    })
 
-                        # Convert timestamps to HH:MM:SS format
-                        start_times_str = pd.to_datetime(clip_starts, unit="s").strftime("%H:%M:%S").tolist()
-                        end_times_str = pd.to_datetime(clip_ends, unit="s").strftime("%H:%M:%S").tolist()
+                    # Update total travel distance and duration for the vehicle
+                    vehicle_records[vehicle_id]["trip_repetitions"] += repetition_fraction
+                    vehicle_records[vehicle_id]["total_distance_km"] += full_trip_distance * repetition_fraction
+                    vehicle_records[vehicle_id]["total_travel_time_s"] += trip_duration * repetition_fraction
 
-                        # Store each valid event in the results list
-                        for i in range(len(clip_starts)):
-                            rows.append({
-                                "vehicle_id": vehicle_id,
-                                "start_time": start_times_str[i],
-                                "end_time": end_times_str[i],
-                                "status": valid_status[i],
-                                "distance": clipped_distances[i],
-                                "duration": clipped_durations[i],
-                                "distance_from_start": clipped_cum_distances[i],
-                                "duration_from_start": clipped_cum_durations[i]
-                            })
+                    repetition_start += trip_duration
 
-                        # Move to the next trip repetition
-                        repetition_start += trip_duration
-
-            # Store the computed fleet operation sequence
-            self._fleet_operation = rows
+        # Store the final results in the vehicle records
+        self._fleet_operation = list(vehicle_records.values())
 
     # Helper functions
 
@@ -343,82 +335,88 @@ class TripSimulator:
 
     def get_fleet_trajectory(self, time_step: int) -> pd.DataFrame:
         """
-        Optimized simulation of fleet operation using the trip travel sequence.
-        Now includes vehicle locations at each time step.
+        Simulation of fleet operation using pre-computed fleet operation
+        (self._fleet_operation). This method uses the base trip sequence from 
+        self._single_trip_sequence and, for each travel sequence stored in each 
+        fleet operation record, computes the location at every time step as a 
+        Point object.
         
         Args:
             time_step (int): Time step in seconds.
-
+        
         Returns:
-            pd.DataFrame: DataFrame with vehicle status and location at each time step.
-        """
-        trip_duration = self.trip_duration_sec()
-        num_vehicles = self.max_vehicles_in_operation()
-
-        # Generate the time range for simulation
-        time_range = pd.date_range("00:00:00", "23:59:59", freq=f"{time_step}s").time
-        fleet_status = np.empty((num_vehicles, len(time_range)), dtype=object)
-        fleet_location = np.empty((num_vehicles, len(time_range)), dtype=object)
-        
-        fleet_status.fill(None)
-        fleet_location.fill(None)
-
-        trip_frequencies = self.gtfs_manager.frequencies[self.gtfs_manager.frequencies['trip_id'] == self.trip_id]
-
-        print(f"INFO \t Simulating fleet trajectory for trip \"{self.trip_id}\" with {len(trip_frequencies)} frequency intervals...")
-
-        # Get base trip sequence
-        # Check if fleet_travel_sequence exists and is not None
-        if hasattr(self, "_single_trip_sequence") and self._single_trip_sequence is not None:
-            base_seq = self._single_trip_sequence
-        else:
+            pd.DataFrame: DataFrame with a row per vehicle (indexed by vehicle ID)
+                          and columns for each time step (HH:MM:SS). Each cell contains 
+                          a Point object (or None) representing the vehicle location.
+        """       
+        # Ensure that fleet operation data exists; if not, compute it.
+        if not hasattr(self, '_fleet_operation') or self._fleet_operation is None:
             self.compute_fleet_operation()
-            base_seq = self._single_trip_sequence
         
+        # Ensure that we have the base trip sequence.
+        if not hasattr(self, '_single_trip_sequence') or self._single_trip_sequence is None:
+            self.compute_single_trip_sequence()
+        base_seq = self._single_trip_sequence
+
+        # Compute overall trip duration and extract event data from base_seq.
+        trip_duration = sum(event['duration'] for event in base_seq)
         event_durations = np.array([event["duration"] for event in base_seq])
         event_statuses = np.array([event["status"] for event in base_seq])
         event_locations = np.array([event["location"] for event in base_seq])
         event_cumulative_durations = np.concatenate(([0], np.cumsum(event_durations)))
 
-        for _, row in trip_frequencies.iterrows():
-            start_time, end_time = row["start_time"].time(), row["end_time"].time()
-            headway = row["headway_secs"]
-            vehicles_in_operation = max(1, round(trip_duration / headway))
-            active_vehicles = np.arange(min(num_vehicles, vehicles_in_operation))
+        # Create a daily time range with the given time_step.
+        time_range = pd.date_range("00:00:00", "23:59:59", freq=f"{time_step}s")
+        times = time_range.time
+        times_sec = np.array([t.hour * 3600 + t.minute * 60 + t.second for t in times])
+        
+        # Prepare an empty array to store computed Point objects.
+        num_vehicles = len(self._fleet_operation)
+        fleet_location = np.empty((num_vehicles, len(times)), dtype=object)
+        fleet_location.fill(None)
 
-            # Efficiently determine time indices for the current frequency interval.
-            time_range_sec = np.array([t.hour * 3600 + t.minute * 60 + t.second for t in time_range])
-            start_sec = start_time.hour * 3600 + start_time.minute * 60 + start_time.second
-            end_sec = end_time.hour * 3600 + end_time.minute * 60 + end_time.second
-            time_indices = np.where((time_range_sec >= start_sec) & (time_range_sec <= end_sec))[0]
+        # For each vehicle operation record, loop over its travel sequences.
+        for veh_idx, vehicle_record in enumerate(self._fleet_operation):
+            # Loop on every travel segment for this vehicle.
+            for seq in vehicle_record["travel_sequences"]:
+                # Convert travel sequence start/end times (HH:MM:SS) into seconds-from-midnight.
+                seq_start = pd.to_datetime(seq["start_time"], format="%H:%M:%S").time()
+                seq_end = pd.to_datetime(seq["end_time"], format="%H:%M:%S").time()
+                seq_start_sec = seq_start.hour * 3600 + seq_start.minute * 60 + seq_start.second
+                seq_end_sec = seq_end.hour * 3600 + seq_end.minute * 60 + seq_end.second
 
-            # Compute start offsets for vehicles.
-            vehicle_start_offsets = np.arange(len(active_vehicles)) * headway
-            vehicle_start_offsets[0] = 0  # Ensure the first vehicle starts at 0
+                # Identify the time indices in the overall time range that fall within this travel sequence.
+                indices = np.where((times_sec >= seq_start_sec) & (times_sec < seq_end_sec))[0]
+                if len(indices) == 0:
+                    continue
 
-            for veh, offset in zip(active_vehicles, vehicle_start_offsets):
-                # Compute duration from start for each time index.
-                durations = ((time_indices - time_indices[0]) * time_step - offset) % trip_duration
-
-                # Find the corresponding status for each time step
+                # Retrieve the offset from start for this sequence.
+                offset = seq.get("offset_from_start", 0)
+                # For the found time indices, compute the elapsed time since the beginning of the sequence.
+                time_indices_secs = times_sec[indices]
+                # Adjust the elapsed time for the vehicle's initial offset and use modulo for wrap-around.
+                durations = ((time_indices_secs - seq_start_sec + offset) % trip_duration)
+                
+                # Determine which event each duration falls into.
                 status_indices = np.maximum(0, np.searchsorted(event_cumulative_durations, durations, side="left") - 1)
-
-                statuses = event_statuses[status_indices]
+                
+                # Now, for each time step in the sequence, compute the Point location.
                 locations = []
-
-                for i, idx in enumerate(status_indices):
-                    status = statuses[i]
+                for i, dur in enumerate(durations):
+                    idx = status_indices[i]
+                    status = event_statuses[idx]
                     if status in ["at_stop", "at_terminal"]:
-                        locations.append(event_locations[idx])  # Store the Point directly
+                        # For stop or terminal events, use the event location directly.
+                        locations.append(event_locations[idx])
                     else:
-                        # Compute the share of travel completed **between previous and next stop**
+                        # Determine the fraction of travel completed between stops.
                         prev_stop_time = event_cumulative_durations[idx]
                         next_stop_time = event_cumulative_durations[idx + 1]
-                        time_in_travel = durations[i] - prev_stop_time
+                        time_in_travel = dur - prev_stop_time
                         total_travel_time = next_stop_time - prev_stop_time
                         travel_fraction = time_in_travel / total_travel_time if total_travel_time > 0 else 0
 
-                        # Extract the correct position along the travel linestring
+                        # For the 'travelling' status, compute the correct position along the travel linestring.
                         travel_linestring = event_locations[idx]
                         if isinstance(travel_linestring, LineString) and travel_linestring.length > 0:
                             travel_distance = travel_linestring.length * travel_fraction
@@ -426,17 +424,18 @@ class TripSimulator:
                             locations.append(travel_point)
                         else:
                             locations.append(None)
+                
+                # Store the computed locations at the appropriate time indices.
+                fleet_location[veh_idx, indices] = locations                
+    
+        # Create the final DataFrame with vehicle IDs as the index.
+        vehicle_ids = [record.get("vehicle_id", f"veh_{i}") for i, record in enumerate(self._fleet_operation)]
 
-                # Store results
-                fleet_location[veh, time_indices] = locations
-
-        print("\t Fleet trajectory simulation completed.")
-        
-        return pd.DataFrame(fleet_location, index=range(num_vehicles), columns=time_range)
+        return pd.DataFrame(fleet_location, index=vehicle_ids, columns=times)
 
     # Visualisation
 
-    def map_fleet_trajectory(self, fleet_trajectory: pd.DataFrame) -> folium.Map:
+    def get_fleet_trajectory_map(self, fleet_trajectory: pd.DataFrame) -> folium.Map:
         """
         Generates an interactive folium map with a time slider using the simulated fleet operation data.
 
@@ -447,7 +446,7 @@ class TripSimulator:
 
         Returns:
             folium.Map: A folium map with a time slider visualization of vehicle movements.
-        """
+        """       
         # Transform the fleet operation DataFrame into a long-format DataFrame
         data = []
         for vehicle_id in fleet_trajectory.index:

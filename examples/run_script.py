@@ -14,11 +14,13 @@ Ensure the following structure for the input data:
 """
 
 import sys
-import os
+import os, psutil
 import time
 import json
 import pandas as pd
 from shapely.ops import substring
+import time
+import gc
 
 # Adding the parent directory to the Python path for access to the GTFS4EV module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))) 
@@ -52,7 +54,7 @@ if __name__ == "__main__":
     # gtfs.filter_agency(agency_id="UON") # Removes all data related to the specified agency.
     
     # Example 3: Add additional idle time at trip terminals (optional based on specific fleet simulation needs)
-    # gtfs.add_idle_time(idle_time_seconds=60*30)  # Adds 30 minutes idle time at trip terminals
+    gtfs.add_idle_time(idle_time_seconds=60*30)  # Adds 30 minutes idle time at trip terminals
 
     # Example 4: Trim tripshapes to make sure their start and end points correspond to the projection of the start
     # and stop stops locations once projected on the tripshape (needed later to calculate distance between stops)
@@ -70,7 +72,7 @@ if __name__ == "__main__":
 
     # Export a map of a trip or the entire GTFS data (e.g., stops, routes, and trips) as an HTML file 
     #gtfs.generate_network_map("output/map_GTFS_data.html")
-    trip_id = "2017B111"
+    trip_id = "1011F110"
     gtfs.generate_single_trip_map(trip_id = trip_id, filepath = f"output/map_{trip_id}.html", projected = True)
 
     ###############################################################################
@@ -79,32 +81,18 @@ if __name__ == "__main__":
 
     # 2.1) Initialize the FleetSimulator with the GTFS data and a list of trip IDs to simulate
     # If no trip IDs are specified, all trips in the GTFS feed will be simulated
-    fleet_sim = FleetSimulator(gtfs_manager=gtfs, trip_ids=["2017B111", "10106110"])
+    fleet_sim = FleetSimulator(gtfs_manager=gtfs, trip_ids=["1011F110", "1107D110", "70002110"])
     # If you want to simulate all trips, uncomment the line below:
-    # fleet_sim = FleetSimulator(gtfs_manager=gtfs)
+    #fleet_sim = FleetSimulator(gtfs_manager=gtfs)
 
     # 2.2) Compute the fleet operation for the selected trips
     # Use multiprocessing to speed up the simulation (set to False if you want a single-threaded computation)
     fleet_sim.compute_fleet_operation(use_multiprocessing=False)  # Set use_multiprocessing=True for parallel processing
-    fleet_sim.fleet_operation.to_csv(f"output/fleet_operation.csv", index=False)
+    fleet_sim.fleet_operation.to_csv(f"output/fleet_operation.csv", index=True)
 
-    # 2.3) OPTIONAL - Map and visualize the spatio-temporal movement of vehicles along a specific trip
-    trip_id = "10106110"  # Replace with the trip ID you want to analyze
-
-    # Initialize a TripSimulator to track the fleet movement along a specific trip
-    tripsim = TripSimulator(gtfs_manager=gtfs, trip_id=trip_id)
-
-    # Get the fleet trajectory (movement of vehicles) along the specified trip, with a time step of 120 seconds
-    df = tripsim.get_fleet_trajectory(time_step=120)
-
-    # Save the fleet trajectory to a CSV file for further analysis
-    df.to_csv(f"output/{trip_id}_fleet_trajectory.csv", index=False)
-
-    # 2.4) Visualize the fleet trajectory on a map
-    vehicle_map = tripsim.map_fleet_trajectory(df)
-
-    # Save the interactive map as an HTML file
-    vehicle_map.save(f"output/{trip_id}_fleet_trajectory.html")
-
-    # 2.5) Store the overall fleet operation results to a CSV file
-    fleet_sim.fleet_operation.to_csv(f"output/{trip_id}_fleet_operation.csv", index=False)
+    # # 2.3) OPTIONAL - Map and visualize the spatio-temporal movement of vehicles 
+    # # Warning : this might take a very long time and a lot of disk space if many trips are simulated
+    df = fleet_sim.get_fleet_trajectory(time_step=120)
+    df.to_csv(f"output/fleet_trajectory.csv", index=True)
+    fleet_sim.generate_fleet_trajectory_map(fleet_trajectory=df, filepath=f"output/fleet_trajectory.html")
+    

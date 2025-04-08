@@ -24,24 +24,12 @@ def check_dataframe(df):
 		return False
 	else:
 		return True
-
+        
 def find_closest_point(line, point):
-	""" Among all the points of a line (LineString object), returns the one closest to the point (Point object) coordinates  
-	"""
-
-	min_distance = float('inf')
-	closest_point = None
-
-	for coordinate in line.coords:
-		current_point = Point(coordinate)
-		distance = point.distance(current_point)
-
-		if distance < min_distance:
-			min_distance = distance
-			closest_point = current_point
-
-	return closest_point
-
+    """
+    Returns the closest point on the LineString to the given Point.
+    """
+    return line.interpolate(line.project(point))
 
 def local_emission_index(vkm_list, linestring_list, ref_raster_path, output_raster_path, C = 1):
     """ Map of local emission factor, prop. to vkm of all trips within each pixel  
