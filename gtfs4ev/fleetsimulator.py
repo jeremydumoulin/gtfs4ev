@@ -91,16 +91,19 @@ class FleetSimulator:
 
         # If use_multiprocessing is True, perform the computation in parallel
         if use_multiprocessing:
-            # Create a shared manager to track the progress
             with mp.Manager() as manager:
-                progress_counter = manager.Value('i', 0)  # Shared counter to track progress
+                progress_counter = manager.Value('i', 0)
 
-                # Create multiprocessing pool and apply function
                 with mp.Pool(mp.cpu_count()) as pool:
                     results = pool.starmap(
                         process_trip, 
                         [(trip_id, self.gtfs_manager, progress_counter, num_trips) for trip_id in self.trip_ids]
                     )
+
+            # Separate the results into two lists
+            fleet_operations, sequences = zip(*results)
+            fleet_operations = list(fleet_operations)
+            sequences = list(sequences)
         else:
             # If no multiprocessing, compute trips sequentially
             fleet_operations = []
@@ -215,19 +218,19 @@ class FleetSimulator:
 # Helper function (outside the class) to process trips using multiprocessing
 
 def process_trip(trip_id, gtfs_manager, progress_counter, num_trips):
-    """
-    Function to process a single trip. This runs in parallel or sequentially.
-    """
-    # Process the trip (simulation)
     tripsim = TripSimulator(gtfs_manager=gtfs_manager, trip_id=trip_id)
     tripsim.compute_fleet_operation()
-    result = pd.DataFrame(tripsim._fleet_operation)
-    
+
+    fleet_operation = pd.DataFrame(tripsim._fleet_operation)
+    sequence = pd.DataFrame(tripsim._single_trip_sequence)
+
+    # Add trip_id to both dataframes
+    fleet_operation['trip_id'] = trip_id
+    sequence['trip_id'] = trip_id
+
     if progress_counter is not None:
-        # Update progress
-        progress_counter.value += 1  # Increment the shared counter directly
-        # Print progress
+        progress_counter.value += 1
         sys.stdout.write(f"\r \t Progress: {progress_counter.value}/{num_trips} trips.")
         sys.stdout.flush()
 
-    return result
+    return fleet_operation, sequence

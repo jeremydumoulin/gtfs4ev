@@ -46,7 +46,7 @@ if __name__ == "__main__":
         print("INFO \t Data is inconsistent, cleaning data...")
         gtfs.clean_all()
 
-    # 1.3) OPTIONAL - Additional filtering and data manipulation (uncomment to enable)
+    # 1.3) OPTIONAL - Data filtering and manipulation (uncomment to enable)
     # Example 1: Filter for services that run daily (e.g., remove weekend-only services)
     # gtfs.filter_services(service_id="DAILY") # Keep only trips operating under the specified service schedule.
     
@@ -56,15 +56,15 @@ if __name__ == "__main__":
     # Example 3: Add additional idle time at trip terminals (optional based on specific fleet simulation needs)
     gtfs.add_idle_time(idle_time_seconds=60*30)  # Adds 30 minutes idle time at trip terminals
 
-    # Example 4: Trim tripshapes to make sure their start and end points correspond to the projection of the start
+    # Example 4: Trim tripshapes to make sure their start and end points correspond to the projection of the start (RECOMMENDED)
     # and stop stops locations once projected on the tripshape (needed later to calculate distance between stops)
     #gtfs.trim_tripshapes_to_terminal_locations()
 
-    # 1.4) OPTIONAL - Display general information and export GTFS summary
+    # 1.4) OPTIONAL - Show information and export 
     # Show general information about the GTFS feed (e.g., number of trips, agencies, etc.)
     gtfs.show_general_info()
 
-    # Export cleaned/filtered GTFS data to GTFS file
+    # Export cleaned/filtered GTFS data to GTFS file (usefull to avoid pre-processing everytime)
     #gtfs.export_to_csv("input/GTFS_Nairobi_cleaned")
 
     # Export summary statistics to a text file
@@ -91,9 +91,13 @@ if __name__ == "__main__":
     fleet_sim.fleet_operation.to_csv(f"output/Mobility_fleet_operation.csv", index=False)
     fleet_sim.trip_travel_sequences.to_csv(f"output/Mobility_trip_travel_sequences.csv", index=False)
 
-    # # 2.3) OPTIONAL - Map and visualize the spatio-temporal movement of vehicles 
+    # # 2.3) OPTIONAL - Map the spatio-temporal movement of vehicles 
     # # Warning : this might take a very long time and a lot of disk space if many trips are simulated
     df = fleet_sim.get_fleet_trajectory(time_step=120)
     df.to_csv(f"output/Mobility_fleet_trajectory.csv", index=True)
     fleet_sim.generate_fleet_trajectory_map(fleet_trajectory=df, filepath=f"output/Mobility_fleet_trajectory_map.html")
+
+    ###############################################################################
+    ########################## STEP 3: Charging Scenario ########################## 
+    ###############################################################################
     
