@@ -250,7 +250,6 @@ class TripSimulator:
                         "travel_sequences": [],
                         "trip_repetitions": 0.0,
                         "total_distance_km": 0.0,
-                        "total_travel_time_s": 0.0,
                         "terminal_time_s": 0.0,
                         "stop_time_s": 0.0,
                         "travel_time_s": 0.0,
@@ -310,7 +309,6 @@ class TripSimulator:
 
                     vehicle_records[vehicle_id]["trip_repetitions"] += repetition_fraction
                     vehicle_records[vehicle_id]["total_distance_km"] += full_trip_distance * repetition_fraction
-                    vehicle_records[vehicle_id]["total_travel_time_s"] += trip_duration * repetition_fraction
 
                     last_end_time = clipped_end
                     repetition_start += trip_duration
