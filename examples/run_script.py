@@ -73,7 +73,7 @@ if __name__ == "__main__":
     # Export a map of a trip or the entire GTFS data (e.g., stops, routes, and trips) as an HTML file 
     #gtfs.generate_network_map("output/map_GTFS_data.html")
     trip_id = "1011F110"
-    gtfs.generate_single_trip_map(trip_id = trip_id, filepath = f"output/map_{trip_id}.html", projected = True)
+    gtfs.generate_single_trip_map(trip_id = trip_id, filepath = f"output/GTFS_map_{trip_id}.html", projected = True)
 
     ###############################################################################
     ############# STEP 2: Simulate the operation of the vehicle fleet ############# 
@@ -88,11 +88,12 @@ if __name__ == "__main__":
     # 2.2) Compute the fleet operation for the selected trips
     # Use multiprocessing to speed up the simulation (set to False if you want a single-threaded computation)
     fleet_sim.compute_fleet_operation(use_multiprocessing=False)  # Set use_multiprocessing=True for parallel processing
-    fleet_sim.fleet_operation.to_csv(f"output/fleet_operation.csv", index=True)
+    fleet_sim.fleet_operation.to_csv(f"output/Mobility_fleet_operation.csv", index=False)
+    fleet_sim.trip_travel_sequences.to_csv(f"output/Mobility_trip_travel_sequences.csv", index=False)
 
     # # 2.3) OPTIONAL - Map and visualize the spatio-temporal movement of vehicles 
     # # Warning : this might take a very long time and a lot of disk space if many trips are simulated
     df = fleet_sim.get_fleet_trajectory(time_step=120)
-    df.to_csv(f"output/fleet_trajectory.csv", index=True)
-    fleet_sim.generate_fleet_trajectory_map(fleet_trajectory=df, filepath=f"output/fleet_trajectory.html")
+    df.to_csv(f"output/Mobility_fleet_trajectory.csv", index=True)
+    fleet_sim.generate_fleet_trajectory_map(fleet_trajectory=df, filepath=f"output/Mobility_fleet_trajectory_map.html")
     

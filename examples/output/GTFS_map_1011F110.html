@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_41e6d4233d8613c52e02a64a535ef0c9 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+        
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.1.0/leaflet.markercluster.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.1.0/MarkerCluster.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.1.0/MarkerCluster.Default.css"/>
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_41e6d4233d8613c52e02a64a535ef0c9" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_41e6d4233d8613c52e02a64a535ef0c9 = L.map(
+                "map_41e6d4233d8613c52e02a64a535ef0c9",
+                {
+                    center: [-1.2072198511353904, 36.78602008298463],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 14,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_57ec734b83c44aa447d1c56a162b470d = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_57ec734b83c44aa447d1c56a162b470d.addTo(map_41e6d4233d8613c52e02a64a535ef0c9);
+        
+    
+        function geo_json_127486493c086370df632ecd4812c41d_styler(feature) {
+            switch(feature.id) {
+                default:
+                    return {"color": "blue", "opacity": 0.8, "weight": 4};
+            }
+        }
+
+        function geo_json_127486493c086370df632ecd4812c41d_onEachFeature(feature, layer) {
+            layer.on({
+            });
+        };
+        var geo_json_127486493c086370df632ecd4812c41d = L.geoJson(null, {
+                onEachFeature: geo_json_127486493c086370df632ecd4812c41d_onEachFeature,
+            
+                style: geo_json_127486493c086370df632ecd4812c41d_styler,
+            ...{
+}
+        });
+
+        function geo_json_127486493c086370df632ecd4812c41d_add (data) {
+            geo_json_127486493c086370df632ecd4812c41d
+                .addData(data);
+        }
+            geo_json_127486493c086370df632ecd4812c41d_add({"features": [{"geometry": {"coordinates": [[36.786019206, -1.20721936226], [36.7864455, -1.207457], [36.786648, -1.207584], [36.787056, -1.20794], [36.7879503965, -1.20880723], [36.7886767449, -1.20951225058], [36.7891520262, -1.21001422405], [36.7895436287, -1.21035218239], [36.79147, -1.212167], [36.791901, -1.212546], [36.7927086353, -1.21309876442], [36.794483, -1.214238], [36.7948758602, -1.21453642845], [36.7965441942, -1.21534109116], [36.796887517, -1.21548056602], [36.7980569601, -1.2157702446], [36.7982554436, -1.21583461761], [36.7986685038, -1.21603310108], [36.79921031, -1.21634960175], [36.7996925, -1.216685], [36.8002080917, -1.21701478958], [36.800919, -1.21748], [36.801418, -1.21795], [36.8016028404, -1.21818959713], [36.801762, -1.218589], [36.8018066883, -1.2187743187], [36.801842, -1.219152], [36.801828146, -1.21944487095], [36.801763773, -1.21979355812], [36.8016145, -1.2202835], [36.801464, -1.22073], [36.8013614416, -1.22111856937], [36.8013238907, -1.22151017189], [36.8013775349, -1.2218105793], [36.8015062809, -1.22214853764], [36.8017047644, -1.22245430946], [36.8019676208, -1.2227922678], [36.8022358418, -1.22297465801], [36.80283, -1.223314], [36.8035072088, -1.22362375259], [36.803879, -1.223886], [36.8040543795, -1.22408509254], [36.8043226004, -1.22455179691], [36.8049824238, -1.22631669044], [36.8050575256, -1.2267190218], [36.8050038815, -1.22716426849], [36.8048107624, -1.22775435448], [36.8043977022, -1.22880578041], [36.8039524555, -1.23006105423], [36.8034160137, -1.23140215874], [36.8032228947, -1.23193860054], [36.8030619621, -1.23252332211], [36.8030512333, -1.23283982277], [36.8031209707, -1.23327434063], [36.803394556, -1.23394489288], [36.8036091328, -1.23440623283], [36.803909, -1.234813], [36.8043762445, -1.23516261578], [36.8095958233, -1.23782873154], [36.809872, -1.237996], [36.810501, -1.238417], [36.8113660812, -1.23911619186], [36.812305, -1.239809], [36.81321, -1.240624], [36.8133616447, -1.24090254307], [36.8134850264, -1.24125123024], [36.8139410019, -1.24360620975], [36.8140804768, -1.24390661716], [36.814686656, -1.24465763569], [36.8149763346, -1.24514043331], [36.8159848452, -1.24775290489], [36.8162369728, -1.24810159206], [36.8165051937, -1.24834835529], [36.816714406, -1.24848783016], [36.8169236183, -1.2485897541], [36.8171489239, -1.24863266945], [36.8174815178, -1.24867022038], [36.8180179596, -1.24879360199], [36.8185973167, -1.24899744987], [36.8195843697, -1.24917984009], [36.820769906, -1.24950170517], [36.8210864067, -1.2496304512], [36.8212902546, -1.24981820583], [36.8214029074, -1.24997913837], [36.8214511871, -1.2500756979], [36.8214404583, -1.25016689301], [36.8213653564, -1.25023126602], [36.8212580681, -1.25023663044], [36.8212044239, -1.25019907951], [36.8210703135, -1.25026345253], [36.8203300238, -1.25043511391], [36.8199330568, -1.25048875809], [36.8196702003, -1.25055849552], [36.8190801144, -1.25083208084], [36.8186855, -1.251007], [36.8178248405, -1.2514436245], [36.8177068233, -1.25155091286], [36.8176692724, -1.25168502331], [36.817677, -1.251853], [36.817728281, -1.25201225281], [36.8178141117, -1.25208199024], [36.8180125952, -1.25212490559], [36.8187475204, -1.25212490559], [36.8192142248, -1.25202298164], [36.819396615, -1.25201761723], [36.819857955, -1.25217318535], [36.8206787109, -1.25282764435], [36.8211561441, -1.25308513641], [36.821369, -1.253137], [36.823364, -1.254578], [36.823769, -1.254792], [36.8240207434, -1.2549251318], [36.8242889643, -1.25501096249], [36.8248146772, -1.2551343441], [36.8251365423, -1.25524163246], [36.825836, -1.255678], [36.8260216713, -1.25594973564], [36.826275, -1.256637], [36.8269228935, -1.25785946846], [36.827118, -1.258125], [36.827156, -1.258286], [36.827131, -1.2584145], [36.8267512321, -1.25935077667], [36.8258070946, -1.26150727272], [36.824991703, -1.26318097115], [36.8244230747, -1.2644469738], [36.8240529299, -1.26520335674], [36.8232214451, -1.26642107964], [36.8227761984, -1.26702725887], [36.8224596977, -1.26730620861], [36.821331, -1.268097], [36.821331, -1.268097], [36.8211615086, -1.26825034618], [36.8209415674, -1.26848101616], [36.8207323551, -1.26876533031], [36.8205606937, -1.26915156841], [36.8205231428, -1.26937687397], [36.82051241, -1.269682646], [36.8205231428, -1.27024054527], [36.8205553293, -1.27040684223], [36.8206465244, -1.27050340176], [36.82153165, -1.271173954], [36.8218159676, -1.27141535282], [36.8219929934, -1.27162456512], [36.82229877, -1.272085905], [36.8223792315, -1.27223610878], [36.82262599, -1.272654533], [36.82297468, -1.273190975], [36.8231678009, -1.27345919609], [36.823387742, -1.27368986607], [36.8235057592, -1.27390444279], [36.8234413862, -1.27399563789], [36.8233823776, -1.27403855324], [36.8232750893, -1.27403318882], [36.8232268095, -1.27386152744], [36.822411418, -1.27365767956], [36.8215692043, -1.27299785614], [36.8210327625, -1.27255797386], [36.8202388287, -1.27363085747], [36.8196702003, -1.27433896065], [36.81904256, -1.274001002], [36.81843102, -1.274794936], [36.81827009, -1.275047064], [36.8190372, -1.275781989], [36.81970239, -1.276441813], [36.82014763, -1.276844144], [36.82068408, -1.277208924], [36.82122052, -1.277455688], [36.8216121197, -1.27770781517], [36.8217033148, -1.27782046795], [36.8217515945, -1.27799212933], [36.8218535185, -1.27812087536], [36.8219822645, -1.27835154533], [36.8220305443, -1.27864658833], [36.8220090866, -1.27886652946], [36.8219286203, -1.27904891968], [36.82153165, -1.279472709], [36.821397543, -1.27967655659], [36.8213760853, -1.27980530262], [36.8213814497, -1.27992868423], [36.8215477467, -1.2802451849], [36.8217247725, -1.28042757511], [36.8222397566, -1.28088891506], [36.8222934008, -1.28098011017], [36.8224972486, -1.2810498476], [36.8226850033, -1.28111958504], [36.8229156733, -1.28129124641], [36.8229693174, -1.28144145012], [36.8229317665, -1.28159165382], [36.82278156, -1.281704307], [36.822835207, -1.28178477287], [36.8240690231, -1.28278791904], [36.824567914, -1.2831902504], [36.82469666, -1.28302395344]], "type": "LineString"}, "id": "0", "type": "Feature"}], "type": "FeatureCollection"});
+
+        
+    
+            geo_json_127486493c086370df632ecd4812c41d.addTo(map_41e6d4233d8613c52e02a64a535ef0c9);
+        
+    
+            var marker_cluster_eb7e42e733eb59880b128842908c68f4 = L.markerClusterGroup(
+                {
+}
+            );
+        
+    
+            var marker_f1f34a3c18b6870ba7ef03f241c2d8ff = L.marker(
+                [-1.2072198511353904, 36.78602008298463],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_767e42fde850367709bcd53a73a89f9a = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_afd46c4744eff79712c24615a3c11358 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_befff2bb641920704cdb35ee5f7f84cf = $(`<div id="html_befff2bb641920704cdb35ee5f7f84cf" style="width: 100.0%; height: 100.0%;"><b>1. Ruaka/Banana Junction/Tuskys Supermarket</b><br>ID: 0100RBJ</div>`)[0];
+                popup_afd46c4744eff79712c24615a3c11358.setContent(html_befff2bb641920704cdb35ee5f7f84cf);
+            
+        
+
+        marker_f1f34a3c18b6870ba7ef03f241c2d8ff.bindPopup(popup_afd46c4744eff79712c24615a3c11358)
+        ;
+
+        
+    
+    
+                marker_f1f34a3c18b6870ba7ef03f241c2d8ff.setIcon(icon_767e42fde850367709bcd53a73a89f9a);
+            
+    
+            var marker_fde8b6be0751d8741a34e94fba3ba9fd = L.marker(
+                [-1.2088027550481062, 36.787945781367554],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_b9798883a1a94d77392f819da7531f6d = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_146076827005d6b2a3651fbb00733a6f = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_14f91102e29345264e090f0f651c7079 = $(`<div id="html_14f91102e29345264e090f0f651c7079" style="width: 100.0%; height: 100.0%;"><b>2. Delta Petrol Station Ruaka/Border</b><br>ID: 0100DPA</div>`)[0];
+                popup_146076827005d6b2a3651fbb00733a6f.setContent(html_14f91102e29345264e090f0f651c7079);
+            
+        
+
+        marker_fde8b6be0751d8741a34e94fba3ba9fd.bindPopup(popup_146076827005d6b2a3651fbb00733a6f)
+        ;
+
+        
+    
+    
+                marker_fde8b6be0751d8741a34e94fba3ba9fd.setIcon(icon_b9798883a1a94d77392f819da7531f6d);
+            
+    
+            var marker_9bc162ba90f71d69d46dd68df98f770e = L.marker(
+                [-1.2103855887760429, 36.789579088518636],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_4aa988f065f2bc761a0c79fccbe9e1c0 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_7beed529f3203a25e2cd20dfccc89fb8 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_2f13d9dfe1236b1d1bcc0b438b443795 = $(`<div id="html_2f13d9dfe1236b1d1bcc0b438b443795" style="width: 100.0%; height: 100.0%;"><b>3. Boda</b><br>ID: 0110BDO</div>`)[0];
+                popup_7beed529f3203a25e2cd20dfccc89fb8.setContent(html_2f13d9dfe1236b1d1bcc0b438b443795);
+            
+        
+
+        marker_9bc162ba90f71d69d46dd68df98f770e.bindPopup(popup_7beed529f3203a25e2cd20dfccc89fb8)
+        ;
+
+        
+    
+    
+                marker_9bc162ba90f71d69d46dd68df98f770e.setIcon(icon_4aa988f065f2bc761a0c79fccbe9e1c0);
+            
+    
+            var marker_309c5191823f6de38247fa7c541d8a10 = L.marker(
+                [-1.2109641732491085, 36.79019323757549],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_cd4c4db47bee81cc1fd29e6c816675e0 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_bcf58e6efad6982693be52862aabf7dc = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_c9a0e9decfdce2aa4b6b3c850f38b5a4 = $(`<div id="html_c9a0e9decfdce2aa4b6b3c850f38b5a4" style="width: 100.0%; height: 100.0%;"><b>4. Movers/Rosslyn Centre</b><br>ID: 0100MRC</div>`)[0];
+                popup_bcf58e6efad6982693be52862aabf7dc.setContent(html_c9a0e9decfdce2aa4b6b3c850f38b5a4);
+            
+        
+
+        marker_309c5191823f6de38247fa7c541d8a10.bindPopup(popup_bcf58e6efad6982693be52862aabf7dc)
+        ;
+
+        
+    
+    
+                marker_309c5191823f6de38247fa7c541d8a10.setIcon(icon_cd4c4db47bee81cc1fd29e6c816675e0);
+            
+    
+            var marker_db3df2eca1a753963f4c39f5ab9d8872 = L.marker(
+                [-1.2145051238611018, 36.79483464989631],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_9ea9546c27fd81703c8c9e26780a5e37 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_41db4cae2552d93291308f7e28e13f70 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_e114e46271355bd4d4d26c090c34c4ee = $(`<div id="html_e114e46271355bd4d4d26c090c34c4ee" style="width: 100.0%; height: 100.0%;"><b>5. Two Rivers</b><br>ID: 0110RRS</div>`)[0];
+                popup_41db4cae2552d93291308f7e28e13f70.setContent(html_e114e46271355bd4d4d26c090c34c4ee);
+            
+        
+
+        marker_db3df2eca1a753963f4c39f5ab9d8872.bindPopup(popup_41db4cae2552d93291308f7e28e13f70)
+        ;
+
+        
+    
+    
+                marker_db3df2eca1a753963f4c39f5ab9d8872.setIcon(icon_9ea9546c27fd81703c8c9e26780a5e37);
+            
+    
+            var marker_01556e23b635516322442c263baf0b75 = L.marker(
+                [-1.216395519028043, 36.79927632361903],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_d196541c37290a571f6331b5d9c5af04 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_a7bcb3aad1a8be81faa6252cf2df49f9 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_79f6837c75acfce36e70208f81e916ac = $(`<div id="html_79f6837c75acfce36e70208f81e916ac" style="width: 100.0%; height: 100.0%;"><b>6. Rosslyn Road/Karura Community Chapel</b><br>ID: 0100RRP</div>`)[0];
+                popup_a7bcb3aad1a8be81faa6252cf2df49f9.setContent(html_79f6837c75acfce36e70208f81e916ac);
+            
+        
+
+        marker_01556e23b635516322442c263baf0b75.bindPopup(popup_a7bcb3aad1a8be81faa6252cf2df49f9)
+        ;
+
+        
+    
+    
+                marker_01556e23b635516322442c263baf0b75.setIcon(icon_d196541c37290a571f6331b5d9c5af04);
+            
+    
+            var marker_cd4fa3e5e812d2564f0f77087ce79978 = L.marker(
+                [-1.218724074567383, 36.801794572281096],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_f4fc0861fc4fdabfaf6e02e4202b2cbd = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_07b184a2dc3b5248cea93647adc71d56 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_6655bf30fa6e25dfec5ea1722cc4cd27 = $(`<div id="html_6655bf30fa6e25dfec5ea1722cc4cd27" style="width: 100.0%; height: 100.0%;"><b>7. Runda Estate Entrance</b><br>ID: 0100RES</div>`)[0];
+                popup_07b184a2dc3b5248cea93647adc71d56.setContent(html_6655bf30fa6e25dfec5ea1722cc4cd27);
+            
+        
+
+        marker_cd4fa3e5e812d2564f0f77087ce79978.bindPopup(popup_07b184a2dc3b5248cea93647adc71d56)
+        ;
+
+        
+    
+    
+                marker_cd4fa3e5e812d2564f0f77087ce79978.setIcon(icon_f4fc0861fc4fdabfaf6e02e4202b2cbd);
+            
+    
+            var marker_a989bf5a3bd3547caa3e90f6ca620ea0 = L.marker(
+                [-1.2209041991957081, 36.801418022133056],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_91defb061fcfdd16a766c24fe2c08c60 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_c14e72d385254a4dd08da95d9594ee11 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_c807348522f3d3918950f0ee2514177d = $(`<div id="html_c807348522f3d3918950f0ee2514177d" style="width: 100.0%; height: 100.0%;"><b>8. Runda/Karura Carwash</b><br>ID: 0100RKH</div>`)[0];
+                popup_c14e72d385254a4dd08da95d9594ee11.setContent(html_c807348522f3d3918950f0ee2514177d);
+            
+        
+
+        marker_a989bf5a3bd3547caa3e90f6ca620ea0.bindPopup(popup_c14e72d385254a4dd08da95d9594ee11)
+        ;
+
+        
+    
+    
+                marker_a989bf5a3bd3547caa3e90f6ca620ea0.setIcon(icon_91defb061fcfdd16a766c24fe2c08c60);
+            
+    
+            var marker_aea23cc9461ca01551235f16a98c2a27 = L.marker(
+                [-1.2300482889659765, 36.8039569833501],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_877015009a984cf0c91da6d38e9c2628 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_225dce99e7dc0bb985be3cd3e41dd7b7 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_9c8abd571a8fc4d87006b867af5f0ebc = $(`<div id="html_9c8abd571a8fc4d87006b867af5f0ebc" style="width: 100.0%; height: 100.0%;"><b>9. Village Market</b><br>ID: 0110VMT</div>`)[0];
+                popup_225dce99e7dc0bb985be3cd3e41dd7b7.setContent(html_9c8abd571a8fc4d87006b867af5f0ebc);
+            
+        
+
+        marker_aea23cc9461ca01551235f16a98c2a27.bindPopup(popup_225dce99e7dc0bb985be3cd3e41dd7b7)
+        ;
+
+        
+    
+    
+                marker_aea23cc9461ca01551235f16a98c2a27.setIcon(icon_877015009a984cf0c91da6d38e9c2628);
+            
+    
+            var marker_964028b704204cbd9b9592d2b208986b = L.marker(
+                [-1.2339720137761498, 36.80340717037495],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_b244c8959780fea943eec41a5194e5ad = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_7f5bbce45c2b3b115f922fe9ae5b5337 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_ddc570ece7f9682557d14a4f4e08486d = $(`<div id="html_ddc570ece7f9682557d14a4f4e08486d" style="width: 100.0%; height: 100.0%;"><b>10. Redhill Road Junction</b><br>ID: 0100RRJ</div>`)[0];
+                popup_7f5bbce45c2b3b115f922fe9ae5b5337.setContent(html_ddc570ece7f9682557d14a4f4e08486d);
+            
+        
+
+        marker_964028b704204cbd9b9592d2b208986b.bindPopup(popup_7f5bbce45c2b3b115f922fe9ae5b5337)
+        ;
+
+        
+    
+    
+                marker_964028b704204cbd9b9592d2b208986b.setIcon(icon_b244c8959780fea943eec41a5194e5ad);
+            
+    
+            var marker_4540b3406162bbbf9f7e6b2307527541 = L.marker(
+                [-1.23804331161979, 36.809942686481826],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_ff798d688b1d59c87595f3e2520b8913 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_961e3882112fa1a2f6ce42014ce7b24e = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_456b05664fe60f30d15701b4be667a70 = $(`<div id="html_456b05664fe60f30d15701b4be667a70" style="width: 100.0%; height: 100.0%;"><b>11. UNEP/KTTC</b><br>ID: 0110UNA</div>`)[0];
+                popup_961e3882112fa1a2f6ce42014ce7b24e.setContent(html_456b05664fe60f30d15701b4be667a70);
+            
+        
+
+        marker_4540b3406162bbbf9f7e6b2307527541.bindPopup(popup_961e3882112fa1a2f6ce42014ce7b24e)
+        ;
+
+        
+    
+    
+                marker_4540b3406162bbbf9f7e6b2307527541.setIcon(icon_ff798d688b1d59c87595f3e2520b8913);
+            
+    
+            var marker_9222ccb76c07b4aa7e24af4876e7f5f6 = L.marker(
+                [-1.2391004737498632, 36.81134663383175],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_30790e1af1a1b8bd14cafbfdc1a099c4 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_9c3850253e41d65ee380e042ace386b3 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_45eac2be988d7dff1253e880a800285c = $(`<div id="html_45eac2be988d7dff1253e880a800285c" style="width: 100.0%; height: 100.0%;"><b>12. Kobil Gigiri</b><br>ID: 0110LIG</div>`)[0];
+                popup_9c3850253e41d65ee380e042ace386b3.setContent(html_45eac2be988d7dff1253e880a800285c);
+            
+        
+
+        marker_9222ccb76c07b4aa7e24af4876e7f5f6.bindPopup(popup_9c3850253e41d65ee380e042ace386b3)
+        ;
+
+        
+    
+    
+                marker_9222ccb76c07b4aa7e24af4876e7f5f6.setIcon(icon_30790e1af1a1b8bd14cafbfdc1a099c4);
+            
+    
+            var marker_6966efcbc0d56a8f92dc5a1bb12977df = L.marker(
+                [-1.2483947898013565, 36.816574845465375],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_789faae6fc66e91f18cd3ffc1bf09fdc = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_ee550687fb43d05119c1c4ff95f65c83 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_91b74a8155c195aa9044b334dbea265d = $(`<div id="html_91b74a8155c195aa9044b334dbea265d" style="width: 100.0%; height: 100.0%;"><b>13. Karura Forest/Belgian Embassy</b><br>ID: 0110FSA</div>`)[0];
+                popup_ee550687fb43d05119c1c4ff95f65c83.setContent(html_91b74a8155c195aa9044b334dbea265d);
+            
+        
+
+        marker_6966efcbc0d56a8f92dc5a1bb12977df.bindPopup(popup_ee550687fb43d05119c1c4ff95f65c83)
+        ;
+
+        
+    
+    
+                marker_6966efcbc0d56a8f92dc5a1bb12977df.setIcon(icon_789faae6fc66e91f18cd3ffc1bf09fdc);
+            
+    
+            var marker_b21a00b04ee6f7285bcdfad3632a6f9a = L.marker(
+                [-1.2505145369453012, 36.819835890333174],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_e801f444f6745d4cb3d0ec3c90442cd7 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_73b2054f00dab04aef12bcadc38dfe6e = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_7ad5f7e43c1352fae9f1e30dcf5bdf97 = $(`<div id="html_7ad5f7e43c1352fae9f1e30dcf5bdf97" style="width: 100.0%; height: 100.0%;"><b>14. Muthaiga Shopping Centre</b><br>ID: 0110MTS</div>`)[0];
+                popup_73b2054f00dab04aef12bcadc38dfe6e.setContent(html_7ad5f7e43c1352fae9f1e30dcf5bdf97);
+            
+        
+
+        marker_b21a00b04ee6f7285bcdfad3632a6f9a.bindPopup(popup_73b2054f00dab04aef12bcadc38dfe6e)
+        ;
+
+        
+    
+    
+                marker_b21a00b04ee6f7285bcdfad3632a6f9a.setIcon(icon_e801f444f6745d4cb3d0ec3c90442cd7);
+            
+    
+            var marker_1136cea54b5ba7574b7b13aa55b05d5e = L.marker(
+                [-1.257876512612222, 36.82693541715307],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_460173db0908e23f1c3360d1bd8b667a = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_a6cf9d780114d351e294b103ea8104ee = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_a9ebf20a387d0e40e4bbcd586273dd05 = $(`<div id="html_a9ebf20a387d0e40e4bbcd586273dd05" style="width: 100.0%; height: 100.0%;"><b>15. 6th Parklands Avenue/Regal House/Kobil</b><br>ID: 0110BLV</div>`)[0];
+                popup_a6cf9d780114d351e294b103ea8104ee.setContent(html_a9ebf20a387d0e40e4bbcd586273dd05);
+            
+        
+
+        marker_1136cea54b5ba7574b7b13aa55b05d5e.bindPopup(popup_a6cf9d780114d351e294b103ea8104ee)
+        ;
+
+        
+    
+    
+                marker_1136cea54b5ba7574b7b13aa55b05d5e.setIcon(icon_460173db0908e23f1c3360d1bd8b667a);
+            
+    
+            var marker_937ecdc747930f5203450d7701979d21 = L.marker(
+                [-1.25942505759639, 36.82671871109996],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_616955608c50e6761a99b415f66069ff = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_cd1ab08ab98f40980ac093839cfbb48c = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_63539121078412502002c7e22a64d36b = $(`<div id="html_63539121078412502002c7e22a64d36b" style="width: 100.0%; height: 100.0%;"><b>16. Total/City Park</b><br>ID: 0100TCP</div>`)[0];
+                popup_cd1ab08ab98f40980ac093839cfbb48c.setContent(html_63539121078412502002c7e22a64d36b);
+            
+        
+
+        marker_937ecdc747930f5203450d7701979d21.bindPopup(popup_cd1ab08ab98f40980ac093839cfbb48c)
+        ;
+
+        
+    
+    
+                marker_937ecdc747930f5203450d7701979d21.setIcon(icon_616955608c50e6761a99b415f66069ff);
+            
+    
+            var marker_54f4b5048037909f94678f699a859a9b = L.marker(
+                [-1.2615784784990896, 36.82577240460263],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_749b4ac6a3f947b82107a1449ebab512 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_f8ced453888b0df894813f1bb1106eec = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_24578494dca988ea2787bc17c9a101d4 = $(`<div id="html_24578494dca988ea2787bc17c9a101d4" style="width: 100.0%; height: 100.0%;"><b>17. City Park Market</b><br>ID: 0110MYA</div>`)[0];
+                popup_f8ced453888b0df894813f1bb1106eec.setContent(html_24578494dca988ea2787bc17c9a101d4);
+            
+        
+
+        marker_54f4b5048037909f94678f699a859a9b.bindPopup(popup_f8ced453888b0df894813f1bb1106eec)
+        ;
+
+        
+    
+    
+                marker_54f4b5048037909f94678f699a859a9b.setIcon(icon_749b4ac6a3f947b82107a1449ebab512);
+            
+    
+            var marker_2ed0223fa3972d9775bade5c83ae2e25 = L.marker(
+                [-1.263189068119014, 36.82498806622584],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_1244de10631376ed8097c70b27d59958 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_2d41df9af3672dd4e0174a973bfcd494 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_fe7374759f0bdccfab7623bdd2dbdbce = $(`<div id="html_fe7374759f0bdccfab7623bdd2dbdbce" style="width: 100.0%; height: 100.0%;"><b>18. 3rd Parklands Avenue/Aga Kan Hospital Junction</b><br>ID: 0110TPA</div>`)[0];
+                popup_2d41df9af3672dd4e0174a973bfcd494.setContent(html_fe7374759f0bdccfab7623bdd2dbdbce);
+            
+        
+
+        marker_2ed0223fa3972d9775bade5c83ae2e25.bindPopup(popup_2d41df9af3672dd4e0174a973bfcd494)
+        ;
+
+        
+    
+    
+                marker_2ed0223fa3972d9775bade5c83ae2e25.setIcon(icon_1244de10631376ed8097c70b27d59958);
+            
+    
+            var marker_47be49d3fd18e6583cf8efbda631cb2d = L.marker(
+                [-1.2641855703436462, 36.82454048472517],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_a55f4741049d6b7018811f6748c3bb6f = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_3ca8fc0538db050649df5699447ef5ba = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_cf60cfceccc547ae16a7cfe1b741cee1 = $(`<div id="html_cf60cfceccc547ae16a7cfe1b741cee1" style="width: 100.0%; height: 100.0%;"><b>19. OiLibya/2nd Parklands Avenue</b><br>ID: 0110YIL</div>`)[0];
+                popup_3ca8fc0538db050649df5699447ef5ba.setContent(html_cf60cfceccc547ae16a7cfe1b741cee1);
+            
+        
+
+        marker_47be49d3fd18e6583cf8efbda631cb2d.bindPopup(popup_3ca8fc0538db050649df5699447ef5ba)
+        ;
+
+        
+    
+    
+                marker_47be49d3fd18e6583cf8efbda631cb2d.setIcon(icon_a55f4741049d6b7018811f6748c3bb6f);
+            
+    
+            var marker_ff3e2924f1718934ef30b96e38e52b95 = L.marker(
+                [-1.266423424381487, 36.82321972285622],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_a710bfc12757423bf7dae1291680adf5 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_254c0c20f204f65171f421ae0fa3fc2c = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_0ff63ae8d35d0ea416846f7e66282a59 = $(`<div id="html_0ff63ae8d35d0ea416846f7e66282a59" style="width: 100.0%; height: 100.0%;"><b>20. Aga Khan Academy</b><br>ID: 0110AGK</div>`)[0];
+                popup_254c0c20f204f65171f421ae0fa3fc2c.setContent(html_0ff63ae8d35d0ea416846f7e66282a59);
+            
+        
+
+        marker_ff3e2924f1718934ef30b96e38e52b95.bindPopup(popup_254c0c20f204f65171f421ae0fa3fc2c)
+        ;
+
+        
+    
+    
+                marker_ff3e2924f1718934ef30b96e38e52b95.setIcon(icon_a710bfc12757423bf7dae1291680adf5);
+            
+    
+            var marker_410455fb0b1198219f197962593fa80e = L.marker(
+                [-1.2681343823567692, 36.821289681800984],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_00add5288689f16ff1f1fddb65fb36d5 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_9e3813be683ddc7007cf0d74c333ca05 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_fba73380836a91a543b188fbfe58e05e = $(`<div id="html_fba73380836a91a543b188fbfe58e05e" style="width: 100.0%; height: 100.0%;"><b>21. Wambugu Road</b><br>ID: 0110ROA</div>`)[0];
+                popup_9e3813be683ddc7007cf0d74c333ca05.setContent(html_fba73380836a91a543b188fbfe58e05e);
+            
+        
+
+        marker_410455fb0b1198219f197962593fa80e.bindPopup(popup_9e3813be683ddc7007cf0d74c333ca05)
+        ;
+
+        
+    
+    
+                marker_410455fb0b1198219f197962593fa80e.setIcon(icon_00add5288689f16ff1f1fddb65fb36d5);
+            
+    
+            var marker_b05921d144cc804cc2de08575ebc8a48 = L.marker(
+                [-1.2697536468152044, 36.82051377590526],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_f122b11e73fc05036a281cc662680ee9 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_f27f1be874d261cfe2dfb57aa7b04d04 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_88a56da47f316b842ba5f3f555f200a5 = $(`<div id="html_88a56da47f316b842ba5f3f555f200a5" style="width: 100.0%; height: 100.0%;"><b>22. Stima Plaza</b><br>ID: 0110TAA</div>`)[0];
+                popup_f27f1be874d261cfe2dfb57aa7b04d04.setContent(html_88a56da47f316b842ba5f3f555f200a5);
+            
+        
+
+        marker_b05921d144cc804cc2de08575ebc8a48.bindPopup(popup_f27f1be874d261cfe2dfb57aa7b04d04)
+        ;
+
+        
+    
+    
+                marker_b05921d144cc804cc2de08575ebc8a48.setIcon(icon_f122b11e73fc05036a281cc662680ee9);
+            
+    
+            var marker_c0b7be1bb4997714033c7783c6606826 = L.marker(
+                [-1.2722177954378995, 36.822369421367554],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_5d09990d9e09e8039b109c9ee7b8481c = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_7e91efb858a5f18fff3b309403207fc5 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_3d99bf6ac9c1d3882bac8f48a3fba48f = $(`<div id="html_3d99bf6ac9c1d3882bac8f48a3fba48f" style="width: 100.0%; height: 100.0%;"><b>23. Jamhuri High School</b><br>ID: 0100RGH</div>`)[0];
+                popup_7e91efb858a5f18fff3b309403207fc5.setContent(html_3d99bf6ac9c1d3882bac8f48a3fba48f);
+            
+        
+
+        marker_c0b7be1bb4997714033c7783c6606826.bindPopup(popup_7e91efb858a5f18fff3b309403207fc5)
+        ;
+
+        
+    
+    
+                marker_c0b7be1bb4997714033c7783c6606826.setIcon(icon_5d09990d9e09e8039b109c9ee7b8481c);
+            
+    
+            var marker_f92218ee97a4e0ebabe99ae08ea1383b = L.marker(
+                [-1.27399563789, 36.8234413862],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_c4e2b6daaffb8f614c83e77585f6bd0b = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_91b470cd8440600c170246187af25c68 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_39b71f4527168fae2c12a33466de0f18 = $(`<div id="html_39b71f4527168fae2c12a33466de0f18" style="width: 100.0%; height: 100.0%;"><b>24. Ngara</b><br>ID: 0110IRT</div>`)[0];
+                popup_91b470cd8440600c170246187af25c68.setContent(html_39b71f4527168fae2c12a33466de0f18);
+            
+        
+
+        marker_f92218ee97a4e0ebabe99ae08ea1383b.bindPopup(popup_91b470cd8440600c170246187af25c68)
+        ;
+
+        
+    
+    
+                marker_f92218ee97a4e0ebabe99ae08ea1383b.setIcon(icon_c4e2b6daaffb8f614c83e77585f6bd0b);
+            
+    
+            var marker_2d2b67c5a2315e29881f3e346dc264d3 = L.marker(
+                [-1.28302395344, 36.82469666],
+                {
+}
+            ).addTo(marker_cluster_eb7e42e733eb59880b128842908c68f4);
+        
+    
+            var icon_c604f1f3987feafe4da16b31757a4b0d = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_79ce83fc71fcd9e525aad95c16a4e109 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_461b0cfa8fcaeb41917ce78334da103f = $(`<div id="html_461b0cfa8fcaeb41917ce78334da103f" style="width: 100.0%; height: 100.0%;"><b>25. Odeon</b><br>ID: 0212SNT</div>`)[0];
+                popup_79ce83fc71fcd9e525aad95c16a4e109.setContent(html_461b0cfa8fcaeb41917ce78334da103f);
+            
+        
+
+        marker_2d2b67c5a2315e29881f3e346dc264d3.bindPopup(popup_79ce83fc71fcd9e525aad95c16a4e109)
+        ;
+
+        
+    
+    
+                marker_2d2b67c5a2315e29881f3e346dc264d3.setIcon(icon_c604f1f3987feafe4da16b31757a4b0d);
+            
+    
+            marker_cluster_eb7e42e733eb59880b128842908c68f4.addTo(map_41e6d4233d8613c52e02a64a535ef0c9);
+        
+</script>
+</html>

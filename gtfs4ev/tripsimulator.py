@@ -165,6 +165,10 @@ class TripSimulator:
                 travel_distance_km = 0
 
             # Travelling event:
+
+            cumulative_distance += travel_distance_km
+            cumulative_duration += travel_durations[i]
+            
             sequence.append({
                 "status": "travelling",
                 "distance": travel_distance_km,
@@ -173,9 +177,7 @@ class TripSimulator:
                 "duration_from_start": cumulative_duration,
                 "location": sub_linestring,  # LineString geometry
                 "stop_id": None
-            })
-            cumulative_distance += travel_distance_km
-            cumulative_duration += travel_durations[i]
+            })            
 
             # Stop event:
             sequence.append({

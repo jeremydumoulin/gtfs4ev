@@ -35,6 +35,7 @@ class FleetSimulator:
         self.trip_ids = trip_ids
 
         self._fleet_operation = None
+        self._trip_travel_sequences = None
 
         print("INFO \t Successful initialization of the FleetSimulator. The fleet operation can now be simulated. ")
     
@@ -73,6 +74,11 @@ class FleetSimulator:
         """Gets the pd dataframe with fleet operation."""
         return self._fleet_operation
 
+    @property
+    def trip_travel_sequences(self):
+        """Gets the pd dataframe with fleet travel sequences."""
+        return self._trip_travel_sequences
+
     # Fleet Operation
         
     def compute_fleet_operation(self, use_multiprocessing = False):
@@ -97,23 +103,31 @@ class FleetSimulator:
                     )
         else:
             # If no multiprocessing, compute trips sequentially
-            results = []
+            fleet_operations = []
+            sequences = []
             counter = 1
             for trip_id in self.trip_ids:
                 tripsim = TripSimulator(gtfs_manager=self.gtfs_manager, trip_id=trip_id)
                 tripsim.compute_fleet_operation()
 
-                result = pd.DataFrame(tripsim._fleet_operation)
+                fleet_operation = pd.DataFrame(tripsim._fleet_operation)
+                sequence = pd.DataFrame(tripsim._single_trip_sequence)
+
+                # Add trip_id column to the sequence dataframe
+                sequence['trip_id'] = trip_id
+                fleet_operation['trip_id'] = trip_id                
 
                 sys.stdout.write(f"\r \t Progress: {counter}/{num_trips} trips.")
                 sys.stdout.flush()
 
                 counter += 1
 
-                results.append(result)
+                fleet_operations.append(fleet_operation)
+                sequences.append(sequence)
 
         # Step 3: Merge all results **at once**
-        self._fleet_operation = pd.concat(results, ignore_index=True)
+        self._fleet_operation = pd.concat(fleet_operations, ignore_index=True)
+        self._trip_travel_sequences = pd.concat(sequences, ignore_index=True)        
 
         print("\n \t Fleet operation computation completed.")
 
