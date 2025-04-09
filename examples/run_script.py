@@ -19,8 +19,6 @@ import time
 import json
 import pandas as pd
 from shapely.ops import substring
-import time
-import gc
 
 # Adding the parent directory to the Python path for access to the GTFS4EV module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))) 
@@ -31,6 +29,7 @@ from gtfs4ev.vehiclefleet import VehicleFleet
 from gtfs4ev.gtfsmanager import GTFSManager
 from gtfs4ev.tripsimulator import TripSimulator
 from gtfs4ev.fleetsimulator import FleetSimulator
+from gtfs4ev.chargingsimulator import ChargingSimulator
 
 if __name__ == "__main__":
     #################################################################################
@@ -93,11 +92,26 @@ if __name__ == "__main__":
 
     # # 2.3) OPTIONAL - Map the spatio-temporal movement of vehicles 
     # # Warning : this might take a very long time and a lot of disk space if many trips are simulated
-    df = fleet_sim.get_fleet_trajectory(time_step=120)
-    df.to_csv(f"output/Mobility_fleet_trajectory.csv", index=True)
-    fleet_sim.generate_fleet_trajectory_map(fleet_trajectory=df, filepath=f"output/Mobility_fleet_trajectory_map.html")
+    # df = fleet_sim.get_fleet_trajectory(time_step=120)
+    # df.to_csv(f"output/Mobility_fleet_trajectory.csv", index=True)
+    # fleet_sim.generate_fleet_trajectory_map(fleet_trajectory=df, filepath=f"output/Mobility_fleet_trajectory_map.html")
 
     ###############################################################################
     ########################## STEP 3: Charging Scenario ########################## 
     ###############################################################################
+
+    cs = ChargingSimulator(
+        fleet_sim = FleetSimulator, 
+        vehicle_properties = {
+            "energy_consumption_kwh_per_km": 0.39,
+            "additional_travel_distance_km": .0,
+            "depot_availability_hours": [18, 5, 1]
+        }, 
+        charging_powers_kw = {
+            "depot": [[11, 1.0]],
+            "terminal": [[50, 0.5], [100, 0.5]]
+        }, 
+        charging_strategy ="at_depot", 
+        charging_efficiency= 0.9
+    )
     

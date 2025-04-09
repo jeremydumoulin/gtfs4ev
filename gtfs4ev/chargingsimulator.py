@@ -13,13 +13,18 @@ class ChargingSimulator:
             fleet_sim: An instance of a FleetSimulator class containing vehicle operations.
             vehicle_properties (dict): A dictionary of vehicle properties (e.g., energy consumption, battery capacity).
             charging_powers_kw (dict): A dictionary of vehicle_id: charging power in kW.
-            depot_hours (dict): Dictionary with vehicle_id: (start_hour, end_hour) tuples or lists.
             charging_efficiency (float): Charging efficiency as a value between 0 and 1 (default is 0.0).
         """
-        self._fleet_sim = fleet_sim
-        self._vehicle_properties = vehicle_properties
-        self._charging_powers_kw = charging_powers_kw
-        self._charging_efficiency = charging_efficiency
+        print("=========================================")
+        print(f"INFO \t Creation of a ChargingSimulator object.")
+        print("=========================================")
+
+        self.fleet_sim = fleet_sim
+        self.vehicle_properties = vehicle_properties
+        self.charging_powers_kw = charging_powers_kw
+        self.charging_efficiency = charging_efficiency
+
+        print("INFO \t Successful initialization of the ChargingSimulator. ")
 
     # --- fleet_sim ---
     @property
@@ -31,6 +36,11 @@ class ChargingSimulator:
         if value.fleet_operation is None:
             raise ValueError("fleet_sim.fleet_operation cannot be None. You must simulate the fleet opeation first.")
         self._fleet_sim = value
+
+    # --- vehicle_properties ---
+    @property
+    def vehicle_properties(self):
+        return self._vehicle_properties
 
     @vehicle_properties.setter
     def vehicle_properties(self, value: dict):
