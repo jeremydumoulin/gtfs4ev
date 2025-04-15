@@ -91,16 +91,16 @@ class FleetSimulator:
 
         # If use_multiprocessing is True, perform the computation in parallel
         if use_multiprocessing:
+            # Create a shared manager to track the progress
             with mp.Manager() as manager:
-                progress_counter = manager.Value('i', 0)
+                progress_counter = manager.Value('i', 0)  # Shared counter to track progress
 
+                # Create multiprocessing pool and apply function
                 with mp.Pool(mp.cpu_count()) as pool:
                     results = pool.starmap(
                         process_trip, 
                         [(trip_id, self.gtfs_manager, progress_counter, num_trips) for trip_id in self.trip_ids]
                     )
-
-            # Separate the results into two lists
             fleet_operations, sequences = zip(*results)
             fleet_operations = list(fleet_operations)
             sequences = list(sequences)
@@ -218,13 +218,15 @@ class FleetSimulator:
 # Helper function (outside the class) to process trips using multiprocessing
 
 def process_trip(trip_id, gtfs_manager, progress_counter, num_trips):
+    """
+    Function to process a single trip. This runs in parallel or sequentially.
+    """
     tripsim = TripSimulator(gtfs_manager=gtfs_manager, trip_id=trip_id)
     tripsim.compute_fleet_operation()
 
     fleet_operation = pd.DataFrame(tripsim._fleet_operation)
     sequence = pd.DataFrame(tripsim._single_trip_sequence)
 
-    # Add trip_id to both dataframes
     fleet_operation['trip_id'] = trip_id
     sequence['trip_id'] = trip_id
 

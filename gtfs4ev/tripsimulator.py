@@ -201,7 +201,6 @@ class TripSimulator:
         - Partial trip repetitions are accounted for using float values.
         - Total travel distance is accumulated across all repetitions.
         - Total travel duration (in seconds) is also added to the results.
-        - Includes idling periods when vehicle is not in operation.
         """
         self._fleet_operation = []
 
@@ -211,30 +210,27 @@ class TripSimulator:
         if trip_duration <= 0:
             raise ValueError("Trip duration must be positive.")
 
+        # Total distance of one full trip
         full_trip_distance = sum(
             event["distance"] for event in base_seq if event["status"] == "travelling"
         )
 
-        trip_freq = self.gtfs_manager.frequencies[
-            self.gtfs_manager.frequencies['trip_id'] == self.trip_id
-        ]
+        # Retrieve trip frequencies
+        trip_freq = self.gtfs_manager.frequencies[self.gtfs_manager.frequencies['trip_id'] == self.trip_id]
         if trip_freq.empty:
             raise ValueError(f"No frequency data available for trip ID {self.trip_id}.")
 
         num_vehicles = self.max_vehicles_in_operation()
         durations = np.array([event['duration'] for event in base_seq])
-        cum_times = np.concatenate(([0], np.cumsum(durations)))
+        cum_times = np.concatenate(([0], np.cumsum(durations)))  # cumulative time from trip start
 
+        # Store results per vehicle
         vehicle_records = {}
 
         for _, freq in trip_freq.iterrows():
             headway = freq['headway_secs']
-            freq_start_sec = (
-                freq['start_time'].hour * 3600 + freq['start_time'].minute * 60 + freq['start_time'].second
-            )
-            freq_end_sec = (
-                freq['end_time'].hour * 3600 + freq['end_time'].minute * 60 + freq['end_time'].second
-            )
+            freq_start_sec = (freq['start_time'].hour * 3600 + freq['start_time'].minute * 60 + freq['start_time'].second)
+            freq_end_sec = (freq['end_time'].hour * 3600 + freq['end_time'].minute * 60 + freq['end_time'].second)
 
             vehicles_in_operation = min(num_vehicles, max(1, round(trip_duration / headway)))
             vehicle_indices = np.arange(vehicles_in_operation)
@@ -250,49 +246,39 @@ class TripSimulator:
                         "travel_sequences": [],
                         "trip_repetitions": 0.0,
                         "total_distance_km": 0.0,
+                        "total_travel_time_s": 0.0,  # Initialize total duration to 0
                         "terminal_time_s": 0.0,
                         "stop_time_s": 0.0,
-                        "travel_time_s": 0.0,
-                        "idling_time_s": 0.0
+                        "travel_time_s": 0.0
                     }
 
                 repetition_start = trip_start_time
-                last_end_time = 0
-
                 while repetition_start < freq_end_sec:
                     start_abs = repetition_start
                     end_abs = repetition_start + trip_duration
 
+                    # Clip to frequency interval
                     clipped_start = max(start_abs, freq_start_sec)
                     clipped_end = min(end_abs, freq_end_sec)
 
                     if clipped_end <= clipped_start:
-                        break
+                        break  # nothing to store
 
+                    # Compute the fraction of trip done
                     clipped_duration = clipped_end - clipped_start
                     repetition_fraction = clipped_duration / trip_duration
 
-                    # Insert idling period between previous trip and this one
-                    if clipped_start > last_end_time:
-                        idle_duration = clipped_start - last_end_time
-                        idle_start_str = pd.to_datetime(last_end_time, unit="s").strftime("%H:%M:%S")
-                        idle_end_str = pd.to_datetime(clipped_start, unit="s").strftime("%H:%M:%S")
-                        vehicle_records[vehicle_id]["travel_sequences"].append({
-                            "start_time": idle_start_str,
-                            "end_time": idle_end_str,
-                            "offset_from_start": 0,
-                            "status": "idling"
-                        })
-                        vehicle_records[vehicle_id]["idling_time_s"] += idle_duration
-
+                    # Convert start/end to HH:MM:SS
                     start_str = pd.to_datetime(clipped_start, unit="s").strftime("%H:%M:%S")
                     end_str = pd.to_datetime(clipped_end, unit="s").strftime("%H:%M:%S")
 
+                    # Iterate over the sequence of events for this trip
                     for event in base_seq:
                         event_status = event["status"]
                         event_duration = event["duration"]
                         event_distance = event["distance"]
 
+                        # Accumulate the times based on the event status
                         if event_status == "at_terminal":
                             vehicle_records[vehicle_id]["terminal_time_s"] += event_duration * repetition_fraction
                         elif event_status == "at_stop":
@@ -300,33 +286,63 @@ class TripSimulator:
                         elif event_status == "travelling":
                             vehicle_records[vehicle_id]["travel_time_s"] += event_duration * repetition_fraction
 
+                    # Store the travel sequence information
                     vehicle_records[vehicle_id]["travel_sequences"].append({
                         "start_time": start_str,
                         "end_time": end_str,
-                        "offset_from_start": int(clipped_start - start_abs),
-                        "status": "operating"
+                        "offset_from_start": int(clipped_start - start_abs),  # how far from original start
                     })
 
+                    # Update total travel distance and duration for the vehicle
                     vehicle_records[vehicle_id]["trip_repetitions"] += repetition_fraction
                     vehicle_records[vehicle_id]["total_distance_km"] += full_trip_distance * repetition_fraction
+                    vehicle_records[vehicle_id]["total_travel_time_s"] += trip_duration * repetition_fraction
 
-                    last_end_time = clipped_end
                     repetition_start += trip_duration
 
-                # Idling after last trip until freq_end_sec
-                if last_end_time < freq_end_sec:
-                    idle_start_str = pd.to_datetime(last_end_time, unit="s").strftime("%H:%M:%S")
-                    idle_end_str = pd.to_datetime(freq_end_sec, unit="s").strftime("%H:%M:%S")
-                    idle_duration = freq_end_sec - last_end_time
-                    vehicle_records[vehicle_id]["travel_sequences"].append({
-                        "start_time": idle_start_str,
-                        "end_time": idle_end_str,
-                        "offset_from_start": 0,
-                        "status": "idling"
-                    })
-                    vehicle_records[vehicle_id]["idling_time_s"] += idle_duration
+        # Fill the gaps with a vehicle that is not operation
 
-        self._fleet_operation = list(vehicle_records.values())
+        fleet_result = []
+
+        for record in vehicle_records.values():
+            filled_sequences = []
+            prev_end = 0  # seconds since midnight
+
+            for seq in record["travel_sequences"]:
+                start_dt = datetime.strptime(seq["start_time"], "%H:%M:%S")
+                end_dt = datetime.strptime(seq["end_time"], "%H:%M:%S")
+
+                start_sec = start_dt.hour * 3600 + start_dt.minute * 60 + start_dt.second
+                end_sec = end_dt.hour * 3600 + end_dt.minute * 60 + end_dt.second
+
+                if start_sec > prev_end:
+                    start_str = f"{prev_end // 3600:02}:{(prev_end % 3600) // 60:02}:{prev_end % 60:02}"
+                    end_str = f"{start_sec // 3600:02}:{(start_sec % 3600) // 60:02}:{start_sec % 60:02}"
+                    filled_sequences.append({
+                        "start_time": start_str,
+                        "end_time": end_str,
+                        "offset_from_start": 0,
+                        "operating": False
+                    })
+
+                seq["operating"] = True
+                filled_sequences.append(seq)
+                prev_end = end_sec
+
+            if prev_end < 86399:
+                start_str = f"{prev_end // 3600:02}:{(prev_end % 3600) // 60:02}:{prev_end % 60:02}"
+                end_str = "23:59:59"  # explicitly clamp to end of day
+                filled_sequences.append({
+                    "start_time": start_str,
+                    "end_time": end_str,
+                    "offset_from_start": 0,
+                    "operating": False
+                })
+
+            record["travel_sequences"] = filled_sequences
+            fleet_result.append(record)
+
+        self._fleet_operation = fleet_result
 
     # Helper functions
 
@@ -406,6 +422,9 @@ class TripSimulator:
         for veh_idx, vehicle_record in enumerate(self._fleet_operation):
             # Loop on every travel segment for this vehicle.
             for seq in vehicle_record["travel_sequences"]:
+                # Skip the intervals where the vehicles are not in operation
+                if not seq["operating"]: 
+                    continue
                 # Convert travel sequence start/end times (HH:MM:SS) into seconds-from-midnight.
                 seq_start = pd.to_datetime(seq["start_time"], format="%H:%M:%S").time()
                 seq_end = pd.to_datetime(seq["end_time"], format="%H:%M:%S").time()

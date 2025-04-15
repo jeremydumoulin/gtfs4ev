@@ -14,7 +14,7 @@ Ensure the following structure for the input data:
 """
 
 import sys
-import os, psutil
+import os
 import time
 import json
 import pandas as pd
@@ -53,11 +53,11 @@ if __name__ == "__main__":
     # gtfs.filter_agency(agency_id="UON") # Removes all data related to the specified agency.
     
     # Example 3: Add additional idle time at trip terminals (optional based on specific fleet simulation needs)
-    gtfs.add_idle_time(idle_time_seconds=60*30)  # Adds 30 minutes idle time at trip terminals
+    # gtfs.add_idle_time(idle_time_seconds=60*30)  # Adds 30 minutes idle time at trip terminals
 
     # Example 4: Trim tripshapes to make sure their start and end points correspond to the projection of the start (RECOMMENDED)
     # and stop stops locations once projected on the tripshape (needed later to calculate distance between stops)
-    #gtfs.trim_tripshapes_to_terminal_locations()
+    # gtfs.trim_tripshapes_to_terminal_locations()
 
     # 1.4) OPTIONAL - Show information and export 
     # Show general information about the GTFS feed (e.g., number of trips, agencies, etc.)
@@ -67,12 +67,12 @@ if __name__ == "__main__":
     #gtfs.export_to_csv("input/GTFS_Nairobi_cleaned")
 
     # Export summary statistics to a text file
-    gtfs.generate_summary_report("output/GTFS_summary.txt")
+    #gtfs.generate_summary_report("output/GTFS_summary.txt")
 
     # Export a map of a trip or the entire GTFS data (e.g., stops, routes, and trips) as an HTML file 
     #gtfs.generate_network_map("output/map_GTFS_data.html")
-    trip_id = "1011F110"
-    gtfs.generate_single_trip_map(trip_id = trip_id, filepath = f"output/GTFS_map_{trip_id}.html", projected = True)
+    #trip_id = "1011F110"
+    #gtfs.generate_single_trip_map(trip_id = trip_id, filepath = f"output/GTFS_map_{trip_id}.html", projected = True)
 
     ###############################################################################
     ############# STEP 2: Simulate the operation of the vehicle fleet ############# 
@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
     # 2.1) Initialize the FleetSimulator with the GTFS data and a list of trip IDs to simulate
     # If no trip IDs are specified, all trips in the GTFS feed will be simulated
-    fleet_sim = FleetSimulator(gtfs_manager=gtfs, trip_ids=["1011F110", "1107D110", "70002110"])
+    fleet_sim = FleetSimulator(gtfs_manager=gtfs, trip_ids=["1011F110"])
     # If you want to simulate all trips, uncomment the line below:
     #fleet_sim = FleetSimulator(gtfs_manager=gtfs)
 
@@ -92,26 +92,24 @@ if __name__ == "__main__":
 
     # # 2.3) OPTIONAL - Map the spatio-temporal movement of vehicles 
     # # Warning : this might take a very long time and a lot of disk space if many trips are simulated
-    # df = fleet_sim.get_fleet_trajectory(time_step=120)
-    # df.to_csv(f"output/Mobility_fleet_trajectory.csv", index=True)
-    # fleet_sim.generate_fleet_trajectory_map(fleet_trajectory=df, filepath=f"output/Mobility_fleet_trajectory_map.html")
+    df = fleet_sim.get_fleet_trajectory(time_step=120)
+    df.to_csv(f"output/Mobility_fleet_trajectory.csv", index=True)
+    #fleet_sim.generate_fleet_trajectory_map(fleet_trajectory=df, filepath=f"output/Mobility_fleet_trajectory_map.html")
 
     ###############################################################################
     ########################## STEP 3: Charging Scenario ########################## 
     ###############################################################################
 
     cs = ChargingSimulator(
-        fleet_sim = FleetSimulator, 
-        vehicle_properties = {
-            "energy_consumption_kwh_per_km": 0.39,
-            "additional_travel_distance_km": .0,
-            "depot_availability_hours": [18, 5, 1]
-        }, 
-        charging_powers_kw = {
-            "depot": [[11, 1.0]],
-            "terminal": [[50, 0.5], [100, 0.5]]
-        }, 
-        charging_strategy ="at_depot", 
-        charging_efficiency= 0.9
+        fleet_sim = fleet_sim,
+        energy_consumption_kWh_per_km = 0.39,
+        charging_efficiency = 0.9,
+        charging_powers_kW = {
+            "depot": [[11,1.0], [22,0.0]],
+            "terminal": [[200,1.0]]
+        }
     )
+
+    charging_df = cs.compute_charging_schedule(["terminal", "depot_night"], charge_probability=0.5, depot_travel_time_min=[15,30])
+    charging_df.to_csv(f"output/charging_schedule.csv", index=False)
     
