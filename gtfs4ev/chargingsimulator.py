@@ -207,6 +207,8 @@ class ChargingSimulator:
                         charging_events.append({
                             "start_time": event["start_time"],
                             "end_time": event["end_time"],
+                            "location": "terminal",
+                            "stop_id": event["stop_id"],
                             "power": power_rate,
                             "energy_charged_kWh": energy
                         })
@@ -247,6 +249,7 @@ class ChargingSimulator:
                         charging_events.append({
                             "start_time": adjusted_start.strftime("%H:%M:%S"),
                             "end_time": actual_end.strftime("%H:%M:%S"),
+                            "location": "depot",
                             "power": power_rate,
                             "energy_charged_kWh": energy_to_charge
                         })
@@ -273,6 +276,7 @@ class ChargingSimulator:
                     charging_events.append({
                         "start_time": adjusted_start.strftime("%H:%M:%S"),
                         "end_time": (adjusted_start + duration_needed).strftime("%H:%M:%S"),
+                        "location": "depot",
                         "power": power_rate,
                         "energy_charged_kWh": remaining_need
                     })
@@ -284,6 +288,7 @@ class ChargingSimulator:
                         charging_events.append({
                             "start_time": adjusted_start.strftime("%H:%M:%S"),
                             "end_time": end_dt.strftime("%H:%M:%S"),
+                            "location": "depot",
                             "power": power_rate,
                             "energy_charged_kWh": energy_end_of_day
                         })
@@ -305,6 +310,7 @@ class ChargingSimulator:
                         charging_events.append({
                             "start_time": start_dt.strftime("%H:%M:%S"),
                             "end_time": (start_dt + actual_duration).strftime("%H:%M:%S"),
+                            "location": "depot",
                             "power": power_rate,
                             "energy_charged_kWh": energy_morning
                         })

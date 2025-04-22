@@ -37,7 +37,7 @@ if __name__ == "__main__":
     #################################################################################
 
     # 1.1) Load GTFS data from the specified folder
-    gtfs = GTFSManager(gtfs_datafolder="input/GTFS_Nairobi")
+    gtfs = GTFSManager(gtfs_datafolder="input/GTFS_Nairobi_cleaned")
 
     # 1.2) Check the consistency of the GTFS data, and clean it if necessary
     # This step ensures that the data is valid for simulation
@@ -53,20 +53,20 @@ if __name__ == "__main__":
     # gtfs.filter_agency(agency_id="UON") # Removes all data related to the specified agency.
     
     # Example 3: Add additional idle time at trip terminals (optional based on specific fleet simulation needs)
-    gtfs.add_idle_time_terminals(mean_idle_time_s = 60, std_idle_time_s = 10)  # Adds idle time at trip terminals
-    gtfs.add_idle_time_stops(mean_idle_time_s = 20, std_idle_time_s = 5)  # Adds idle time at intermediate stops
+    #gtfs.add_idle_time_terminals(mean_idle_time_s = 60, std_idle_time_s = 10)  # Adds idle time at trip terminals
+    #gtfs.add_idle_time_stops(mean_idle_time_s = 20, std_idle_time_s = 5)  # Adds idle time at intermediate stops
 
 
     # Example 4: Trim tripshapes to make sure their start and end points correspond to the projection of the start (RECOMMENDED)
     # and stop stops locations once projected on the tripshape (needed later to calculate distance between stops)
-    gtfs.trim_tripshapes_to_terminal_locations()
+    #gtfs.trim_tripshapes_to_terminal_locations()
 
     # 1.4) OPTIONAL - Show information and export 
     # Show general information about the GTFS feed (e.g., number of trips, agencies, etc.)
     gtfs.show_general_info()
 
     # Export cleaned/filtered GTFS data to GTFS file (usefull to avoid pre-processing everytime)
-    gtfs.export_to_csv("input/GTFS_Nairobi_cleaned")
+    #gtfs.export_to_csv("input/GTFS_Nairobi_cleaned")
 
     # Export summary statistics to a text file
     #gtfs.generate_summary_report("output/GTFS_summary.txt")
@@ -102,16 +102,16 @@ if __name__ == "__main__":
     ########################## STEP 3: Charging Scenario ########################## 
     ###############################################################################
 
-    # cs = ChargingSimulator(
-    #     fleet_sim = fleet_sim,
-    #     energy_consumption_kWh_per_km = 0.39,
-    #     charging_efficiency = 0.9,
-    #     charging_powers_kW = {
-    #         "depot": [[11,1.0], [22,0.0]],
-    #         "terminal": [[200,1.0]]
-    #     }
-    # )
+    cs = ChargingSimulator(
+        fleet_sim = fleet_sim,
+        energy_consumption_kWh_per_km = 0.39,
+        charging_efficiency = 0.9,
+        charging_powers_kW = {
+            "depot": [[11,1.0], [22,0.0]],
+            "terminal": [[200,1.0]]
+        }
+    )
 
-    # cs.compute_charging_schedule(["terminal", "depot_day", "depot_night"], charge_probability=0.5, depot_travel_time_min=[15,30])
-    # cs._charging_schedule.to_csv(f"output/charging_schedule.csv", index=False)
+    cs.compute_charging_schedule(["terminal", "depot_night"], charge_probability=0.5, depot_travel_time_min=[15,30])
+    cs._charging_schedule.to_csv(f"output/charging_schedule.csv", index=False)
     
