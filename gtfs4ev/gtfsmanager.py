@@ -76,10 +76,10 @@ class GTFSManager:
         required_files = ['agency.txt', 'routes.txt', 'stop_times.txt', 'calendar.txt',
                           'frequencies.txt', 'shapes.txt', 'stops.txt', 'trips.txt']
         if not abs_path.is_dir():
-            raise FileNotFoundError(f"ERROR \t Unable to find folder: /{gtfs_foldername}")
+            raise FileNotFoundError(f"ERROR \t Unable to find folder: /{abs_folder}")
         for file_name in required_files:
             if not (abs_path / file_name).exists():
-                raise FileNotFoundError(f"ERROR \t Required file '{file_name}' is missing in folder /{gtfs_foldername}")
+                print(f"ERROR \t Required file '{file_name}' is missing")
         for file_name in os.listdir(abs_path):
             if file_name not in required_files:
                 print(f"INFO \t The data folder contains a GTFS file that is not required: '{file_name}'.")

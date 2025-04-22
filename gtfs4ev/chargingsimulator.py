@@ -57,6 +57,8 @@ class ChargingSimulator:
         Returns:
         - DataFrame with vehicle_id, and a list of charging events as dictionaries.
         """
+        print("INFO \t Computing the charging schedule for all vehicles... ")
+
         fleet_operation = self.fleet_sim.fleet_operation
         trip_travel_sequences = self.fleet_sim.trip_travel_sequences
 
@@ -179,9 +181,9 @@ class ChargingSimulator:
                 "min_capacity_kWh": min_capacity
             })
 
-        return pd.DataFrame(vehicle_charging_sequences)
+        self._charging_schedule = pd.DataFrame(vehicle_charging_sequences)
 
-    def get_charging_sequence(self, travel_sequence, charging_strategy, charging_need_kWh, charge_probability=0.5, depot_travel_time_min=[15,30]):
+    def get_charging_sequence(self, travel_sequence, charging_strategy, charging_need_kWh, charge_probability, depot_travel_time_min):
         """
         Simulates charging events based on the travel sequence and chosen strategy.
         Includes probabilistic arrival/departure offsets for depot time.
@@ -366,7 +368,7 @@ class ChargingSimulator:
 
         # Battery profile is shifted so the minimum is 0
         required_capacity = max_battery_level - min_battery_level
-        print(f"Minimum battery capacity needed: {required_capacity:.2f} kWh")
+
         return required_capacity
 
     # def test_battery_capacity(self, travel_sequence, charging_events, energy_consumption_kWh_per_km, initial_battery_capacity):

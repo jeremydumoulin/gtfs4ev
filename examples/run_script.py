@@ -37,13 +37,13 @@ if __name__ == "__main__":
     #################################################################################
 
     # 1.1) Load GTFS data from the specified folder
-    gtfs = GTFSManager(gtfs_datafolder="input/GTFS_Nairobi_cleaned")
+    gtfs = GTFSManager(gtfs_datafolder="input/GTFS_AFTU")
 
     # 1.2) Check the consistency of the GTFS data, and clean it if necessary
     # This step ensures that the data is valid for simulation
-    if not gtfs.check_all():
-        print("INFO \t Data is inconsistent, cleaning data...")
-        gtfs.clean_all()
+    # if not gtfs.check_all():
+    #     print("INFO \t Data is inconsistent, cleaning data...")
+    #     gtfs.clean_all()
 
     # 1.3) OPTIONAL - Data filtering and manipulation (uncomment to enable)
     # Example 1: Filter for services that run daily (e.g., remove weekend-only services)
@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     # Example 4: Trim tripshapes to make sure their start and end points correspond to the projection of the start (RECOMMENDED)
     # and stop stops locations once projected on the tripshape (needed later to calculate distance between stops)
-    # gtfs.trim_tripshapes_to_terminal_locations()
+    gtfs.trim_tripshapes_to_terminal_locations()
 
     # 1.4) OPTIONAL - Show information and export 
     # Show general information about the GTFS feed (e.g., number of trips, agencies, etc.)
@@ -71,8 +71,8 @@ if __name__ == "__main__":
 
     # Export a map of a trip or the entire GTFS data (e.g., stops, routes, and trips) as an HTML file 
     #gtfs.generate_network_map("output/map_GTFS_data.html")
-    #trip_id = "1011F110"
-    #gtfs.generate_single_trip_map(trip_id = trip_id, filepath = f"output/GTFS_map_{trip_id}.html", projected = True)
+    trip_id = "AFTU_1_HLM-GR-YOFF_1"
+    gtfs.generate_single_trip_map(trip_id = trip_id, filepath = f"output/GTFS_map_{trip_id}.html", projected = True)
 
     ###############################################################################
     ############# STEP 2: Simulate the operation of the vehicle fleet ############# 
@@ -80,20 +80,20 @@ if __name__ == "__main__":
 
     # 2.1) Initialize the FleetSimulator with the GTFS data and a list of trip IDs to simulate
     # If no trip IDs are specified, all trips in the GTFS feed will be simulated
-    fleet_sim = FleetSimulator(gtfs_manager=gtfs, trip_ids=["1011F110"])
+    #fleet_sim = FleetSimulator(gtfs_manager=gtfs, trip_ids=["1011F110"])
     # If you want to simulate all trips, uncomment the line below:
     #fleet_sim = FleetSimulator(gtfs_manager=gtfs)
 
     # 2.2) Compute the fleet operation for the selected trips
     # Use multiprocessing to speed up the simulation (set to False if you want a single-threaded computation)
-    fleet_sim.compute_fleet_operation(use_multiprocessing=False)  # Set use_multiprocessing=True for parallel processing
-    fleet_sim.fleet_operation.to_csv(f"output/Mobility_fleet_operation.csv", index=False)
-    fleet_sim.trip_travel_sequences.to_csv(f"output/Mobility_trip_travel_sequences.csv", index=False)
+    #fleet_sim.compute_fleet_operation(use_multiprocessing=False)  # Set use_multiprocessing=True for parallel processing
+    #fleet_sim.fleet_operation.to_csv(f"output/Mobility_fleet_operation.csv", index=False)
+    #fleet_sim.trip_travel_sequences.to_csv(f"output/Mobility_trip_travel_sequences.csv", index=False)
 
     # # 2.3) OPTIONAL - Map the spatio-temporal movement of vehicles 
     # # Warning : this might take a very long time and a lot of disk space if many trips are simulated
-    df = fleet_sim.get_fleet_trajectory(time_step=120)
-    df.to_csv(f"output/Mobility_fleet_trajectory.csv", index=True)
+    #df = fleet_sim.get_fleet_trajectory(time_step=120)
+    #df.to_csv(f"output/Mobility_fleet_trajectory.csv", index=True)
     #fleet_sim.generate_fleet_trajectory_map(fleet_trajectory=df, filepath=f"output/Mobility_fleet_trajectory_map.html")
 
     ###############################################################################
@@ -110,6 +110,6 @@ if __name__ == "__main__":
         }
     )
 
-    charging_df = cs.compute_charging_schedule(["terminal", "depot_night"], charge_probability=0.5, depot_travel_time_min=[15,30])
-    charging_df.to_csv(f"output/charging_schedule.csv", index=False)
+    cs.compute_charging_schedule(["terminal", "depot_day", "depot_night"], charge_probability=0.5, depot_travel_time_min=[15,30])
+    cs._charging_schedule.to_csv(f"output/charging_schedule.csv", index=False)
     
