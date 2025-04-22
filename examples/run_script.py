@@ -37,7 +37,7 @@ if __name__ == "__main__":
     #################################################################################
 
     # 1.1) Load GTFS data from the specified folder
-    gtfs = GTFSManager(gtfs_datafolder="input/GTFS_AFTU")
+    gtfs = GTFSManager(gtfs_datafolder="input/GTFS_Nairobi")
 
     # 1.2) Check the consistency of the GTFS data, and clean it if necessary
     # This step ensures that the data is valid for simulation
@@ -53,7 +53,9 @@ if __name__ == "__main__":
     # gtfs.filter_agency(agency_id="UON") # Removes all data related to the specified agency.
     
     # Example 3: Add additional idle time at trip terminals (optional based on specific fleet simulation needs)
-    # gtfs.add_idle_time(idle_time_seconds=60*30)  # Adds 30 minutes idle time at trip terminals
+    gtfs.add_idle_time_terminals(mean_idle_time_s = 60, std_idle_time_s = 10)  # Adds idle time at trip terminals
+    gtfs.add_idle_time_stops(mean_idle_time_s = 20, std_idle_time_s = 5)  # Adds idle time at intermediate stops
+
 
     # Example 4: Trim tripshapes to make sure their start and end points correspond to the projection of the start (RECOMMENDED)
     # and stop stops locations once projected on the tripshape (needed later to calculate distance between stops)
@@ -64,14 +66,14 @@ if __name__ == "__main__":
     gtfs.show_general_info()
 
     # Export cleaned/filtered GTFS data to GTFS file (usefull to avoid pre-processing everytime)
-    #gtfs.export_to_csv("input/GTFS_Nairobi_cleaned")
+    gtfs.export_to_csv("input/GTFS_Nairobi_cleaned")
 
     # Export summary statistics to a text file
     #gtfs.generate_summary_report("output/GTFS_summary.txt")
 
     # Export a map of a trip or the entire GTFS data (e.g., stops, routes, and trips) as an HTML file 
     #gtfs.generate_network_map("output/map_GTFS_data.html")
-    trip_id = "AFTU_1_HLM-GR-YOFF_1"
+    trip_id = "1011F110"
     gtfs.generate_single_trip_map(trip_id = trip_id, filepath = f"output/GTFS_map_{trip_id}.html", projected = True)
 
     ###############################################################################
@@ -80,36 +82,36 @@ if __name__ == "__main__":
 
     # 2.1) Initialize the FleetSimulator with the GTFS data and a list of trip IDs to simulate
     # If no trip IDs are specified, all trips in the GTFS feed will be simulated
-    #fleet_sim = FleetSimulator(gtfs_manager=gtfs, trip_ids=["1011F110"])
+    fleet_sim = FleetSimulator(gtfs_manager=gtfs, trip_ids=["1011F110"])
     # If you want to simulate all trips, uncomment the line below:
     #fleet_sim = FleetSimulator(gtfs_manager=gtfs)
 
     # 2.2) Compute the fleet operation for the selected trips
     # Use multiprocessing to speed up the simulation (set to False if you want a single-threaded computation)
-    #fleet_sim.compute_fleet_operation(use_multiprocessing=False)  # Set use_multiprocessing=True for parallel processing
-    #fleet_sim.fleet_operation.to_csv(f"output/Mobility_fleet_operation.csv", index=False)
-    #fleet_sim.trip_travel_sequences.to_csv(f"output/Mobility_trip_travel_sequences.csv", index=False)
+    fleet_sim.compute_fleet_operation(use_multiprocessing=False)  # Set use_multiprocessing=True for parallel processing
+    fleet_sim.fleet_operation.to_csv(f"output/Mobility_fleet_operation.csv", index=False)
+    fleet_sim.trip_travel_sequences.to_csv(f"output/Mobility_trip_travel_sequences.csv", index=False)
 
     # # 2.3) OPTIONAL - Map the spatio-temporal movement of vehicles 
     # # Warning : this might take a very long time and a lot of disk space if many trips are simulated
-    #df = fleet_sim.get_fleet_trajectory(time_step=120)
-    #df.to_csv(f"output/Mobility_fleet_trajectory.csv", index=True)
-    #fleet_sim.generate_fleet_trajectory_map(fleet_trajectory=df, filepath=f"output/Mobility_fleet_trajectory_map.html")
+    df = fleet_sim.get_fleet_trajectory(time_step=120)
+    df.to_csv(f"output/Mobility_fleet_trajectory.csv", index=True)
+    fleet_sim.generate_fleet_trajectory_map(fleet_trajectory=df, filepath=f"output/Mobility_fleet_trajectory_map.html")
 
     ###############################################################################
     ########################## STEP 3: Charging Scenario ########################## 
     ###############################################################################
 
-    cs = ChargingSimulator(
-        fleet_sim = fleet_sim,
-        energy_consumption_kWh_per_km = 0.39,
-        charging_efficiency = 0.9,
-        charging_powers_kW = {
-            "depot": [[11,1.0], [22,0.0]],
-            "terminal": [[200,1.0]]
-        }
-    )
+    # cs = ChargingSimulator(
+    #     fleet_sim = fleet_sim,
+    #     energy_consumption_kWh_per_km = 0.39,
+    #     charging_efficiency = 0.9,
+    #     charging_powers_kW = {
+    #         "depot": [[11,1.0], [22,0.0]],
+    #         "terminal": [[200,1.0]]
+    #     }
+    # )
 
-    cs.compute_charging_schedule(["terminal", "depot_day", "depot_night"], charge_probability=0.5, depot_travel_time_min=[15,30])
-    cs._charging_schedule.to_csv(f"output/charging_schedule.csv", index=False)
+    # cs.compute_charging_schedule(["terminal", "depot_day", "depot_night"], charge_probability=0.5, depot_travel_time_min=[15,30])
+    # cs._charging_schedule.to_csv(f"output/charging_schedule.csv", index=False)
     

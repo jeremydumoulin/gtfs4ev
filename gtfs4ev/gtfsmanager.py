@@ -2,6 +2,7 @@
 
 import os
 import pandas as pd
+import numpy as np
 import geopandas as gpd
 from pathlib import Path
 from shapely.geometry import LineString, Point, box
@@ -678,38 +679,76 @@ class GTFSManager:
 
     # Data manipulation
 
-    def add_idle_time(self, idle_time_seconds):
+    def add_idle_time_terminals(self, mean_idle_time_s, std_idle_time_s):
         """
-        Adds an idle time to the terminal of each trip.
+        Adds an idle time to the terminal of each trip, drawn from a normal distribution.
         This idle time is split between the first and the last stop.
-        
+
         Parameters:
-            idle_time_seconds (int): The number of seconds to add as idle time.
+            mean_idle_time_s (float): Mean idle time in seconds.
+            std_idle_time_s (float): Standard deviation of idle time in seconds.
         """
-        print(f"INFO \t Adding an idle time of {idle_time_seconds} s at terminal.")
-      
-        # Ensure stop_times is sorted by trip_id and stop_sequence
+        print(f"INFO \t Adding terminal idle time (mean={mean_idle_time_s}s, std={std_idle_time_s}s)")
+
+        # Ensure stop_times is sorted
         self.stop_times.sort_values(by=['trip_id', 'stop_sequence'], inplace=True)
 
-        # Identify last stop in each trip
+        # Identify first and last stops for each trip
+        first_stop_indices = self.stop_times.groupby('trip_id')['stop_sequence'].idxmin()
         last_stop_indices = self.stop_times.groupby('trip_id')['stop_sequence'].idxmax()
 
-        # Identify first stop in each trip
-        first_stop_indices = self.stop_times.groupby('trip_id')['stop_sequence'].idxmin()
-        
-        # Convert time columns to datetime if necessary
+        # Convert time columns to datetime if needed
         time_cols = ['arrival_time', 'departure_time']
         for col in time_cols:
             self.stop_times[col] = pd.to_datetime(self.stop_times[col])
 
-        # Add idle time
-        self.stop_times.loc[last_stop_indices, 'departure_time'] += pd.to_timedelta(idle_time_seconds/2, unit='s')
-        self.stop_times.loc[first_stop_indices, 'departure_time'] += pd.to_timedelta(idle_time_seconds/2, unit='s')
+        # Loop over each trip and apply individual idle times
+        for trip_id in self.stop_times['trip_id'].unique():
+            idle_time = max(0, np.random.normal(mean_idle_time_s, std_idle_time_s))  # prevent negative values
+            idle_delta = pd.to_timedelta(idle_time / 2, unit='s')
 
-        # Shift all subsequent stop times (except the first stop)
-        for trip_id, first_idx in first_stop_indices.items():
+            first_idx = first_stop_indices[trip_id]
+            last_idx = last_stop_indices[trip_id]
+
+            self.stop_times.loc[first_idx, 'departure_time'] += idle_delta
+            self.stop_times.loc[last_idx, 'departure_time'] += idle_delta
+
+            # Shift all stops after the first by half the idle time
             mask = (self.stop_times['trip_id'] == trip_id) & (self.stop_times.index > first_idx)
-            self.stop_times.loc[mask, time_cols] += pd.to_timedelta(idle_time_seconds / 2, unit='s')
+            self.stop_times.loc[mask, time_cols] += idle_delta
+
+    def add_idle_time_stops(self, mean_idle_time_s, std_idle_time_s):
+        """
+        Adds a random idle time to all intermediate stops (excluding the first and last) of each trip.
+        The idle time is added to the departure_time only (i.e., increases dwell time).
+
+        Parameters:
+            mean_idle_time_s (float): Mean idle time in seconds.
+            std_idle_time_s (float): Standard deviation of idle time in seconds.
+        """
+        print(f"INFO \t Adding random stop idle time (mean={mean_idle_time_s}s, std={std_idle_time_s}s)")
+
+        self.stop_times.sort_values(by=['trip_id', 'stop_sequence'], inplace=True)
+
+        time_cols = ['arrival_time', 'departure_time']
+        for col in time_cols:
+            self.stop_times[col] = pd.to_datetime(self.stop_times[col])
+
+        for trip_id, trip_df in self.stop_times.groupby('trip_id'):
+            stop_indices = trip_df.index.tolist()
+            if len(stop_indices) <= 2:
+                continue  # no intermediate stops
+
+            for idx in stop_indices[1:-1]:  # intermediate stops only
+                idle_time = max(0, np.random.normal(mean_idle_time_s, std_idle_time_s))
+                idle_delta = pd.to_timedelta(idle_time, unit='s')
+
+                # Extend dwell time at this stop
+                self.stop_times.loc[idx, 'departure_time'] += idle_delta
+
+                # Shift all following stops (both arrival and departure)
+                following_mask = (self.stop_times['trip_id'] == trip_id) & (self.stop_times.index > idx)
+                self.stop_times.loc[following_mask, time_cols] += idle_delta
 
     # Helper methods
 
