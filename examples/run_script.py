@@ -82,13 +82,13 @@ if __name__ == "__main__":
 
     # 2.1) Initialize the FleetSimulator with the GTFS data and a list of trip IDs to simulate
     # If no trip IDs are specified, all trips in the GTFS feed will be simulated
-    fleet_sim = FleetSimulator(gtfs_manager=gtfs, trip_ids=["1011F110"])
+    #fleet_sim = FleetSimulator(gtfs_manager=gtfs, trip_ids=["1011F110", "1107D110", "10114111"])
     # If you want to simulate all trips, uncomment the line below:
-    #fleet_sim = FleetSimulator(gtfs_manager=gtfs)
+    fleet_sim = FleetSimulator(gtfs_manager=gtfs)
 
     # 2.2) Compute the fleet operation for the selected trips
     # Use multiprocessing to speed up the simulation (set to False if you want a single-threaded computation)
-    fleet_sim.compute_fleet_operation(use_multiprocessing=False)  # Set use_multiprocessing=True for parallel processing
+    fleet_sim.compute_fleet_operation(use_multiprocessing=True)  # Set use_multiprocessing=True for parallel processing
     fleet_sim.fleet_operation.to_csv(f"output/Mobility_fleet_operation.csv", index=False)
     fleet_sim.trip_travel_sequences.to_csv(f"output/Mobility_trip_travel_sequences.csv", index=False)
 
@@ -105,7 +105,6 @@ if __name__ == "__main__":
     cs = ChargingSimulator(
         fleet_sim = fleet_sim,
         energy_consumption_kWh_per_km = 0.39,
-        charging_efficiency = 0.9,
         charging_powers_kW = {
             "depot": [[11,1.0], [22,0.0]],
             "terminal": [[100,1.0]],
@@ -113,7 +112,7 @@ if __name__ == "__main__":
         }
     )
 
-    cs.compute_charging_schedule(["stop"], charge_probability=0.5, depot_travel_time_min=[15,30])
+    cs.compute_charging_schedule(["terminal", "depot_night"], charge_probability=0.1, depot_travel_time_min=[15,30])
     cs.charging_schedule_pervehicle.to_csv(f"output/Charging_schedule_pervehicle.csv", index=False)
     cs.charging_schedule_perstop.to_csv(f"output/Charging_schedule_perstop.csv", index=False)
 
