@@ -37,13 +37,13 @@ if __name__ == "__main__":
     #################################################################################
 
     # 1.1) Load GTFS data from the specified folder
-    gtfs = GTFSManager(gtfs_datafolder="input/GTFS_Nairobi_cleaned")
+    gtfs = GTFSManager(gtfs_datafolder="input/GTFS_Nairobi")
 
     # 1.2) Check the consistency of the GTFS data, and clean it if necessary
     # This step ensures that the data is valid for simulation
-    # if not gtfs.check_all():
-    #     print("INFO \t Data is inconsistent, cleaning data...")
-    #     gtfs.clean_all()
+    if not gtfs.check_all():
+        print("INFO \t Data is inconsistent, cleaning data...")
+        gtfs.clean_all()
 
     # 1.3) OPTIONAL - Data filtering and manipulation (uncomment to enable)
     # Example 1: Filter for services that run daily (e.g., remove weekend-only services)
@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     # Example 4: Trim tripshapes to make sure their start and end points correspond to the projection of the start (RECOMMENDED)
     # and stop stops locations once projected on the tripshape (needed later to calculate distance between stops)
-    #gtfs.trim_tripshapes_to_terminal_locations()
+    gtfs.trim_tripshapes_to_terminal_locations()
 
     # 1.4) OPTIONAL - Show information and export 
     # Show general information about the GTFS feed (e.g., number of trips, agencies, etc.)
@@ -94,9 +94,9 @@ if __name__ == "__main__":
 
     # # 2.3) OPTIONAL - Map the spatio-temporal movement of vehicles 
     # # Warning : this might take a very long time and a lot of disk space if many trips are simulated
-    df = fleet_sim.get_fleet_trajectory(time_step=120)
-    df.to_csv(f"output/Mobility_fleet_trajectory.csv", index=True)
-    fleet_sim.generate_fleet_trajectory_map(fleet_trajectory=df, filepath=f"output/Mobility_fleet_trajectory_map.html")
+    # df = fleet_sim.get_fleet_trajectory(time_step=120)
+    # df.to_csv(f"output/Mobility_fleet_trajectory.csv", index=True)
+    # fleet_sim.generate_fleet_trajectory_map(fleet_trajectory=df, filepath=f"output/Mobility_fleet_trajectory_map.html")
 
     ###############################################################################
     ########################## STEP 3: Charging Scenario ########################## 
@@ -108,10 +108,15 @@ if __name__ == "__main__":
         charging_efficiency = 0.9,
         charging_powers_kW = {
             "depot": [[11,1.0], [22,0.0]],
-            "terminal": [[200,1.0]]
+            "terminal": [[100,1.0]],
+            "stop": [[200, 1.0]]
         }
     )
 
-    cs.compute_charging_schedule(["terminal", "depot_night"], charge_probability=0.5, depot_travel_time_min=[15,30])
-    cs._charging_schedule.to_csv(f"output/charging_schedule.csv", index=False)
+    cs.compute_charging_schedule(["stop"], charge_probability=0.5, depot_travel_time_min=[15,30])
+    cs.charging_schedule_pervehicle.to_csv(f"output/Charging_schedule_pervehicle.csv", index=False)
+    cs.charging_schedule_perstop.to_csv(f"output/Charging_schedule_perstop.csv", index=False)
+
+    load_curve = cs.compute_charging_load_curve(time_step_s = 60)
+    load_curve.to_csv(f"output/Charging_load_curve.csv", index=False)
     

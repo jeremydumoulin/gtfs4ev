@@ -20,7 +20,7 @@ class ChargingSimulator:
             charging_powers_kw (dict): A dictionary of vehicle_id: charging power in kW.
             charging_efficiency (float): Charging efficiency as a value between 0 and 1 (default is 0.0).
         """
-        print("=========================================")
+        print("\n=========================================")
         print(f"INFO \t Creation of a ChargingSimulator object.")
         print("=========================================")
 
@@ -28,6 +28,9 @@ class ChargingSimulator:
         self.energy_consumption_kWh_per_km = energy_consumption_kWh_per_km
         self.charging_efficiency = charging_efficiency
         self.charging_powers_kW = charging_powers_kW or {}
+
+        self._charging_schedule_pervehicle = None
+        self._charging_schedule_perstop = None
 
         print("INFO \t Successful initialization of the ChargingSimulator. ")
 
@@ -42,8 +45,15 @@ class ChargingSimulator:
             raise ValueError("fleet_sim.fleet_operation cannot be None. You must simulate the fleet opeation first.")
         self._fleet_sim = value
 
-    # --- vehicle_properties ---
+    @property
+    def charging_schedule_pervehicle(self):
+        """Gets the pd dataframe with charging schedule for every vehicle."""
+        return self._charging_schedule_pervehicle
 
+    @property
+    def charging_schedule_perstop(self):
+        """Gets the pd dataframe with charging schedule for every stop."""
+        return self._charging_schedule_perstop
 
     def compute_charging_schedule(self, charging_strategy: str, **kwargs):
         """
@@ -181,7 +191,10 @@ class ChargingSimulator:
                 "min_capacity_kWh": min_capacity
             })
 
-        self._charging_schedule = pd.DataFrame(vehicle_charging_sequences)
+        self._charging_schedule_pervehicle = pd.DataFrame(vehicle_charging_sequences)
+
+        # Also calculate the charging schedule per stop
+        self.aggregate_charging_by_stop()
 
     def get_charging_sequence(self, travel_sequence, charging_strategy, charging_need_kWh, charge_probability, depot_travel_time_min):
         """
@@ -192,6 +205,7 @@ class ChargingSimulator:
         # Apply random delays to consider travel time to depot
         delay = timedelta(minutes=random.randint(depot_travel_time_min[0], depot_travel_time_min[1]))
 
+        # --- Charging strategy: Terminal ---
         if charging_strategy == "terminal":
             remaining_need = charging_need_kWh 
 
@@ -201,12 +215,21 @@ class ChargingSimulator:
 
                 if event["status"] == "at_terminal":
                     if random.random() < charge_probability:
-                        power_rate = self.get_random_charging_power("terminal")
+                        power_rate = self.get_random_charging_power("stop")
                         duration_h = event["duration_h"]
-                        energy = duration_h * power_rate
+
+                        # Max energy we can charge during this slot
+                        max_possible_energy = duration_h * power_rate
+                        energy_to_charge = min(max_possible_energy, remaining_need)
+                        charging_duration_h = energy_to_charge / power_rate
+
+                        actual_end = datetime.strptime(event["start_time"], "%H:%M:%S") + timedelta(hours=charging_duration_h)
+                        
+                        energy = charging_duration_h * power_rate
+
                         charging_events.append({
                             "start_time": event["start_time"],
-                            "end_time": event["end_time"],
+                            "end_time": actual_end.strftime("%H:%M:%S"),
                             "location": "terminal",
                             "stop_id": event["stop_id"],
                             "power": power_rate,
@@ -214,6 +237,39 @@ class ChargingSimulator:
                         })
                         remaining_need -= energy
 
+        # --- Charging strategy: Stop ---
+        if charging_strategy == "stop":
+            remaining_need = charging_need_kWh 
+
+            for event in travel_sequence:
+                if remaining_need <= 0:
+                    break  # charging need fulfilled
+
+                if event["status"] == "at_stop":
+                    if random.random() < charge_probability:
+                        power_rate = self.get_random_charging_power("stop")
+                        duration_h = event["duration_h"]
+
+                        # Max energy we can charge during this slot
+                        max_possible_energy = duration_h * power_rate
+                        energy_to_charge = min(max_possible_energy, remaining_need)
+                        charging_duration_h = energy_to_charge / power_rate
+
+                        actual_end = datetime.strptime(event["start_time"], "%H:%M:%S") + timedelta(hours=charging_duration_h)
+                        
+                        energy = charging_duration_h * power_rate
+
+                        charging_events.append({
+                            "start_time": event["start_time"],
+                            "end_time": actual_end.strftime("%H:%M:%S"),
+                            "location": "stop",
+                            "stop_id": event["stop_id"],
+                            "power": power_rate,
+                            "energy_charged_kWh": energy
+                        })
+                        remaining_need -= energy
+
+        # --- Charging strategy: Depot day ---
         if charging_strategy == "depot_day":
             remaining_need = charging_need_kWh            
 
@@ -258,6 +314,7 @@ class ChargingSimulator:
                         if remaining_need <= 0:
                             break  # charging need fulfilled
 
+        # --- Charging strategy: Depot night ---
         if charging_strategy == "depot_night":
             remaining_need = charging_need_kWh
                 
@@ -321,6 +378,158 @@ class ChargingSimulator:
 
         return charging_events
 
+    # Charging sequence with stop perspective
+
+    def aggregate_charging_by_stop(self):
+        """
+        Aggregates charging sessions into non-overlapping intervals per stop_id,
+        calculating power, energy, and number of vehicles charging.
+
+        Returns
+        -------
+        pd.DataFrame
+            One row per stop_id with:
+            - stop_id: str
+            - location: str
+            - charging_sequence: List[Dict] with:
+                - 'start_time', 'end_time', 'power', 'energy_kWh', 'vehicle_count'
+            - total_energy_kWh: float
+            - peak_power_kW: float
+            - max_vehicles: int
+        """
+        print("INFO \t Computing the charging schedule per stop location... ")
+
+        vehicle_df = self.charging_schedule_pervehicle
+
+        stop_sessions = {}
+        stop_locations = {}
+
+        for _, row in vehicle_df.iterrows():
+            for session in row['charging_sequence']:
+                stop_id = session.get('stop_id', 'depot')
+                location = session['location']
+
+                if stop_id not in stop_sessions:
+                    stop_sessions[stop_id] = []
+                    stop_locations[stop_id] = location
+
+                start = datetime.strptime(session['start_time'], '%H:%M:%S')
+                end = datetime.strptime(session['end_time'], '%H:%M:%S')
+                stop_sessions[stop_id].append({
+                    'start': start,
+                    'end': end,
+                    'power': session['power']
+                })
+
+        result = []
+        for stop_id, sessions in stop_sessions.items():
+            time_points = set()
+            for s in sessions:
+                time_points.add(s['start'])
+                time_points.add(s['end'])
+
+            sorted_times = sorted(time_points)
+            charging_sequence = []
+
+            for i in range(len(sorted_times) - 1):
+                t_start = sorted_times[i]
+                t_end = sorted_times[i + 1]
+
+                active_sessions = [
+                    s for s in sessions if s['start'] <= t_start < s['end']
+                ]
+
+                vehicle_count = len(active_sessions)
+                total_power = sum(s['power'] for s in active_sessions)
+                duration_h = (t_end - t_start).total_seconds() / 3600
+                energy_kWh = round(total_power * duration_h, 6)
+
+                if total_power > 0:
+                    charging_sequence.append({
+                        'start_time': t_start.strftime('%H:%M:%S'),
+                        'end_time': t_end.strftime('%H:%M:%S'),
+                        'power': total_power,
+                        'energy_kWh': energy_kWh,
+                        'vehicle_count': vehicle_count
+                    })
+
+            # New summary metrics
+            total_energy_kWh = round(sum(e['energy_kWh'] for e in charging_sequence), 6)
+            peak_power_kW = max((e['power'] for e in charging_sequence), default=0)
+            max_vehicles = max((e['vehicle_count'] for e in charging_sequence), default=0)
+
+            result.append({
+                'stop_id': stop_id,
+                'location': stop_locations[stop_id],
+                'charging_sequence': charging_sequence,
+                'total_energy_kWh': total_energy_kWh,
+                'peak_power_kW': peak_power_kW,
+                'max_vehicles': max_vehicles
+            })
+
+        self._charging_schedule_perstop = pd.DataFrame(result)
+
+    # Charging load curve
+
+    def compute_charging_load_curve(self, time_step_s):
+        """
+        Compute aggregated charging load curves by location from vehicle charging sequences.
+
+        Parameters:
+        - time_step_s: int, the resolution of the output time series in seconds
+
+        Returns:
+        - pd.DataFrame: charging load with columns:
+            - 'time_h': time elapsed from midnight in hours
+            - One column per location: aggregated power [kW] at each time step
+          Index is datetime.time (HH:MM:SS)
+        """
+        print("INFO \t Computing the charging load curve... ")
+
+        df = self.charging_schedule_pervehicle
+
+        # Full day index at desired resolution
+        full_day = pd.date_range(
+            start="00:00:00", 
+            end="23:59:59", 
+            freq=f"{time_step_s}s"
+        )
+
+        # Will store location-wise power curves
+        location_curves = {}
+
+        for _, row in df.iterrows():
+            for session in row['charging_sequence']:
+                start_dt = datetime.strptime(session['start_time'], '%H:%M:%S')
+                end_dt = datetime.strptime(session['end_time'], '%H:%M:%S')
+                power = session['power']
+                location = session['location']
+
+                if location not in location_curves:
+                    location_curves[location] = pd.Series(0.0, index=full_day)
+
+                session_range = pd.date_range(
+                    start=start_dt.time().strftime('%H:%M:%S'),
+                    end=end_dt.time().strftime('%H:%M:%S'),
+                    freq=f'{time_step_s}s'
+                )
+
+                for t in session_range:
+                    if t in location_curves[location].index:
+                        location_curves[location][t] += power
+
+        # Build full DataFrame
+        load_df = pd.DataFrame(location_curves, index=full_day)
+
+        # Add time in hours as first column
+        time_h = load_df.index.hour + load_df.index.minute / 60 + load_df.index.second / 3600
+        load_df.insert(0, 'time_h', time_h)
+
+        # Set index to time only (HH:MM:SS)
+        load_df.index = load_df.index.time
+
+        return load_df
+
     # Helpers
 
     def get_random_charging_power(self, location_type: str) -> float:
@@ -376,160 +585,3 @@ class ChargingSimulator:
         required_capacity = max_battery_level - min_battery_level
 
         return required_capacity
-
-    # def test_battery_capacity(self, travel_sequence, charging_events, energy_consumption_kWh_per_km, initial_battery_capacity):
-    #     def to_time(t): return datetime.strptime(t, "%H:%M:%S")
-
-    #     # Convert charging times and sort them
-    #     charging_times = [to_time(e["start_time"]) for e in charging_events]
-    #     charging_times = sorted(charging_times)
-
-    #     # Get earliest and latest travel times
-    #     travel_start = to_time(travel_sequence[1]["start_time"])
-    #     travel_end = to_time(travel_sequence[-2]["end_time"])
-
-    #     # Add dummy charge times to cover full day
-    #     all_checkpoints = [travel_start] + charging_times + [travel_end]
-    #     all_checkpoints = sorted(all_checkpoints)
-
-    #     # Handle case where there's only one charging event
-    #     if len(charging_events) == 1:
-    #         # Total distance travelled in the journey
-    #         total_distance = sum(event["distance_km"] for event in travel_sequence)
-    #         # Energy required for the total distance
-    #         required_capacity = total_distance * energy_consumption_kWh_per_km
-    #         print(f"Only one charging event. Minimum battery capacity needed: {required_capacity:.2f} kWh")
-    #         return required_capacity  # Return the calculated required capacity
-
-    #     # Battery status and current battery level
-    #     battery_capacity = initial_battery_capacity 
-    #     battery_level = battery_capacity
-
-    #     print(f"Starting with battery capacity: {battery_capacity} kWh")
-
-    #     # Loop over intervals between charging sessions
-    #     for i in range(len(all_checkpoints) - 1):
-    #         interval_start = all_checkpoints[i]
-    #         interval_end = all_checkpoints[i + 1]
-    #         energy_needed = 0.0
-
-    #         # Calculate energy consumption between charging events
-    #         for event in travel_sequence:
-    #             event_start = to_time(event["start_time"])
-    #             event_end = to_time(event["end_time"])
-
-    #             if event_end <= interval_start or event_start >= interval_end:
-    #                 continue  # Skip events outside this interval
-
-    #             if event["status"] == "travelling":
-    #                 energy_needed += event["distance_km"] * energy_consumption_kWh_per_km
-
-    #         # Check if the battery level is sufficient for this leg
-    #         if battery_level < energy_needed:
-    #             print(f"Battery ran out! Needed {energy_needed:.2f} kWh, but only {battery_level:.2f} kWh left.")
-    #             return False  # The battery was not sufficient
-
-    #         # If battery level is sufficient, reduce battery by the energy consumed
-    #         battery_level -= energy_needed
-
-    #         print(f"Traveling from {interval_start.strftime('%H:%M:%S')} → {interval_end.strftime('%H:%M:%S')}")
-    #         print(f"Energy needed: {energy_needed:.2f} kWh | Remaining battery: {battery_level:.2f} kWh")
-
-    #         # Refill battery at the charging stop
-    #         if interval_end in charging_times:
-    #             print(f"Charging at {interval_end.strftime('%H:%M:%S')}")
-    #             # Find the corresponding charging event and add the energy charged
-    #             for charge_event in charging_events:
-    #                 if to_time(charge_event["start_time"]) == interval_end:
-    #                     battery_level += charge_event["energy_charged_kWh"]
-    #                     print(f"Energy charged: {charge_event['energy_charged_kWh']} kWh | Total battery: {battery_level:.2f} kWh")
-    #                     break
-
-    #     print("Battery successfully handled the entire trip.")
-    #     return True  # The battery was sufficient for the entire trip
-
-
-        # def compute_charging_schedule(self):
-    #     """
-    #     Simulates charging behavior for a fleet of vehicles.
-    #     Charges only at 11kW when the vehicle status is 'at_terminal'.
-
-    #     Parameters:
-    #     - fleet_operation: List of dicts, each with key 'travel_sequences'
-
-    #     Returns:
-    #     - charging_schedules: DataFrame with vehicle_id, the corresponding charging sequence, and total energy charged
-    #     """
-    #     charging_power_kW = 11  # constant charging rate
-    #     energy_consumption = 0.5 # kWh per km
-    #     charging_schedules = []  # List to hold each vehicle's charging schedule
-
-    #     fleet_operation = self.fleet_sim.fleet_operation 
-    #     trip_travel_sequences = self.fleet_sim.trip_travel_sequences  
-
-    #     # Step 1: Organize base sequences by trip_id
-    #     trip_base_sequences = {}
-    #     for _, event in trip_travel_sequences.iterrows():
-    #         trip_id = event["trip_id"]
-    #         trip_base_sequences.setdefault(trip_id, []).append(event)
-
-    #     # Loop through vehicles in fleet_operation
-    #     for veh_idx, vehicle_record in fleet_operation.iterrows():
-    #         charging_schedule = []
-    #         total_energy_charged = 0  # Variable to accumulate the total energy charged for the vehicle
-
-    #         # Get the travel_sequences for the current vehicle
-    #         vehicle_travel_sequences = vehicle_record["travel_sequences"]
-    #         trip_id = vehicle_record["trip_id"]
-
-    #         for seq in vehicle_travel_sequences:
-    #             # Check if the sequence is not operating (skip if operating is False)
-    #             if not seq.get("operating", True):
-    #                 continue  # Skip this sequence if it's not operating
-
-    #             # Retrieve the base sequence for the current vehicle and trip_id
-    #             base_seq = trip_base_sequences.get(trip_id)                
-                    
-    #             # Extract start time and compute the cumulative durations for base sequence
-    #             start_time = datetime.strptime(seq["start_time"], "%H:%M:%S")
-    #             durations = [e["duration"] for e in base_seq]
-    #             cumulative_durations = np.cumsum([0] + durations[:-1])
-
-    #             # Loop through the base sequence to handle charging during "at_terminal" status
-    #             for event, offset in zip(base_seq, cumulative_durations):
-    #                 if event["status"] != "at_terminal":
-    #                     continue  # Only process "at_terminal" events
-
-    #                 # Compute event's start and end time based on cumulative duration offset
-    #                 event_start = start_time + timedelta(seconds=offset)
-    #                 event_end = event_start + timedelta(seconds=event["duration"])
-                    
-    #                 # Calculate charging power (kW) and energy consumption (kWh)
-    #                 duration_h = event["duration"] / 3600
-    #                 energy_kWh = duration_h * charging_power_kW
-
-    #                 # Add the energy to the total energy charged for the vehicle
-    #                 total_energy_charged += energy_kWh
-
-    #                 # Append the charging event to the charging schedule
-    #                 charging_schedule.append({
-    #                     "start_time": event_start.strftime("%H:%M:%S"),
-    #                     "end_time": event_end.strftime("%H:%M:%S"),
-    #                     "status": event["status"],
-    #                     "power_kW": charging_power_kW,
-    #                     "energy_kWh": energy_kWh,
-    #                     "duration_h": duration_h,
-    #                     "stop_id": event.get("stop_id", None)
-    #                 })
-
-    #         # Append the charging schedule and total energy charged for the current vehicle to the list
-    #         charging_schedules.append({
-    #             "vehicle_id": vehicle_record["vehicle_id"],
-    #             "trip_id": trip_id,  
-    #             "charging_sequence": charging_schedule,  # Store the entire charging sequence for this vehicle
-    #             "total_charged_energy_kWh": total_energy_charged,  # Store the total energy charged,
-    #             "charging_demand_kWh": vehicle_record["total_distance_km"] * energy_consumption
-    #         })
-
-    #     # Convert the list of dictionaries into a DataFrame and return it
-    #     return pd.DataFrame(charging_schedules)
