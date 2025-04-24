@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
     # 2.1) Initialize the FleetSimulator with the GTFS data and a list of trip IDs to simulate
     # If no trip IDs are specified, all trips in the GTFS feed will be simulated
-    fleet_sim = FleetSimulator(gtfs_manager=gtfs, trip_ids=["1011F110"])
+    fleet_sim = FleetSimulator(gtfs_manager=gtfs, trip_ids=["1011F110", "1107D110", "10114111"])
     # If you want to simulate all trips, uncomment the line below:
     #fleet_sim = FleetSimulator(gtfs_manager=gtfs)
 
@@ -112,12 +112,12 @@ if __name__ == "__main__":
         }
     )
 
-    cs.compute_charging_schedule(["terminal", "depot_night"], charge_probability=0.5, depot_travel_time_min=[15,30])
+    cs.compute_charging_schedule(["stop", "depot_night"], charge_probability=0.1, depot_travel_time_min=[15,30])
     cs.charging_schedule_pervehicle.to_csv(f"output/Charging_schedule_pervehicle.csv", index=False)
     cs.charging_schedule_perstop.to_csv(f"output/Charging_schedule_perstop.csv", index=False)
 
     cs.generate_charging_map(stop_charging_schedule = cs.charging_schedule_perstop, filepath=f"output/Charging_stop_map.html")
 
-    load_curve = cs.compute_charging_load_curve(time_step_s = 60)
+    load_curve = cs.compute_charging_load_curve(time_step_s = 1)
     load_curve.to_csv(f"output/Charging_load_curve.csv", index=False)
     

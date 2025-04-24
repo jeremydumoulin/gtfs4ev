@@ -159,22 +159,26 @@ class ChargingSimulator:
         base_seq = trip_base_sequences.get(trip_id, [])
 
         base_durations = [event["duration"] for event in base_seq]
-        base_distances = [event.get("distance", 0.0) for event in base_seq]
+        base_distances = [event["distance"] for event in base_seq]
         base_statuses = [event["status"] for event in base_seq]
-        base_stop_ids = [event.get("stop_id", None) for event in base_seq]
+        base_stop_ids = [event["stop_id"] for event in base_seq]
         base_cumulative = np.concatenate(([0], np.cumsum(base_durations)))
 
         travel_sequence = []
 
         for seq in vehicle_sequences:
+            offset = seq.get("offset_from_start", 0)
             travel_sequence.extend(
-                self._generate_segment_sequence(seq, base_seq, base_durations, base_distances, base_statuses, base_stop_ids, base_cumulative)
+                self._generate_segment_sequence(
+                    seq, base_seq, base_durations, base_distances,
+                    base_statuses, base_stop_ids, base_cumulative, offset
+                )
             )
 
         return travel_sequence
 
-    def _generate_segment_sequence(self, seq, base_seq, base_durations, base_distances, base_statuses, base_stop_ids, base_cumulative):
-        """Breaks a single time interval into base-sequence-aligned segments."""
+    def _generate_segment_sequence(self, seq, base_seq, base_durations, base_distances, base_statuses, base_stop_ids, base_cumulative, offset_from_start):
+        """Breaks a single time interval into base-sequence-aligned segments, with offset applied."""
         start_time = datetime.strptime(seq["start_time"], "%H:%M:%S")
         end_time = datetime.strptime(seq["end_time"], "%H:%M:%S")
         if end_time < start_time:
@@ -192,14 +196,20 @@ class ChargingSimulator:
             }]
 
         segments = []
-        for i, _ in enumerate(base_seq):
-            if base_cumulative[i] >= duration_sec:
-                break
+        abs_start_offset = offset_from_start
+        abs_end_offset = offset_from_start + duration_sec
 
-            start_offset = base_cumulative[i]
-            end_offset = base_cumulative[i + 1]
-            effective_start = start_time + timedelta(seconds=start_offset)
-            effective_end = start_time + timedelta(seconds=min(end_offset, duration_sec))
+        for i, _ in enumerate(base_seq):
+            if base_cumulative[i] >= abs_end_offset:
+                break
+            if base_cumulative[i + 1] <= abs_start_offset:
+                continue
+
+            segment_start = max(base_cumulative[i], abs_start_offset)
+            segment_end = min(base_cumulative[i + 1], abs_end_offset)
+
+            effective_start = start_time + timedelta(seconds=segment_start - abs_start_offset)
+            effective_end = start_time + timedelta(seconds=segment_end - abs_start_offset)
             event_duration = (effective_end - effective_start).total_seconds()
 
             base_duration = base_durations[i]
@@ -571,7 +581,7 @@ class ChargingSimulator:
 
     # Charging load curve
 
-    def compute_charging_load_curve(self, time_step_s):
+    def compute_charging_load_curve(self, time_step_s: int) -> pd.DataFrame:
         """
         Compute aggregated charging load curves by location from vehicle charging sequences.
 
@@ -586,49 +596,59 @@ class ChargingSimulator:
         """
         print("INFO \t Computing the charging load curve... ")
 
-        df = self.charging_schedule_pervehicle
+        # 1) Flatten all charging sessions
+        all_sessions = []
+        for _, row in self.charging_schedule_pervehicle.iterrows():
+            all_sessions.extend(row['charging_sequence'])
+        sessions = pd.DataFrame(all_sessions)
 
-        # Full day index at desired resolution
-        full_day = pd.date_range(
-            start="00:00:00", 
-            end="23:59:59", 
-            freq=f"{time_step_s}s"
-        )
+        # 2) Convert HH:MM:SS → seconds since midnight
+        def to_sec(hms: str) -> int:
+            h, m, s = map(int, hms.split(':'))
+            return h * 3600 + m * 60 + s
 
-        # Will store location-wise power curves
-        location_curves = {}
+        sessions['start_sec'] = sessions['start_time'].map(to_sec)
+        sessions['end_sec']   = sessions['end_time'].  map(to_sec)
 
-        for _, row in df.iterrows():
-            for session in row['charging_sequence']:
-                start_dt = datetime.strptime(session['start_time'], '%H:%M:%S')
-                end_dt = datetime.strptime(session['end_time'], '%H:%M:%S')
-                power = session['power']
-                location = session['location']
+        # 2a) Split sessions that cross midnight
+        over_midnight = sessions['end_sec'] < sessions['start_sec']
+        if over_midnight.any():
+            wrap = sessions[over_midnight].copy()
+            # first part: start → midnight
+            wrap['end_sec'] = 86400
+            # second part: midnight → original end
+            wrap2 = wrap.copy()
+            wrap2['start_sec'] = 0
+            wrap2['end_sec']   = sessions.loc[over_midnight, 'end_sec'].values + 86400 - wrap.loc[over_midnight, 'start_sec'].values
+            sessions.loc[over_midnight, 'end_sec'] = 86400
+            sessions = pd.concat([sessions, wrap2], ignore_index=True)
 
-                if location not in location_curves:
-                    location_curves[location] = pd.Series(0.0, index=full_day)
+        # 3) Prepare time-axis and location axes
+        full_day_sec  = np.arange(0, 86400, time_step_s)        # e.g. [0, 2, 4, …]
+        n_steps       = full_day_sec.shape[0]
+        locations     = sessions['location'].unique()
+        loc_to_col    = {loc:i for i, loc in enumerate(locations)}
 
-                session_range = pd.date_range(
-                    start=start_dt.time().strftime('%H:%M:%S'),
-                    end=end_dt.time().strftime('%H:%M:%S'),
-                    freq=f'{time_step_s}s'
-                )
+        # 4) Build empty load matrix (steps × locations)
+        load_matrix = np.zeros((n_steps, locations.size), dtype=float)
 
-                for t in session_range:
-                    if t in location_curves[location].index:
-                        location_curves[location][t] += power
+        # 5) Accumulate each session’s power by slicing
+        for _, sess in sessions.iterrows():
+            start_idx = np.searchsorted(full_day_sec, sess['start_sec'],  side='left')
+            end_idx   = np.searchsorted(full_day_sec, sess['end_sec'],    side='left')
+            col_idx   = loc_to_col[sess['location']]
+            load_matrix[start_idx:end_idx, col_idx] += sess['power']
 
-        # Build full DataFrame
-        load_df = pd.DataFrame(location_curves, index=full_day)
+        # 6) Build the DataFrame
+        #    - index as datetime.time
+        #    - insert time_h
+        times = [(datetime(1900,1,1) + timedelta(seconds=int(s))).time()
+                 for s in full_day_sec]
+        df = pd.DataFrame(load_matrix, index=times, columns=locations)
+        df.index.name = 'time'
+        df.insert(0, 'time_h', full_day_sec / 3600.0)
 
-        # Add time in hours as first column
-        time_h = load_df.index.hour + load_df.index.minute / 60 + load_df.index.second / 3600
-        load_df.insert(0, 'time_h', time_h)
-
-        # Set index to time only (HH:MM:SS)
-        load_df.index = load_df.index.time
-
-        return load_df
+        return df
 
     # Visualization
 
@@ -655,7 +675,7 @@ class ChargingSimulator:
         layers_info = {
             "Energy Charged (kWh)": ("total_energy_kWh", cm.linear.YlOrRd_09),
             "Peak Power (kW)": ("peak_power_kW", cm.linear.PuBu_09),
-            "Number of Vehicles": ("max_vehicles", cm.linear.YlGnBu_09)
+            "Max Vehicles": ("max_vehicles", cm.linear.YlGnBu_09)
         }
 
         for name, (col, colormap) in layers_info.items():
