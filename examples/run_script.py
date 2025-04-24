@@ -113,7 +113,11 @@ if __name__ == "__main__":
         }
     )
 
-    cs.compute_charging_schedule(["stop", "depot_night"], charge_probability=0.1, depot_travel_time_min=[15,30])
+    cs.compute_charging_schedule(["terminal_random", "stop_random", "depot_night"], 
+        charge_probability_terminal=0.1,
+        charge_probability_stop=0.1,
+        depot_travel_time_min=[15,30])
+
     cs.charging_schedule_pervehicle.to_csv(f"output/Charging_schedule_pervehicle.csv", index=False)
     cs.charging_schedule_perstop.to_csv(f"output/Charging_schedule_perstop.csv", index=False)
 

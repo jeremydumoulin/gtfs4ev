@@ -271,8 +271,9 @@ class ChargingSimulator:
         }
 
     def _generate_charging_events_for_strategy(self, travel_sequence, charging_strategy, 
-        charging_need_kWh, 
-        charge_probability, 
+        charging_need_kWh,
+        charge_probability_terminal,
+        charge_probability_stop,
         depot_travel_time_min):
         """
         Simulates charging events based on a given strategy and a vehicle’s travel sequence.
@@ -281,8 +282,8 @@ class ChargingSimulator:
         depending on the charging strategy selected. 
 
         Supported strategies:
-        - "terminal": Attempts charging during 'at_terminal' statuses with a certain probability.
-        - "stop": Attempts charging during 'at_stop' statuses with a certain probability.
+        - "terminal_random": Attempts charging during 'at_terminal' statuses with a certain probability.
+        - "stop_random": Attempts charging during 'at_stop' statuses with a certain probability.
         - "depot_day": Tries charging during daytime idle (non-operating) periods, excluding first/last events.
         - "depot_night": Charges either at the end or beginning of the day (or both), based on depot availability.
 
@@ -315,11 +316,11 @@ class ChargingSimulator:
 
         # --- Charging Strategy: Terminal ---
         # Charge opportunistically when a vehicle is parked at the terminal (usually end/start of line).
-        if charging_strategy == "terminal":
+        if charging_strategy == "terminal_random":
             for event in travel_sequence:
                 if remaining_need <= 0:
                     break  # Stop if enough energy has been charged
-                if event["status"] == "at_terminal" and can_charge(charge_probability):
+                if event["status"] == "at_terminal" and can_charge(charge_probability_terminal):
                     charge_event, charged = compute_charging_event(
                         event["start_time"],
                         event["duration_h"],
@@ -331,11 +332,11 @@ class ChargingSimulator:
 
         # --- Charging Strategy: Stop ---
         # Similar to terminal strategy, but happens at intermediate stops.
-        elif charging_strategy == "stop":
+        elif charging_strategy == "stop_random":
             for event in travel_sequence:
                 if remaining_need <= 0:
                     break
-                if event["status"] == "at_stop" and can_charge(charge_probability):
+                if event["status"] == "at_stop" and can_charge(charge_probability_stop):
                     charge_event, charged = compute_charging_event(
                         event["start_time"],
                         event["duration_h"],
@@ -414,6 +415,11 @@ class ChargingSimulator:
                         "energy_charged_kWh": energy
                     })
                     remaining_need -= energy
+
+        # --- Unknown charging strategy ---
+        else:
+            print(f"ERROR \t The charging strategy '{charging_strategy}' is unknown.")
+            return
 
         # Ensure chronological order of events
         charging_events.sort(key=lambda e: e["start_time"])
