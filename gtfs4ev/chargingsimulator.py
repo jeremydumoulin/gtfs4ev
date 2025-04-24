@@ -4,6 +4,12 @@ import numpy as np
 import pandas as pd
 import random
 from datetime import date, datetime, timedelta
+import time
+import sys
+import folium
+from folium.plugins import TimestampedGeoJson
+from folium.plugins import HeatMap
+import branca.colormap as cm
 
 from gtfs4ev.fleetsimulator import FleetSimulator
 
@@ -114,19 +120,29 @@ class ChargingSimulator:
             - self._charging_schedule_pervehicle: DataFrame with per-vehicle charging schedules.
             - self.aggregate_charging_by_stop(): Updates internal stop-level charging summary.
         """
-        print("INFO \t Computing the charging schedule for all vehicles...")
+        print("INFO \t Computing the charging schedule...")
 
         trip_base_sequences = self._group_trip_events_by_id()
         vehicle_charging_sequences = []
 
-        for _, vehicle_record in self.fleet_sim.fleet_operation.iterrows():
+        # Total number of vehicles for progress tracking
+        total_vehicles = len(self.fleet_sim.fleet_operation)
+
+        for idx, (_, vehicle_record) in enumerate(self.fleet_sim.fleet_operation.iterrows()):
             travel_sequence = self._construct_travel_sequence(vehicle_record, trip_base_sequences)            
             charging_result = self._apply_charging_strategies(travel_sequence, charging_strategies, **kwargs)            
-            result = {"vehicle_id": vehicle_record["vehicle_id"], **charging_result} # Put vehicle_id first by manually ordering the dict
+            result = {"vehicle_id": vehicle_record["vehicle_id"], **charging_result}
             vehicle_charging_sequences.append(result)
 
+            # Print progress: percentage completion
+            sys.stdout.write(f"\r \t Progress: {idx+1}/{total_vehicles} vehicles")
+            sys.stdout.flush()
+
         self._charging_schedule_pervehicle = pd.DataFrame(vehicle_charging_sequences)
+
+        print(f"\n \t Aggregating the charging schedule per stop...")
         self._charging_schedule_perstop = self._aggregate_charging_by_stop()
+        print(f"\t Charging schedule computation completed.")
 
     def _group_trip_events_by_id(self):
         """Groups travel events by trip_id into a dictionary."""
@@ -402,7 +418,7 @@ class ChargingSimulator:
             - peak_power_kW: float
             - max_vehicles: int
         """
-        print("INFO \t Computing the charging schedule per stop location... ")
+        stops = self.fleet_sim.gtfs_manager.stops
 
         # Retrieve the per-vehicle charging schedule DataFrame
         vehicle_df = self.charging_schedule_pervehicle
@@ -477,9 +493,21 @@ class ChargingSimulator:
             max_vehicles = max((e['vehicle_count'] for e in charging_sequence), default=0)
 
             # Append results for this stop
+            # Filter the row where stop_id matches to get the geometry
+            stop_gtfs = stops[stops['stop_id'] == stop_id]
+
+            lat = lon = None
+
+            # Check if the stop_gtfs DataFrame is not empty
+            if not stop_gtfs.empty:
+                # Extract latitude and longitude from the geometry (Shapely Point)
+                lat = stop_gtfs['geometry'].iloc[0].y  # Latitude (y-coordinate)
+                lon = stop_gtfs['geometry'].iloc[0].x  # Longitude (x-coordinate)
+
             result.append({
                 'stop_id': stop_id,
                 'location': stop_locations[stop_id],
+                'coordinates': (lat, lon), 
                 'charging_sequence': charging_sequence,
                 'total_energy_kWh': total_energy_kWh,
                 'peak_power_kW': peak_power_kW,
@@ -601,3 +629,79 @@ class ChargingSimulator:
         load_df.index = load_df.index.time
 
         return load_df
+
+    # Visualization
+
+    def generate_charging_map(self,stop_charging_schedule, filepath):
+        """
+        Generates a folium map with both detailed colormapped markers and
+        heatmap aggregation for each key metric.
+        """
+        df = stop_charging_schedule
+
+        valid = df['coordinates'].apply(lambda x: x != (None, None))
+        df_valid = df[valid]
+
+        if df_valid.empty:
+            center = [0, 0]
+        else:
+            avg_lat = df_valid['coordinates'].apply(lambda x: x[0]).mean()
+            avg_lon = df_valid['coordinates'].apply(lambda x: x[1]).mean()
+            center = [avg_lat, avg_lon]
+
+        m = folium.Map(location=center, zoom_start=12)
+
+        # Define the properties to plot
+        layers_info = {
+            "Energy Charged (kWh)": ("total_energy_kWh", cm.linear.YlOrRd_09),
+            "Peak Power (kW)": ("peak_power_kW", cm.linear.PuBu_09),
+            "Number of Vehicles": ("max_vehicles", cm.linear.YlGnBu_09)
+        }
+
+        for name, (col, colormap) in layers_info.items():
+            # Color marker layer
+            fg_markers = folium.FeatureGroup(name=f"{name} (Details)")
+            values = df_valid[col].dropna()
+            colormap = colormap.scale(values.min(), values.max())
+            colormap.caption = name
+
+            for _, row in df_valid.iterrows():
+                val = row[col]
+                if pd.notnull(val):
+                    color = colormap(val)
+                    lat, lon = row['coordinates']
+                    folium.CircleMarker(
+                        location=[lat, lon],
+                        radius=8,
+                        color=color,
+                        fill=True,
+                        fill_opacity=0.7,
+                        weight=0.5,
+                        popup=folium.Popup(
+                            f"Stop ID: {row['stop_id']}<br>"
+                            f"Location: {row['location']}<br>"
+                            f"{name}: {val:.2f}", max_width=300
+                        )
+                    ).add_to(fg_markers)
+
+            fg_markers.add_to(m)
+            colormap.add_to(m)
+
+            # Heatmap layer
+            heat_data = [
+                [row['coordinates'][0], row['coordinates'][1], row[col]]
+                for _, row in df_valid.iterrows()
+                if pd.notnull(row[col])
+            ]
+            if heat_data:
+                HeatMap(
+                    heat_data,
+                    name=f"{name} (Heatmap)",
+                    min_opacity=0.4,
+                    max_opacity=0.8,
+                    radius=25,
+                    blur=15,
+                ).add_to(m)
+
+        folium.LayerControl(collapsed=False).add_to(m)
+        m.save(filepath)
