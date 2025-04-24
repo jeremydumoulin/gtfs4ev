@@ -17,7 +17,7 @@ class ChargingSimulator:
     """
     A class simulating the charging of electric vehicles based on the mobility simulation and charging strategy."""
 
-    def __init__(self, fleet_sim: FleetSimulator, energy_consumption_kWh_per_km: float, charging_powers_kW: dict = None):
+    def __init__(self, fleet_sim: FleetSimulator, energy_consumption_kWh_per_km: float, security_driving_distance_km: float , charging_powers_kW: dict = None):
         """
         Initializes the Charging Simulator.
 
@@ -32,6 +32,7 @@ class ChargingSimulator:
 
         self.fleet_sim = fleet_sim
         self.energy_consumption_kWh_per_km = energy_consumption_kWh_per_km
+        self.security_driving_distance_km = security_driving_distance_km
         self.charging_powers_kW = charging_powers_kW or {}
 
         self._charging_schedule_pervehicle = None
@@ -60,6 +61,16 @@ class ChargingSimulator:
         if not isinstance(value, (int, float)) or value <= 0:
             raise ValueError("energy_consumption_kWh_per_km must be a positive number.")
         self._energy_consumption_kWh_per_km = value
+
+    @property
+    def security_driving_distance_km(self):
+        return self._security_driving_distance_km
+
+    @security_driving_distance_km.setter
+    def security_driving_distance_km(self, value):
+        if not isinstance(value, (int, float)) or value < 0:
+            raise ValueError("security_driving_distance_km must be a positive number.")
+        self._security_driving_distance_km = value
 
     @property
     def charging_powers_kW(self):
@@ -229,7 +240,7 @@ class ChargingSimulator:
 
     def _apply_charging_strategies(self, travel_sequence, charging_strategy, **kwargs):
         """Applies multiple charging strategies and returns charging data."""
-        total_need = sum(event["distance_km"] * self.energy_consumption_kWh_per_km for event in travel_sequence)
+        total_need = sum(event["distance_km"] * self.energy_consumption_kWh_per_km for event in travel_sequence) + (self.security_driving_distance_km * self.energy_consumption_kWh_per_km)
         remaining = total_need
         charging_events = []
         added_intervals = []
@@ -259,9 +270,7 @@ class ChargingSimulator:
             "min_capacity_kWh": min_capacity
         }
 
-    def _generate_charging_events_for_strategy(self, 
-        travel_sequence, 
-        charging_strategy, 
+    def _generate_charging_events_for_strategy(self, travel_sequence, charging_strategy, 
         charging_need_kWh, 
         charge_probability, 
         depot_travel_time_min):

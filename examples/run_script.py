@@ -94,9 +94,9 @@ if __name__ == "__main__":
 
     # # 2.3) OPTIONAL - Map the spatio-temporal movement of vehicles 
     # # Warning : this might take a very long time and a lot of disk space if many trips are simulated
-    df = fleet_sim.get_fleet_trajectory(time_step=120)
-    df.to_csv(f"output/Mobility_fleet_trajectory.csv", index=True)
-    fleet_sim.generate_fleet_trajectory_map(fleet_trajectory=df, filepath=f"output/Mobility_fleet_trajectory_map.html")
+    #df = fleet_sim.get_fleet_trajectory(time_step=120)
+    #df.to_csv(f"output/Mobility_fleet_trajectory.csv", index=True)
+    #fleet_sim.generate_fleet_trajectory_map(fleet_trajectory=df, filepath=f"output/Mobility_fleet_trajectory_map.html")
 
     ###############################################################################
     ########################## STEP 3: Charging Scenario ########################## 
@@ -105,6 +105,7 @@ if __name__ == "__main__":
     cs = ChargingSimulator(
         fleet_sim = fleet_sim,
         energy_consumption_kWh_per_km = 0.39,
+        security_driving_distance_km = 0,
         charging_powers_kW = {
             "depot": [[11,1.0], [22,0.0]],
             "terminal": [[100,1.0]],
