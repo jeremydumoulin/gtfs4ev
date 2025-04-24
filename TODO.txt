@@ -1,2 +1,0 @@
-- Vérifier pq les distances sont pas toujours bien calculées
-- Créer une fonction pour exporter les données GTFS
