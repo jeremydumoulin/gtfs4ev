@@ -53,7 +53,7 @@ if __name__ == "__main__":
     # gtfs.filter_agency(agency_id="UON") # Removes all data related to the specified agency.
     
     # Example 3: Add additional idle time at trip terminals (optional based on specific fleet simulation needs)
-    #gtfs.add_idle_time_terminals(mean_idle_time_s = 60, std_idle_time_s = 10)  # Adds idle time at trip terminals
+    gtfs.add_idle_time_terminals(mean_idle_time_s = 60, std_idle_time_s = 10)  # Adds idle time at trip terminals
     #gtfs.add_idle_time_stops(mean_idle_time_s = 20, std_idle_time_s = 5)  # Adds idle time at intermediate stops
 
 
@@ -64,15 +64,14 @@ if __name__ == "__main__":
     # 1.4) OPTIONAL - Show information and export 
     # Show general information about the GTFS feed (e.g., number of trips, agencies, etc.)
     gtfs.show_general_info()
+    gtfs.generate_summary_report("output/GTFS_summary.txt")
 
     # Export cleaned/filtered GTFS data to GTFS file (usefull to avoid pre-processing everytime)
     #gtfs.export_to_csv("input/GTFS_Nairobi_cleaned")
 
-    # Export summary statistics to a text file
-    #gtfs.generate_summary_report("output/GTFS_summary.txt")
-
     # Export a map of a trip or the entire GTFS data (e.g., stops, routes, and trips) as an HTML file 
-    #gtfs.generate_network_map("output/map_GTFS_data.html")
+    gtfs.generate_network_map("output/GTFS_map_alldata.html")
+
     trip_id = "1011F110"
     gtfs.generate_single_trip_map(trip_id = trip_id, filepath = f"output/GTFS_map_{trip_id}.html", projected = True)
 
@@ -94,13 +93,16 @@ if __name__ == "__main__":
 
     # # 2.3) OPTIONAL - Map the spatio-temporal movement of vehicles 
     # # Warning : this might take a very long time and a lot of disk space if many trips are simulated
-    #df = fleet_sim.get_fleet_trajectory(time_step=120)
-    #df.to_csv(f"output/Mobility_fleet_trajectory.csv", index=True)
-    #fleet_sim.generate_fleet_trajectory_map(fleet_trajectory=df, filepath=f"output/Mobility_fleet_trajectory_map.html")
+    df = fleet_sim.get_fleet_trajectory(time_step=120)
+    df.to_csv(f"output/Mobility_fleet_trajectory.csv", index=True)
+    fleet_sim.generate_fleet_trajectory_map(fleet_trajectory=df, filepath=f"output/Mobility_fleet_trajectory_map.html")
 
     ###############################################################################
     ########################## STEP 3: Charging Scenario ########################## 
     ###############################################################################
+
+    # 3.1) Initialize the ChargingSimulator object with basic parameters 
+    # Available charging powers at each charging location must be specified as a list of [power, share] values
 
     cs = ChargingSimulator(
         fleet_sim = fleet_sim,
@@ -113,16 +115,27 @@ if __name__ == "__main__":
         }
     )
 
+    # 3.2) Compute the charging schedule by applying a sequence of charging strategies.
+    # The strategies are applied in the order provided until each vehicle is fully charged or no further strategy is available.
+    # Note: Some strategies require additional parameters, which must be specified accordingly.
+
     cs.compute_charging_schedule(["terminal_random", "stop_random", "depot_night"], 
         charge_probability_terminal=0.1,
         charge_probability_stop=0.1,
         depot_travel_time_min=[15,30])
 
+    # 3.3) Export the charging sequence (per vehicle and per stop) and map the charging needs
     cs.charging_schedule_pervehicle.to_csv(f"output/Charging_schedule_pervehicle.csv", index=False)
     cs.charging_schedule_perstop.to_csv(f"output/Charging_schedule_perstop.csv", index=False)
-
     cs.generate_charging_map(stop_charging_schedule = cs.charging_schedule_perstop, filepath=f"output/Charging_stop_map.html")
 
-    load_curve = cs.compute_charging_load_curve(time_step_s = 1)
+    # 3.4) Generate and export the aggregated load curve
+    load_curve = cs.compute_charging_load_curve(time_step_s = 5)
     load_curve.to_csv(f"output/Charging_load_curve.csv", index=False)
+
+    ###############################################################################
+    ######################## STEP 4: EV-PV Complementarity ######################## 
+    ###############################################################################
     
+
+
