@@ -56,7 +56,6 @@ if __name__ == "__main__":
     gtfs.add_idle_time_terminals(mean_idle_time_s = 60, std_idle_time_s = 10)  # Adds idle time at trip terminals
     #gtfs.add_idle_time_stops(mean_idle_time_s = 20, std_idle_time_s = 5)  # Adds idle time at intermediate stops
 
-
     # Example 4: Trim tripshapes to make sure their start and end points correspond to the projection of the start (RECOMMENDED)
     # and stop stops locations once projected on the tripshape (needed later to calculate distance between stops)
     gtfs.trim_tripshapes_to_terminal_locations()
