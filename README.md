@@ -42,7 +42,7 @@ The model follows a five-step workflow from data preparation to the evaluation o
 5. **EV–PV Complementarity Analysis**. Assesses how well PV generation aligns with EV charging demand.  
 *Main output*: Synergy metrics (e.g., self-sufficiency and self-consumption potentials) for the selected time period.
 
-> :bulb: Additionally, the model provides Python scripts to easily assess CO₂ savings, fuel savings, and map the reduction in exposure to air pollution.
+> :white_check_mark: Additionally, the model provides Python scripts to easily assess CO₂ savings, fuel savings, and map the reduction in exposure to air pollution.
 
 ## Installation
 
