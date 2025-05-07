@@ -638,14 +638,14 @@ class ChargingSimulator:
             sessions.loc[over_midnight, 'end_sec'] = 86400
             sessions = pd.concat([sessions, wrap2], ignore_index=True)
 
-        # 3) Prepare time-axis and location axes
-        full_day_sec  = np.arange(0, 86400, time_step_s)        # e.g. [0, 2, 4, …]
-        n_steps       = full_day_sec.shape[0]
-        locations     = sessions['location'].unique()
-        loc_to_col    = {loc:i for i, loc in enumerate(locations)}
+        # 3) Prepare time axis and predefined location types
+        full_day_sec = np.arange(0, 86400, time_step_s)
+        n_steps = full_day_sec.shape[0]
+        predefined_locations = ['depot', 'stop', 'terminal']
+        loc_to_col = {loc: i for i, loc in enumerate(predefined_locations)}
 
         # 4) Build empty load matrix (steps × locations)
-        load_matrix = np.zeros((n_steps, locations.size), dtype=float)
+        load_matrix = np.zeros((n_steps, len(predefined_locations)), dtype=float)
 
         # 5) Accumulate each session’s power by slicing
         for _, sess in sessions.iterrows():
@@ -659,7 +659,7 @@ class ChargingSimulator:
         #    - insert time_h
         times = [(datetime(1900,1,1) + timedelta(seconds=int(s))).time()
                  for s in full_day_sec]
-        df = pd.DataFrame(load_matrix, index=times, columns=locations)
+        df = pd.DataFrame(load_matrix, index=times, columns=predefined_locations)
         df.index.name = 'time'
         df.insert(0, 'time_h', full_day_sec / 3600.0)
 
