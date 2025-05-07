@@ -54,20 +54,20 @@ Ensure Python is installed on your system. This project was developped with **Py
 
 If it is your first time with Python, we recommend installing python via [Miniconda](https://docs.conda.io/en/latest/miniconda.html). Many tutorials are available online to help you with this installation process (see for example [this one](https://www.youtube.com/watch?v=oHHbsMfyNR4)). During the installation, make sure to select "Add Miniconda to PATH".
 
-> :thumbsup: Miniconda includes `conda`, which allows you to create a dedicated python environment for `evpv-simulator`. If not using conda, consider alternative environment managers like `venv`. Manual installation of all dependencies 
+> :thumbsup: Miniconda includes `conda`, which allows you to create a dedicated python environment for `gtfs4ev`. If not using conda, consider alternative environment managers like `venv`. Manual installation of all dependencies 
 is also possible but not recommended.
 
 ### Installation 
-1. (Optional) Create a Conda environment with Python 3.12. As stated before, it is not mandatory but recommended to use a dedicated environment. Here an example with conda using an environment named *evpv-env*
+1. (Optional) Create a Conda environment with Python 3.12. As stated before, it is not mandatory but recommended to use a dedicated environment. Here an example with conda using an environment named *gtfs4ev-env*
 
 ```bash
-$ conda create --name evpv-env python=3.12
-$ conda activate evpv-env
+$ conda create --name gtfs4ev-env python=3.12
+$ conda activate gtfs4ev-env
 ```
 
-2. Install evpv as a python package from the GitHub repository
+2. Install gtfs4ev as a python package from the GitHub repository
 ```bash
-$ pip install git+https://github.com/jeremydumoulin/evpv-simulator.git
+$ pip install git+https://github.com/jeremydumoulin/gtfs4ev.git
 ```
 
 ## Basic Usage
@@ -80,7 +80,7 @@ First, create a new configuration file for you case study by copying an existing
 
 Once your config file and GTFS data foler is ready, open a terminal, activate your conda environment (optional), and run:
 ```bash
-$ evpv
+$ gtfs4ev
 ```
 You’ll be prompted to enter the path to your config file:
 ```bash
