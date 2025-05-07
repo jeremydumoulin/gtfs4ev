@@ -33,7 +33,7 @@ from gtfs4ev.evpvsynergies import EVPVSynergies
 
 if __name__ == "__main__":
     #################################################################################
-    ########### STEP 1: Load, clean, and filter (optional) the GTFS data ###########
+    ########### STEP 1: Load, clean, and filter (optional) the GTFS data ############
     #################################################################################
 
     # 1.1) Load GTFS data from the specified folder

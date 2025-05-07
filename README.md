@@ -1,7 +1,13 @@
-
 # GTFS4EV
-**GTFS4EV (GTFS for Electric Vehicles) is an open-source Python tool that supports planning the electrification of public transport systems. It simulates electric public transport operations and charging scenarios using widely available GTFS data. 
-The model allows users to explore different charging strategies and assess their impacts on the charging needs in time and space, assessing also whether a specific charging strategy can meet the demand and what battery capacity is needed. It also evaluates how local solar PV energy could be used to fulfill the charging needs.**
+
+**GTFS4EV (GTFS for Electric Vehicles) is an open-source Python tool designed to support strategic planning for the electrification of public transport systems. It simulates electric vehicle (EV) operations and charging scenarios based on the widely available GTFS (General Transit Feed Specification) data format. It enables users to explore and evaluate different electrification strategies, assess spatial and temporal charging needs, and determine the required battery capacities. It also integrates solar photovoltaic (PV) production modeling to analyze the complementarity between local renewable generation and EV charging needs.** 
+
+In short, GTFS4EV answers key questions such as:
+* What is the charging demand demand for bus electrification?
+* Can a specific charging strategy meet the charging demand of a public transport fleet? What is the associated required battery capacity?
+* How can local PV energy be used to fulfill the charging needs and reduce grid dependency?
+
+> :thumbsup: Additional python scripts are also included to estimate ex-post benefits such as CO2 and diesel fuel savings, and to analyze reductions in air pollution exposure.
 
 Authors = Jeremy Dumoulin, Alejandro Pena-Bello, Noémie Jeannin, Nicolas Wyrsch
 
@@ -17,20 +23,20 @@ Langage = python 3
 
 1. [Overview of the Model](#overview-of-the-model)
 2. [Installation](#installation)
-3. [Usage](#usage)
-4. [Features](#features)
-5. [Project Structure](#project-structure)
+3. [Basic Usage](#basic-usage)
+4. [Advanced Usage](#advanced-usage)
+5. [Standout Features & Limitations](#standout-features--limitations)
 6. [Scientific Publications](#scientific-publications)
 7. [Acknowledgment](#acknowledgment)
 8. [License](#license)
 
 ## Overview of the model
-The model follows a five-step workflow from data preparation to the evaluation of solar-electric vehicle synergies. Below is a quick summary of the modelling steps and their typical outputs:
+The model follows a five-step workflow from data preparation to the evaluation of EV-PV complementarity indicators. Below is a quick summary of the modelling steps and their typical outputs:
 
 1. **GTFS Data Preprocessing**. GTFS data is loaded, checked, cleaned, and optionally filtered or enriched (e.g., by adding idle times at terminals).  
 *Main outputs*: Cleaned GTFS data, transport network map.
 
-2. **Fleet Operation Simulation**.Vehicle movements are simulated based on the GTFS feed, either for the entire network or selected trips.  
+2. **Fleet Operation Simulation**. Vehicle movements are simulated based on the GTFS feed, either for the entire network or selected trips.  
 *Main output*: Operational data for each vehicle.
 
 3. **Charging Scenario Simulation**. Charging needs are computed using customizable strategies and charging infrastructure setups.  
@@ -42,7 +48,7 @@ The model follows a five-step workflow from data preparation to the evaluation o
 5. **EV–PV Complementarity Analysis**. Assesses how well PV generation aligns with EV charging demand.  
 *Main output*: Synergy metrics (e.g., self-sufficiency and self-consumption potentials) for the selected time period.
 
-> :white_check_mark: Additionally, the model provides Python scripts to easily assess CO₂ savings, fuel savings, and map the reduction in exposure to air pollution.
+> :white_check_mark: Additionally, the model provides Python scripts to easily assess CO2 savings, diesel fuel savings, and map the reduction in exposure to air pollution.
 
 ## Installation
 
