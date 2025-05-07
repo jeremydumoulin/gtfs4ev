@@ -184,7 +184,7 @@ def run_simulation(config):
 
     evpv = EVPVSynergies(pv=pv, load_curve=load_curve, pv_capacity_MW=config.pv_capacity_MW)
     synergy_metrics = evpv.daily_metrics(config.start_date, config.end_date)
-    synergy_metrics.to_csv(f"{config.output_folder}EVPVSynergies.csv") # Save synergy metrics data
+    synergy_metrics.to_csv(f"{config.output_folder}/EVPVSynergies.csv") # Save synergy metrics data
 
     # End time and message 
 

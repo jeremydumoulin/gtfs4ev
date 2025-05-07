@@ -49,94 +49,97 @@ GTFS4EV follows a five-step workflow—from transit data preprocessing to the ev
 
 > :white_check_mark: Additional Python scripts are included to estimate avoided CO2 emissions, diesel fuel savings, and to map the reduction in population exposure to air pollution.
 
-## Installation
+### Getting python
+Ensure Python is installed on your system. This project was developped with **Python 3.12**. Other versions may not be compatible.
 
-### Requirements
-- **Python**: Ensure Python is installed on your system. Note that the code was developed and tested using python 3.12, so other python version might not work.
-- **Conda** (optional, but recommended): Use Conda for managing Python environments and dependencies. 
+If it is your first time with Python, we recommend installing python via [Miniconda](https://docs.conda.io/en/latest/miniconda.html). Many tutorials are available online to help you with this installation process (see for example [this one](https://www.youtube.com/watch?v=oHHbsMfyNR4)). During the installation, make sure to select "Add Miniconda to PATH".
 
-> :bulb: If you are new to python and conda environments, we recommand installing python and conda via the [Miniconda](https://docs.conda.io/en/latest/miniconda.html) distribution. During the installation, make sure to select "Add Miniconda to PATH" for ease of use.
+> :thumbsup: Miniconda includes `conda`, which allows you to create a dedicated python environment for `evpv-simulator`. If not using conda, consider alternative environment managers like `venv`. Manual installation of all dependencies 
+is also possible but not recommended.
 
-> :thumbsdown: If you do not want to use conda, we strongly recommend using an other virtual environment manager (venv, ...). However, you can also manually install all the python dependencies (not recommended) using the list of required modules in the `environment.yml` file.
+### Installation 
+1. (Optional) Create a Conda environment with Python 3.12. As stated before, it is not mandatory but recommended to use a dedicated environment. Here an example with conda using an environment named *evpv-env*
 
-### Installation with conda
-
-
-![](docs/installation.gif)
-
-## Usage
-
-### Basic Usage
-
-### Advanced Usage
-
-## Features
-
-### Main features 
-
-- **Lorem ipsum** Lorem ipsum dolor sit amet
-
-### Available charging strategies
-
-### Planned Features
-
-- Update the README file to the new architecture
-- Add more advanced examples
-- Create a CLI for easy usage
-- Create a readthedocs
-- Make a contributing guide
-- Write some unit tests 
-
-## Project structure (for contributing or advanced usage)
 ```bash
-├───environment.yml
-├───setup.py
-├───version.py
-├───LICENSE.md
-├───README.md
-├───doc/
-├───evpv/
-│   ├───chargingsimulator.py
-│   ├───evpvsynergies.py
-│   ├───mobilitysimulator.py
-│   ├───pvsimulator.py
-│   ├───region.py
-│   ├───vehicle.py
-│   ├───vehiclefleet.py
-│   ├───evpv_cli.py
-│   └───helpers.py
-├───examples/
-│   ├───Basic_AddisAbaba_ConfigFile/
-│   └───...
-└───scripts/
-```  
-### evpv-simulator run script
-The file `evpv_cli.py` is a python script that allows users to run to conduct a basic study using a simple command line interface (see section *Usage*).
+$ conda create --name evpv-env python=3.12
+$ conda activate evpv-env
+```
 
-### Python Modules
-In the `evpv/` folder, you will find the following python classes:
+2. Install evpv as a python package from the GitHub repository
+```bash
+$ pip install git+https://github.com/jeremydumoulin/evpv-simulator.git
+```
 
-**Core Classes**
-These modules are essential for basic usage:
-- **`Vehicle`**: Defines the parameters for a specific type of electric vehicle.
-- **`VehicleFleet`**: Manages information about an EV fleet for simulation.
-- **`Region`**: Represents the region of interest, including geospatial characteristics.
-- **`MobilitySimulator`**: Simulates mobility demand by allocating EVs to origins and determining trip distributions.
-- **`ChargingSimulator`**: Analyzes the spatial and temporal charging needs for the EV fleet.
-- **`PVSimulator`**: Simulates the PV production based on PV-Lib.
-- **`EVPVSynergies`**: Computes metrics for PV-based charging of EVs.
+## Basic Usage
 
-**Additional Files**
-- **`evpv_cli.py`**: Provides a command-line interface for running mobility demand simulations.
-- **`helpers.py`**: Contains various utility functions used internally by other classes.
+After installation, you can run the **GTFS4EV model in command-line mode**. This is ideal for users who are not familiar with Python or who want to quickly conduct a simple case study.
 
-### Examples
-In the `examples/` folder, you will find various examples illustrating basic and more advanced use cases. We recommend looking at the various scripts, starting with the more basic ones.
+First, create a new configuration file for you case study by copying an existing example such as the `config.py` that you find in the `/example`. Update it with your own input values and make sure you have your GTFS data ready. GTFS data needs to be provided as a folder, not a .zip file. As for populating the input file, the `config.py` file comes with comments.
 
-### Scripts
-In the `scripts/` folder, you will find additionnal helpful scripts, notably a script to fetch georeferenced workplaces or points of interest from OpenStreetMap.
+> :bulb: We recommend starting by running the example to get familiar with the workflow. The easiest way to access all necessary files is to download the full GitHub repository as a ZIP file, extract it and copy the contents of the example folder into the directory of your choice.
+
+Once your config file and GTFS data foler is ready, open a terminal, activate your conda environment (optional), and run:
+```bash
+$ evpv
+```
+You’ll be prompted to enter the path to your config file:
+```bash
+$ Enter the path to the python configuration file: C:\Users\(...)\config.py
+```
+> :warning: Use absolute paths in the config file, or start the terminal in the same directory as the config file to use relative paths.
+
+## Input Parameters
+
+Input parameters are defined and explained in the configuration file. Some basic parameters (e.g., GTFS path, charging strategy) are mandatory, while advanced options (e.g., PV setup details) have default values and can be customized as needed.
+
+> :bulb: Easily test different charging strategies or PV scenarios by editing the config file.
+
+### Model Outputs
+
+After simulation, outputs are organized into five folders:
+
+- **GTFS**: Intermediate results related to the GTFS data, like aggregated information and a map of the transport network.
+- **Mobility**: Intermediate results from the fleet operation simulation, such as the travel pattern of every vehicle, the distance travelled by the vehicles, and idle periods at stops and terminals.
+- **Charging**: Contains results from the charging simulation, including: charging schedules per vehicle and per stop, estimated battery capacities, load curves 
+- **PV**: Hourly solar PV generation over the simulation year, based on the defined system parameters and location-specific environmental data.
+- **EVPV**: Analysis of complementarity between PV production and EV charging demand.
+
+## Advanced usage
+
+Advanced users can develop custom analyses or workflows by importing core classes from the `gtfs4ev/` module:
+
+```python
+from gtfs4ev.gtfsmanager import GTFSManager
+from gtfs4ev.fleetsimulator import FleetSimulator
+from gtfs4ev.chargingsimulator import ChargingSimulator
+# and more...
+```
+
+This allows full control over each step of the modeling process—from GTFS processing to charging simulation and result interpretation.
+
+> :bulb: For a working example, see `run_script.py` in the `/example` folder.
+> :bulb: Additional post-processing scripts (e.g., CO₂ savings, air pollution exposure analysis) are available in the `/scripts` folder.
+
+## Standout Features 
+
+### Main features
+- **Fully Data-Driven Simulation**. Operates entirely from GTFS data (no need for additional operational datasets) to simulate electric bus operation and energy demand. Ideal for contexts where transport data is scarce.
+
+- **Idle Time Handling**. Users can enrich GTFS data by adding customizable idle times at stops or terminals to better reflect real-world vehicle behavior.
+
+- **Chained Charging Strategy Framework**. Supports multiple charging strategies applied in sequence. The model starts with the first strategy and falls back to the next one if charging needs are not met, ensuring flexible charging simulations.
+
+- **Extensible Charging Strategy Design**. The codebase is modular and ready for other user-defined charging strategies, making it easy to plug in new logic without modifying the core simulation.
+
+- **PV system presets**. Easily generates PV production and EV–PV complementarity metrics for common PV system types (rooftop, ground-mounted, with or without tracking).
+
+### Planned features
+
+- Adding more charging strategies
+- Speed up calculations
 
 ## Scientific publications
+(...)
 
 ## Acknowledgment 
 This project was supported by the HORIZON [OpenMod4Africa](https://openmod4africa.eu/) project (Grant number 101118123), with funding from the European Union and the State Secretariat for Education, Research and Innovation (SERI) for the Swiss partners. We also gratefully acknowledge the support of OpenMod4Africa partners for their contributions and collaboration.

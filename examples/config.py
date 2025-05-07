@@ -26,7 +26,7 @@ charging_powers_kW = {
 }
 
 # Charging strategy sequence (in order of application)
-# The model start by applying the first strategy. # If the charging needs of a 
+# The model start by applying the first strategy. If the charging needs of a 
 # vehicle are not met, the next one is tried. And so on, until the vehicle is 
 # sufficiently charged or all strategies are exhausted.
 
