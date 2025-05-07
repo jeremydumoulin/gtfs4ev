@@ -67,7 +67,7 @@ def run_simulation(config):
 
     print("")
     print("------------------------------------------------")
-    print(f"Starting the run of the {config.scenario_name} case study")
+    print(f"Starting the run of the case study")
     print(f"Results are stored in the following folder: {config.output_folder}")
     print("------------------------------------------------")
     print("")
