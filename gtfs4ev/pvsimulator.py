@@ -153,6 +153,12 @@ class PVSimulator:
         # Set the tracking and tilt/azimuth options
         if self.installation['type'] == 'groundmounted_fixed':
             trackingtype = 0
+            # Correct a bug of PVGIS optimizer for low latitudes
+            if abs(self.location.latitude) < 2:
+                optimize_tilt = False
+                optimize_azimuth = False
+                tilt = 0
+                azimuth = 180
         elif self.installation['type'] == 'groundmounted_singleaxis_horizontal':
             trackingtype = 1
         elif self.installation['type'] == 'groundmounted_singleaxis_vertical':
@@ -281,6 +287,8 @@ class PVSimulator:
         # Correct to account for angle of incidence loss (problem when using the run_model_from_poa here)
         if self.installation['type'] == 'groundmounted_fixed' or self.installation['type'] == 'rooftop':
             pv_production = mc.results.dc * (1 - self.calculate_angular_losses(self.environment['latitude'] - self.installation['tilt'])/100)
+        else:
+            pv_production = mc.results.dc
 
         # Correct the DC power for system losses to get AC production
         pv_production = pv_production * (1 - self.installation['system_losses'])
