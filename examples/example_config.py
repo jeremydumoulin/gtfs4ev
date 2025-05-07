@@ -72,7 +72,7 @@ add_idle_time_stops_s = [0, 0]      # Additionnal idle time (in seconds) added a
 # --- GTFS Outputs ---
 export_cleaned_gtfs = False  # If True, export cleaned/filtered GTFS data to a new folder to be easily reused
 generate_network_map = True  # If True, generate a visual map of the transport network
-generate_map_specific_trips = ["1011F110"]  # Trips to map in a dedicated HTML file for inspection 
+generate_map_specific_trips = []  # Trips to map in a dedicated HTML file for inspection 
 
 # --- Fleet Operation Simulation ---
 use_multiprocessing = False  # Enable parallel processing for faster simulation
