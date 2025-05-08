@@ -246,7 +246,7 @@ class TripSimulator:
                         "travel_sequences": [],
                         "trip_repetitions": 0.0,
                         "total_distance_km": 0.0,
-                        "total_travel_time_s": 0.0,  # Initialize total duration to 0
+                        "total_operation_time_s": 0.0,  # Initialize total duration to 0
                         "terminal_time_s": 0.0,
                         "stop_time_s": 0.0,
                         "travel_time_s": 0.0
