@@ -21,7 +21,7 @@ trips_to_simulate = ["1011F110", "1107D110", "10114111"]
 energy_consumption_kWh_per_km = 0.39  # Vehicle energy consumption per kilometer (in kWh)
 
 charging_powers_kW = {
-    "depot": [[11, 1.0], [22, 0.0]],       # List of [power_kW, probability] for depot chargers
+    "depot": [[11, 0.5], [22, 0.5]],       # List of [power_kW, probability] for depot chargers
     "terminal": [[100, 1.0]],              # Charging powers at terminals
     "stop": [[200, 1.0]]                   # Charging powers regular bus stops
 }
@@ -39,7 +39,7 @@ charging_strategy_sequence = ["terminal_random", "stop_random", "depot_night"]
 # Parameters for specific strategies
 charge_probability_terminal = 0.1  # Probability of charging at terminal
 charge_probability_stop = 0.1      # Probability of charging at stop
-depot_travel_time_min = [15, 30]   # Range (min, max) of travel time (in minutes) to/from depot
+depot_travel_time_min = [30, 15]   # [mean, std_deviation] of travel time (in minutes) to/from depot
 
 # --- PV Production ---
 latitude = 0.17094549   # Latitude of the PV system location

@@ -296,7 +296,7 @@ class TripSimulator:
                     # Update total travel distance and duration for the vehicle
                     vehicle_records[vehicle_id]["trip_repetitions"] += repetition_fraction
                     vehicle_records[vehicle_id]["total_distance_km"] += full_trip_distance * repetition_fraction
-                    vehicle_records[vehicle_id]["total_travel_time_s"] += trip_duration * repetition_fraction
+                    vehicle_records[vehicle_id]["total_operation_time_s"] += trip_duration * repetition_fraction
 
                     repetition_start += trip_duration
 

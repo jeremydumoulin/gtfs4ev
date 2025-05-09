@@ -121,7 +121,7 @@ if __name__ == "__main__":
     cs.compute_charging_schedule(["terminal_random", "stop_random", "depot_night"], 
         charge_probability_terminal=0.1,
         charge_probability_stop=0.1,
-        depot_travel_time_min=[15,30])
+        depot_travel_time_min=[30,15])
 
     # 3.3) Export the charging sequence (per vehicle and per stop) and map the charging needs
     cs.charging_schedule_pervehicle.to_csv(f"output/Charging_schedule_pervehicle.csv", index=False)
