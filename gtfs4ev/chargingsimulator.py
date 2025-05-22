@@ -671,17 +671,18 @@ class ChargingSimulator:
 
     # Visualization
 
-    def generate_charging_map(self,stop_charging_schedule, filepath):
+    def generate_charging_map(self, stop_charging_schedule, filepath):
         """
         Generates a folium map with both detailed colormapped markers and
         heatmap aggregation for each key metric.
-        """
+        """        
         df = stop_charging_schedule
 
         valid = df['coordinates'].apply(lambda x: x != (None, None))
         df_valid = df[valid]
 
         if df_valid.empty:
+            print(f"ALERT \t No valid stop coordinates found. The stop map will be empty.")
             center = [0, 0]
         else:
             avg_lat = df_valid['coordinates'].apply(lambda x: x[0]).mean()
@@ -701,7 +702,16 @@ class ChargingSimulator:
             # Color marker layer
             fg_markers = folium.FeatureGroup(name=f"{name} (Details)")
             values = df_valid[col].dropna()
-            colormap = colormap.scale(values.min(), values.max())
+
+            # Crée une nouvelle instance de la palette à chaque fois
+            raw_colormap = colormap  # sauvegarde le modèle
+            vmin, vmax = values.min(), values.max()
+            if pd.isna(vmin) or pd.isna(vmax):
+                print(f"ALERT \t No data for {name}")
+                continue
+
+            # Crée une nouvelle colormap propre
+            colormap = raw_colormap.__class__(raw_colormap.colors).scale(vmin, vmax)
             colormap.caption = name
 
             for _, row in df_valid.iterrows():
