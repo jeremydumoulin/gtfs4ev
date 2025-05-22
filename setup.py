@@ -18,6 +18,7 @@ setup(
         "pandas==2.2.3",
         "numpy==2.2.4",
         "shapely==2.1.0",
+        "rasterio==1.4.3",
         "osmnx==2.0.2",
         "folium==0.19.5",
         "pvlib==0.11.0",
