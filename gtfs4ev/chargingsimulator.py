@@ -425,6 +425,11 @@ class ChargingSimulator:
             print(f"ERROR \t The charging strategy '{charging_strategy}' is unknown.")
             return
 
+        # Final check: did we actually charge anything?
+        if not charging_events and charging_need_kWh > 0:
+            print(f"ALERT \t No charging events were generated using strategy '{charging_strategy}' "
+                  f"despite a remaining need of {charging_need_kWh:.2f} kWh.")
+
         # Ensure chronological order of events
         charging_events.sort(key=lambda e: e["start_time"])
 
